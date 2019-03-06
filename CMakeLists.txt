@@ -38,6 +38,7 @@ find_package(LofarBlob REQUIRED)
 find_package(log4cxx REQUIRED)
 find_package(Casacore REQUIRED COMPONENTS  ms images mirlib coordinates fits lattices measures scimath scimath_f tables casa)
 find_package(AskapParallel REQUIRED)
+find_package(Scimath REQUIRED)
 
 # uninstall target
 if(NOT TARGET uninstall)
@@ -93,9 +94,11 @@ endif (ASKAP_FOUND)
 if (ASKAPPARALLEL_FOUND)
 	include_directories(${ASKAPPARALLEL_INCLUDE_DIRS})
 endif(ASKAPPARALLEL_FOUND)
+if (SCIMATH_FOUND)
+	include_directories(${SCIMATH_INCLUDE_DIRS})
+endif (SCIMATH_FOUND)
 
-
-set (_modules imageaccess)
+set (_modules imageaccess dataaccess )
 
 # add some more tests and sub-directories
 
