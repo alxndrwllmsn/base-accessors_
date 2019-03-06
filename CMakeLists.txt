@@ -98,7 +98,7 @@ if (SCIMATH_FOUND)
 	include_directories(${SCIMATH_INCLUDE_DIRS})
 endif (SCIMATH_FOUND)
 
-set (_modules imageaccess dataaccess )
+set (_modules imageaccess dataaccess calibaccess)
 
 # add some more tests and sub-directories
 

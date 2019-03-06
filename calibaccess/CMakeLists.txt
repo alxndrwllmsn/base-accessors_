@@ -1,0 +1,61 @@
+add_library( 
+	
+calibaccess
+
+CachedCalSolutionAccessor.cc
+CalParamNameHelper.cc
+CalSolutionConstSourceStub.cc
+CalSolutionSourceStub.cc
+CalibAccessFactory.cc
+ChanAdapterCalSolutionConstAccessor.cc
+ChanAdapterCalSolutionConstSource.cc
+ICalSolutionAccessor.cc
+ICalSolutionConstAccessor.cc
+ICalSolutionConstSource.cc
+JonesDTerm.cc
+JonesIndex.cc
+JonesJTerm.cc
+MemCalSolutionAccessor.cc
+ParsetCalSolutionAccessor.cc
+ParsetCalSolutionConstSource.cc
+ParsetCalSolutionSource.cc
+ServiceCalSolutionSourceStub.cc
+TableCalSolutionConstSource.cc
+TableCalSolutionFiller.cc
+TableCalSolutionSource.cc
+)
+install (
+FILES
+CachedCalSolutionAccessor.h
+CalParamNameHelper.h
+CalSolutionConstSourceStub.h
+CalSolutionSourceStub.h
+CalibAccessFactory.h
+ChanAdapterCalSolutionConstAccessor.h
+ChanAdapterCalSolutionConstSource.h
+ICalSolutionAccessor.h
+ICalSolutionConstAccessor.h
+ICalSolutionConstSource.h
+ICalSolutionFiller.h
+ICalSolutionSource.h
+JonesDTerm.h
+JonesIndex.h
+JonesJTerm.h
+MemCalSolutionAccessor.h
+ParsetCalSolutionAccessor.h
+ParsetCalSolutionConstSource.h
+ParsetCalSolutionSource.h
+ServiceCalSolutionSourceStub.h
+TableCalSolutionConstSource.h
+TableCalSolutionFiller.h
+TableCalSolutionSource.h
+
+DESTINATION include/askap/calibaccess
+)
+
+target_link_libraries(
+	calibaccess
+	${CASACORE_LIBRARIES}
+	dataaccess
+)
+
