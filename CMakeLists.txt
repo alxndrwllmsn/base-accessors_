@@ -73,38 +73,16 @@ endif(ENABLE_SHARED)
 
 # include directories
 include_directories( ${CMAKE_SOURCE_DIR} )
-if (Boost_FOUND)
-    include_directories (${Boost_INCLUDE_DIRS})
-    add_definitions(-DHAVE_BOOST)
-endif (Boost_FOUND)
-if (log4cxx_FOUND)
-    include_directories(${log4cxx_INCLUDE_DIRS})
-    add_definitions(-DHAVE_LOG4CXX)
-endif(log4cxx_FOUND)
-
-if (LofarCommon_FOUND)
-	include_directories(${LofarCommon_INCLUDE_DIRS})
-endif(LofarCommon_FOUND)
-
-if (LofarBlob_FOUND)
-	include_directories(${LofarBlob_INCLUDE_DIRS})
-endif(LofarBlob_FOUND)
-
-
-if (CASACORE_FOUND)
-	include_directories(${CASACORE_INCLUDE_DIRS})
-endif(CASACORE_FOUND)
-
-if (ASKAP_FOUND)
-	include_directories(${ASKAPPARALLEL_INCLUDE_DIRS})
-endif (ASKAP_FOUND)
-
-if (ASKAPPARALLEL_FOUND)
-	include_directories(${ASKAPPARALLEL_INCLUDE_DIRS})
-endif(ASKAPPARALLEL_FOUND)
-if (SCIMATH_FOUND)
-	include_directories(${SCIMATH_INCLUDE_DIRS})
-endif (SCIMATH_FOUND)
+include_directories (${Boost_INCLUDE_DIRS})
+add_definitions(-DHAVE_BOOST)
+include_directories(${log4cxx_INCLUDE_DIRS})
+add_definitions(-DHAVE_LOG4CXX)
+include_directories(${LofarCommon_INCLUDE_DIRS})
+include_directories(${LofarBlob_INCLUDE_DIRS})
+include_directories(${CASACORE_INCLUDE_DIRS})
+include_directories(${ASKAP_INCLUDE_DIRS})
+include_directories(${ASKAPPARALLEL_INCLUDE_DIRS})
+include_directories(${SCIMATH_INCLUDE_DIRS})
 
 set (_modules imageaccess dataaccess calibaccess)
 
