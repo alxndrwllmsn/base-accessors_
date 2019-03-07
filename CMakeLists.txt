@@ -96,7 +96,7 @@ if (CASACORE_FOUND)
 endif(CASACORE_FOUND)
 
 if (ASKAP_FOUND)
-	include_directories(${ASKAPPARALLEL_INCLUDE_DIRS})
+	include_directories(${ASKAP_INCLUDE_DIRS})
 endif (ASKAP_FOUND)
 
 if (ASKAPPARALLEL_FOUND)
