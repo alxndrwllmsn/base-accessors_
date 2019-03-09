@@ -84,11 +84,29 @@ include_directories(${ASKAP_INCLUDE_DIRS})
 include_directories(${ASKAPPARALLEL_INCLUDE_DIRS})
 include_directories(${SCIMATH_INCLUDE_DIRS})
 
-set (_modules imageaccess dataaccess calibaccess)
+add_subdirectory(imageaccess)
+add_subdirectory(dataaccess)
+add_subdirectory(calibaccess)
 
+add_library(askap_accessors SHARED
+	$<TARGET_OBJECTS:imageaccess>
+	$<TARGET_OBJECTS:dataaccess>
+	$<TARGET_OBJECTS:calibaccess>
+)
 # add some more tests and sub-directories
 
-foreach (module ${_modules})
-	add_subdirectory(${module})
-endforeach (module)
+target_link_libraries(askap_accessors
+	${CASACORE_LIBRARIES}
+	${log4cxx_LIBRARY}
+	${LofarBlob_LIBRARY}
+	${LofarCommon_LIBRARY}
+	${ASKAPPARALLEL_LIBRARY}
+	${SCIMATH_LIBRARY})
+install (
+	TARGETS askap_accessors
+	RUNTIME DESTINATION bin
+	LIBRARY DESTINATION lib
+	ARCHIVE DESTINATION lib
+	LIBRARY PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+)
 

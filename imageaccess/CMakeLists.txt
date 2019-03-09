@@ -1,7 +1,7 @@
 #
 # base/accessors/imageaccess
 #
-add_library(imageaccess
+add_library(imageaccess OBJECT
 BeamLogger.cc
 CasaImageAccess.cc
 FITSImageRW.cc
@@ -19,13 +19,4 @@ ImageAccessFactory.h
 
 DESTINATION include/askap/imageaccess
 )
-
-target_link_libraries(
-	imageaccess
-	${CASACORE_LIBRARIES}
-	${log4cxx_LIBRARY}
-	${LofarBlob_LIBRARY}
-	${LofarCommon_LIBRARY}
-	${ASKAPPARALLEL_LIBRARY}
-	)
 

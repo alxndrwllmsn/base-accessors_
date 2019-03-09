@@ -1,7 +1,7 @@
 #
 # base/accessors/dataaccess
 #
-add_library(dataaccess
+add_library(dataaccess OBJECT
 
 BasicDataConverter.cc
 BestWPlaneDataAccessor.cc
@@ -148,13 +148,4 @@ UVWRotationHandler.h
 
 DESTINATION include/askap/imageaccess
 )
-target_link_libraries(
-	dataaccess
-	${CASACORE_LIBRARIES}
-	${log4cxx_LIBRARY}
-	${LofarBlob_LIBRARY}
-	${LofarCommon_LIBRARY}
-	${ASKAPPARALLEL_LIBRARY}
-	${SCIMATH_LIBRARY}
-	)
 

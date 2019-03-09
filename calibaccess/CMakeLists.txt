@@ -1,6 +1,4 @@
-add_library( 
-	
-calibaccess
+add_library( calibaccess OBJECT
 
 CachedCalSolutionAccessor.cc
 CalParamNameHelper.cc
@@ -51,11 +49,5 @@ TableCalSolutionFiller.h
 TableCalSolutionSource.h
 
 DESTINATION include/askap/calibaccess
-)
-
-target_link_libraries(
-	calibaccess
-	${CASACORE_LIBRARIES}
-	dataaccess
 )
 
