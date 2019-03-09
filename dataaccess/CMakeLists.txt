@@ -146,6 +146,6 @@ TimeDependentSubtable.h
 UVWMachineCache.h
 UVWRotationHandler.h
 
-DESTINATION include/askap/imageaccess
+DESTINATION include/askap/dataaccess
 )
 
