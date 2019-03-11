@@ -9,6 +9,9 @@ FitsImageAccess.cc
 IImageAccess.cc
 ImageAccessFactory.cc
 )
+
+set_property(TARGET imageaccess PROPERTY POSITION_INDEPENDENT_CODE ON)
+
 install (FILES
 BeamLogger.h
 CasaImageAccess.h
