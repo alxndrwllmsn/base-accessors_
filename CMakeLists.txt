@@ -45,6 +45,7 @@ find_package(LofarCommon REQUIRED)
 find_package(LofarBlob REQUIRED)
 find_package(log4cxx REQUIRED)
 find_package(Casacore REQUIRED COMPONENTS  ms images mirlib coordinates fits lattices measures scimath scimath_f tables casa)
+find_package(Askap REQUIRED)
 find_package(AskapParallel REQUIRED)
 find_package(Scimath REQUIRED)
 
@@ -101,7 +102,10 @@ target_link_libraries(askap_accessors
 	${LofarBlob_LIBRARY}
 	${LofarCommon_LIBRARY}
 	${ASKAPPARALLEL_LIBRARY}
-	${SCIMATH_LIBRARY})
+	${SCIMATH_LIBRARY}
+	${ASKAP_LIBRARY}
+	)
+	
 install (
 	TARGETS askap_accessors
 	RUNTIME DESTINATION bin
