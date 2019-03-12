@@ -57,6 +57,9 @@ TimeDependentSubtable.cc
 UVWMachineCache.cc
 UVWRotationHandler.cc
 )
+
+set_property(TARGET dataaccess PROPERTY POSITION_INDEPENDENT_CODE ON)
+
 install (FILES
 
 BasicDataConverter.h

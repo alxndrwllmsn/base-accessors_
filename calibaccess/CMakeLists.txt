@@ -22,6 +22,9 @@ TableCalSolutionConstSource.cc
 TableCalSolutionFiller.cc
 TableCalSolutionSource.cc
 )
+
+set_property(TARGET calibaccess PROPERTY POSITION_INDEPENDENT_CODE ON)
+
 install (
 FILES
 CachedCalSolutionAccessor.h
