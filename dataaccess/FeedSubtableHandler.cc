@@ -49,7 +49,7 @@
 
 // casa includes
 #include <casacore/tables/Tables/TableRecord.h>
-#include <casacore/tables/Tables/ExprNode.h>
+#include <casacore/tables/TaQL/ExprNode.h>
 #include <casacore/tables/Tables/ScalarColumn.h>
 #include <casacore/tables/Tables/ArrayColumn.h>
 #include <casacore/casa/Arrays/Array.h>
