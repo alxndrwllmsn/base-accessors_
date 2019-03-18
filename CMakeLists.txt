@@ -64,6 +64,12 @@ include_directories(${ASKAP_INCLUDE_DIRS})
 include_directories(${ASKAPPARALLEL_INCLUDE_DIRS})
 include_directories(${SCIMATH_INCLUDE_DIRS})
 
+if (CASACORE3 OR CXX11)
+	set(CMAKE_CXX_STANDARD 11)
+	set(CMAKE_CXX_STANDARD_REQUIRED ON)
+endif()
+
+
 add_subdirectory(imageaccess)
 add_subdirectory(dataaccess)
 add_subdirectory(calibaccess)
