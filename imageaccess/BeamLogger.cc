@@ -90,7 +90,7 @@ void BeamLogger::write()
         std::ofstream fout(itsFilename.c_str());
         fout << "#Channel BMAJ[arcsec] BMIN[arcsec] BPA[deg]\n";
 
-        std::map<unsigned int, casa::Vector<casa::Quantum<double> > >::iterator beam = itsBeamList.begin();
+        std::map<unsigned int, casacore::Vector<casacore::Quantum<double> > >::iterator beam = itsBeamList.begin();
         for (; beam != itsBeamList.end(); beam++) {
             fout << beam->first << " "
                  << beam->second[0].getValue("arcsec") << " "
@@ -123,10 +123,10 @@ void BeamLogger::read()
                 if (line[0] != '#') {
                     std::stringstream ss(line);
                     ss >> chan >> bmaj >> bmin >> bpa;
-                    casa::Vector<casa::Quantum<double> > currentbeam(3);
-                    currentbeam[0] = casa::Quantum<double>(bmaj, "arcsec");
-                    currentbeam[1] = casa::Quantum<double>(bmin, "arcsec");
-                    currentbeam[2] = casa::Quantum<double>(bpa, "deg");
+                    casacore::Vector<casacore::Quantum<double> > currentbeam(3);
+                    currentbeam[0] = casacore::Quantum<double>(bmaj, "arcsec");
+                    currentbeam[1] = casacore::Quantum<double>(bmin, "arcsec");
+                    currentbeam[2] = casacore::Quantum<double>(bpa, "deg");
                     itsBeamList[chan] = currentbeam;
                 }
             }
@@ -167,7 +167,7 @@ void BeamLogger::gather(askapparallel::AskapParallel &comms, int rankToGather, b
             out << size;
             if (itsBeamList.size() > 0) {
                 ASKAPLOG_DEBUG_STR(logger, "This has data, so sending beam list of size " << size);
-                std::map<unsigned int, casa::Vector<casa::Quantum<double> > >::iterator beam = itsBeamList.begin();
+                std::map<unsigned int, casacore::Vector<casacore::Quantum<double> > >::iterator beam = itsBeamList.begin();
                 for (; beam != itsBeamList.end(); beam++) {
                     out << beam->first
                         << beam->second[0].getValue("arcsec")
@@ -199,10 +199,10 @@ void BeamLogger::gather(askapparallel::AskapParallel &comms, int rankToGather, b
                         ASKAPLOG_DEBUG_STR(logger, "Has data - about to receive " << size << " channels");
                         for(unsigned int i=0;i<size;i++){
                             in >> chan >> bmaj >> bmin >> bpa;
-                            casa::Vector<casa::Quantum<double> > currentbeam(3);
-                            currentbeam[0] = casa::Quantum<double>(bmaj, "arcsec");
-                            currentbeam[1] = casa::Quantum<double>(bmin, "arcsec");
-                            currentbeam[2] = casa::Quantum<double>(bpa, "deg");
+                            casacore::Vector<casacore::Quantum<double> > currentbeam(3);
+                            currentbeam[0] = casacore::Quantum<double>(bmaj, "arcsec");
+                            currentbeam[1] = casacore::Quantum<double>(bmin, "arcsec");
+                            currentbeam[2] = casacore::Quantum<double>(bpa, "deg");
                             itsBeamList[chan] = currentbeam;
                         }
                     }
