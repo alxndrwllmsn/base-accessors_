@@ -8,7 +8,7 @@ pipeline {
   stages {
     stage('Building base-askap') {
       steps {
-        dir(path: '${WORKSPACE}') {
+        dir(path: '.') {
           sh '''if [ -d base-askap ]; then
 echo "base-askap directory already exists"
 rm -rf base-askap
@@ -101,9 +101,6 @@ make -j2 install
 
       }
     }
-
-
-
     stage('Building base-accessors') {
       steps {
         dir(path: '${WORKSPACE}') {
