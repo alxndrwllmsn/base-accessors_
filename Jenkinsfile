@@ -118,7 +118,7 @@ mkdir build
 fi'''
         }
 
-        dir(path: '${WORKSPACE}/build') {
+        dir(path: 'build') {
           sh '''cmake -DCMAKE_INSTALL_PREFIX=${PREFIX} ../
 make -j2
 make -j2 install
