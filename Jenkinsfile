@@ -55,7 +55,7 @@ git clone https://bitbucket.csiro.au/scm/askapsdp/base-imagemath.git
 cd base-imagemath
 mkdir build
 cd build
-cmake -DCMAKE_INSTALL_PREFIX=${PREFIX} ../
+cmake -DASKAP_ROOT_DIR=${PREFIX} -DCMAKE_INSTALL_PREFIX=${PREFIX} ../
 make -j2
 make -j2 install
 '''
