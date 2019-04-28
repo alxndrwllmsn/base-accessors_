@@ -27,7 +27,7 @@ make -j2 install
     }
     stage('Building base-logfilters') {
       steps {
-        dir(path: '${WORKSPACE}') {
+        dir(path: '.') {
           sh '''if [ -d base-logfilters ]; then
 echo "base-logfilters directory already exists"
 rm -rf base-logfilters
@@ -46,7 +46,7 @@ make -j2 install
     }
     stage('Building base-imagemath') {
       steps {
-        dir(path: '${WORKSPACE') {
+        dir(path: '.') {
           sh '''if [ -d base-imagemath ]; then
 echo "base-imagemath directory already exists"
 rm -rf base-imagemath
@@ -65,7 +65,7 @@ make -j2 install
     }
     stage('Building base-scimath') {
       steps {
-        dir(path: '${WORKSPACE}') {
+        dir(path: '.') {
           sh '''if [ -d base-scimath ]; then
 echo "base-scimath directory already exists"
 rm -rf base-scimath
@@ -84,7 +84,7 @@ make -j2 install
     }
     stage('Building base-askapparallel') {
       steps {
-        dir(path: '${WORKSPACE}') {
+        dir(path: '.') {
           sh '''if [ -d base-askapparallel ]; then
 echo "base-askapparallel directory already exists"
 rm -rf base-askapparallel
@@ -103,7 +103,7 @@ make -j2 install
     }
     stage('Building base-accessors') {
       steps {
-        dir(path: '${WORKSPACE}') {
+        dir(path: '.') {
           sh '''if [ -d build ]; then
 echo "base-accessors build directory already exists"
 cd build
