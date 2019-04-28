@@ -55,7 +55,7 @@ git clone https://bitbucket.csiro.au/scm/askapsdp/base-imagemath.git
 cd base-imagemath
 mkdir build
 cd build
-cmake -DASKAP_ROOT_DIR=/var/lib/jenkins/workspace/base-accessors_develop/install -DCMAKE_INSTALL_PREFIX=${PREFIX} ../
+cmake -DCMAKE_INSTALL_PREFIX=${PREFIX} ../
 make -j2
 make -j2 install
 '''
@@ -130,6 +130,6 @@ make -j2 install
   }
   environment {
     WORKSPACE = pwd()
-    PREFIX = '${WORKSPACE}/install'
+    PREFIX = ${WORKSPACE}/install
   }
 }
