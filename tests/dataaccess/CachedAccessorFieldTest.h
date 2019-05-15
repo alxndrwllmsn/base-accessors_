@@ -33,7 +33,7 @@
 #include <cppunit/extensions/HelperMacros.h>
 
 // own includes
-#include <dataaccess/CachedAccessorField.h>
+#include <askap/dataaccess/CachedAccessorField.h>
 
 // std includes
 #include <string>

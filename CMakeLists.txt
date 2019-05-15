@@ -71,9 +71,9 @@ if (CASACORE3 OR CXX11)
 endif()
 
 
-add_subdirectory(imageaccess)
-add_subdirectory(dataaccess)
-add_subdirectory(calibaccess)
+add_subdirectory(askap/imageaccess)
+add_subdirectory(askap/dataaccess)
+add_subdirectory(askap/calibaccess)
 
 add_library(askap_accessors SHARED
 	$<TARGET_OBJECTS:imageaccess>

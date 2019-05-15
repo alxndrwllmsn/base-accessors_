@@ -39,7 +39,7 @@
 
 #include "DataAccessTestImpl.h"
 
-#include <dataaccess/DataAdapter.h>
+#include <askap/dataaccess/DataAdapter.h>
 
 using namespace askap;
 using namespace boost;

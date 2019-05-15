@@ -32,10 +32,10 @@
 #include <cppunit/extensions/HelperMacros.h>
 
 // own includes
-#include <calibaccess/JonesIndex.h>
-#include <calibaccess/MemCalSolutionAccessor.h>
-#include <calibaccess/ICalSolutionFiller.h>
-#include <askap/AskapUtil.h>
+#include <askap/calibaccess/JonesIndex.h>
+#include <askap/calibaccess/MemCalSolutionAccessor.h>
+#include <askap/calibaccess/ICalSolutionFiller.h>
+#include <askap/askap/AskapUtil.h>
 
 
 // boost includes

@@ -47,7 +47,7 @@ using namespace std;
 #include <casacore/casa/Quanta/MVPosition.h>
 
 // own includes
-#include <dataaccess/BasicDataConverter.h>
+#include <askap/dataaccess/BasicDataConverter.h>
 
 // cppunit includes
 #include <cppunit/extensions/HelperMacros.h>

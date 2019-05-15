@@ -35,12 +35,12 @@
 // cppunit includes
 #include <cppunit/extensions/HelperMacros.h>
 // own includes
-#include <dataaccess/TableDataSource.h>
-#include <dataaccess/IConstDataSource.h>
-#include <dataaccess/TimeChunkIteratorAdapter.h>
-#include <askap/AskapError.h>
+#include <askap/dataaccess/TableDataSource.h>
+#include <askap/dataaccess/IConstDataSource.h>
+#include <askap/dataaccess/TimeChunkIteratorAdapter.h>
+#include <askap/askap/AskapError.h>
 #include "TableTestRunner.h"
-#include <askap/AskapUtil.h>
+#include <askap/askap/AskapUtil.h>
 
 
 namespace askap {

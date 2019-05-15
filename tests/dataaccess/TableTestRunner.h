@@ -42,7 +42,7 @@
 #include <string>
 
 // askap includes
-#include <askap/AskapError.h>
+#include <askap/askap/AskapError.h>
 
 // casa includes
 #include <casacore/tables/Tables/Table.h>

@@ -30,10 +30,10 @@
 
 #include <casacore/casa/aipstype.h>
 #include <cppunit/extensions/HelperMacros.h>
-#include <calibaccess/TableCalSolutionSource.h>
-#include <calibaccess/ParsetCalSolutionAccessor.h>
-#include <calibaccess/JonesIndex.h>
-#include <calibaccess/ChanAdapterCalSolutionConstSource.h>
+#include <askap/calibaccess/TableCalSolutionSource.h>
+#include <askap/calibaccess/ParsetCalSolutionAccessor.h>
+#include <askap/calibaccess/JonesIndex.h>
+#include <askap/calibaccess/ChanAdapterCalSolutionConstSource.h>
 #include <casacore/tables/Tables/Table.h>
 
 

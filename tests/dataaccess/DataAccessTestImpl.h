@@ -30,10 +30,10 @@
 #define I_DATA_ACCESS_TEST_IMPL_H
 
 #include <boost/shared_ptr.hpp>
-#include <dataaccess/IConstDataIterator.h>
-#include <dataaccess/IFlagDataAccessor.h>
-#include <dataaccess/IDataSource.h>
-#include <dataaccess/SharedIter.h>
+#include <askap/dataaccess/IConstDataIterator.h>
+#include <askap/dataaccess/IFlagDataAccessor.h>
+#include <askap/dataaccess/IDataSource.h>
+#include <askap/dataaccess/SharedIter.h>
 
 
 namespace askap {

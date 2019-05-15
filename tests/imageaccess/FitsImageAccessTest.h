@@ -27,7 +27,7 @@
 ///
 /// @author Steve Ord <stephen.ord@csiro.au>
 
-#include <imageaccess/ImageAccessFactory.h>
+#include <askap/imageaccess/ImageAccessFactory.h>
 #include <cppunit/extensions/HelperMacros.h>
 
 #include <casacore/casa/Arrays/Vector.h>
@@ -49,7 +49,7 @@
 #include <Common/ParameterSet.h>
 
 #include <askap_accessors.h>
-#include <askap/AskapLogging.h>
+#include <askap/askap/AskapLogging.h>
 
 
 

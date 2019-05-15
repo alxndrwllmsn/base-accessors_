@@ -31,8 +31,8 @@
 #include <cppunit/extensions/HelperMacros.h>
 
 // own includes
-#include <calibaccess/JonesIndex.h>
-#include <calibaccess/CalParamNameHelper.h>
+#include <askap/calibaccess/JonesIndex.h>
+#include <askap/calibaccess/CalParamNameHelper.h>
 
 // std includes
 #include <string>

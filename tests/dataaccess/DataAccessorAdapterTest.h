@@ -31,12 +31,12 @@
 // cppunit includes
 #include <cppunit/extensions/HelperMacros.h>
 // own includes
-#include <dataaccess/OnDemandBufferDataAccessor.h>
-#include <dataaccess/OnDemandNoiseAndFlagDA.h>
-#include <dataaccess/DataAccessorStub.h>
-#include <dataaccess/DataAccessorAdapter.h>
-#include <dataaccess/TableDataSource.h>
-#include <dataaccess/BestWPlaneDataAccessor.h>
+#include <askap/dataaccess/OnDemandBufferDataAccessor.h>
+#include <askap/dataaccess/OnDemandNoiseAndFlagDA.h>
+#include <askap/dataaccess/DataAccessorStub.h>
+#include <askap/dataaccess/DataAccessorAdapter.h>
+#include <askap/dataaccess/TableDataSource.h>
+#include <askap/dataaccess/BestWPlaneDataAccessor.h>
 #include "TableTestRunner.h"
 
 namespace askap {

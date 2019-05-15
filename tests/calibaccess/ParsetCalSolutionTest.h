@@ -30,9 +30,9 @@
 
 #include <casacore/casa/aipstype.h>
 #include <cppunit/extensions/HelperMacros.h>
-#include <calibaccess/ParsetCalSolutionSource.h>
-#include <calibaccess/ParsetCalSolutionAccessor.h>
-#include <calibaccess/JonesIndex.h>
+#include <askap/calibaccess/ParsetCalSolutionSource.h>
+#include <askap/calibaccess/ParsetCalSolutionAccessor.h>
+#include <askap/calibaccess/JonesIndex.h>
 
 #include <boost/shared_ptr.hpp>
 

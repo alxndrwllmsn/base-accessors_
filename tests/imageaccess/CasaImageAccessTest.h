@@ -27,7 +27,7 @@
 ///
 /// @author Max Voronkov <maxim.voronkov@csiro.au>
 
-#include <imageaccess/ImageAccessFactory.h>
+#include <askap/imageaccess/ImageAccessFactory.h>
 #include <cppunit/extensions/HelperMacros.h>
 
 #include <casacore/casa/Arrays/Vector.h>

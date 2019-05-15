@@ -30,7 +30,7 @@
 #ifndef UVW_MACHINE_CACHE_TEST_H
 #define UVW_MACHINE_CACHE_TEST_H
 
-#include <dataaccess/UVWMachineCache.h>
+#include <askap/dataaccess/UVWMachineCache.h>
 
 #include <cppunit/extensions/HelperMacros.h>
 #include <casacore/casa/Quanta/MVDirection.h>

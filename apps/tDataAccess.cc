@@ -26,17 +26,17 @@
 ///
 
 
-#include <dataaccess/TableDataSource.h>
+#include <askap/dataaccess/TableDataSource.h>
 #include <askap_accessors.h>
-#include <askap/AskapLogging.h>
+#include <askap/askap/AskapLogging.h>
 ASKAP_LOGGER(logger, "");
 
-#include <askap/AskapError.h>
-#include <dataaccess/SharedIter.h>
-#include <dataaccess/ParsetInterface.h>
+#include <askap/askap/AskapError.h>
+#include <askap/dataaccess/SharedIter.h>
+#include <askap/dataaccess/ParsetInterface.h>
 
-#include <dataaccess/TableManager.h>
-#include <dataaccess/IDataConverterImpl.h>
+#include <askap/dataaccess/TableManager.h>
+#include <askap/dataaccess/IDataConverterImpl.h>
 
 // casa
 #include <casacore/measures/Measures/MFrequency.h>

@@ -44,11 +44,11 @@
 #include <cppunit/extensions/HelperMacros.h>
 
 // own includes
-#include <dataaccess/DataAccessError.h>
-#include <dataaccess/TableInfoAccessor.h>
-#include <dataaccess/TableDataSource.h>
-#include <dataaccess/IConstDataSource.h>
-#include <dataaccess/TableConstDataIterator.h>
+#include <askap/dataaccess/DataAccessError.h>
+#include <askap/dataaccess/TableInfoAccessor.h>
+#include <askap/dataaccess/TableDataSource.h>
+#include <askap/dataaccess/IConstDataSource.h>
+#include <askap/dataaccess/TableConstDataIterator.h>
 #include "TableTestRunner.h"
 
 namespace askap {
