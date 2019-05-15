@@ -108,7 +108,7 @@ class BeamLogger {
     /// @details Returns the beam stored for the requested channel. If
     /// the beam list does not have an entry for that channel, a
     /// zero-size beam is returned (BMAJ=BMIN=BPA=0).
-    casa::Vector<casa::Quantum<double> > beam(const unsigned int channel);
+    casacore::Vector<casacore::Quantum<double> > beam(const unsigned int channel);
 
     protected:
         /// @brief The disk file to be read from / written to

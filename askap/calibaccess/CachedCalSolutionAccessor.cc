@@ -124,12 +124,12 @@ JonesDTerm CachedCalSolutionAccessor::leakage(const JonesIndex &index) const
 /// no bandpass is defined (at all or for this particular channel),
 /// gains of 1.0 are returned (with invalid flag is set).
 /// @return JonesJTerm object with gains and validity flags
-JonesJTerm CachedCalSolutionAccessor::bandpass(const JonesIndex &index, const casa::uInt chan) const
+JonesJTerm CachedCalSolutionAccessor::bandpass(const JonesIndex &index, const casacore::uInt chan) const
 {
-    casa::Complex g1(1.,0.), g2(1.,0.);
+    casacore::Complex g1(1.,0.), g2(1.,0.);
     bool g1Valid = false, g2Valid = false;
-    const std::string paramG1 = addChannelInfo(paramName(index, casa::Stokes::XX), chan);
-    const std::string paramG2 = addChannelInfo(paramName(index, casa::Stokes::YY), chan);
+    const std::string paramG1 = addChannelInfo(paramName(index, casacore::Stokes::XX), chan);
+    const std::string paramG2 = addChannelInfo(paramName(index, casacore::Stokes::YY), chan);
 
     if (cache().has(paramG1)) {
         g1Valid = true;
@@ -194,8 +194,8 @@ void CachedCalSolutionAccessor::setLeakage(const JonesIndex &index, const JonesD
 /// gains set explicitly for each channel.
 void CachedCalSolutionAccessor::setBandpass(const JonesIndex &index, const JonesJTerm &bp, const casacore::uInt chan)
 {
-  updateParamInCache(addChannelInfo(paramName(index, casa::Stokes::XX), chan), bp.g1(), bp.g1IsValid());
-  updateParamInCache(addChannelInfo(paramName(index, casa::Stokes::YY), chan), bp.g2(), bp.g2IsValid());
+  updateParamInCache(addChannelInfo(paramName(index, casacore::Stokes::XX), chan), bp.g1(), bp.g1IsValid());
+  updateParamInCache(addChannelInfo(paramName(index, casacore::Stokes::YY), chan), bp.g2(), bp.g2IsValid());
 }
 
 /// @brief direct access to the cache

@@ -133,7 +133,7 @@ void ParsetCalSolutionAccessor::setLeakage(const JonesIndex &index, const JonesD
 /// @param[in] index ant/beam index
 /// @param[in] bp JonesJTerm object with gains for the given channel and validity flags
 /// @param[in] chan spectral channel
-void ParsetCalSolutionAccessor::setBandpass(const JonesIndex &index, const JonesJTerm &bp, const casa::uInt chan)
+void ParsetCalSolutionAccessor::setBandpass(const JonesIndex &index, const JonesJTerm &bp, const casacore::uInt chan)
 {
   prepareToWrite();
   CachedCalSolutionAccessor::setBandpass(index, bp, chan);
