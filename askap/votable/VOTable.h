@@ -38,13 +38,13 @@
 #include "xercesc/sax/InputSource.hpp"
 
 // Local package includes
-#include "votable/VOTableInfo.h"
-#include "votable/VOTableResource.h"
-#include "votable/VOTableField.h"
-#include "votable/VOTableParam.h"
-#include "votable/VOTableRow.h"
-#include "votable/VOTableTable.h"
-#include "votable/VOTableGroup.h"
+#include "askap/votable/VOTableInfo.h"
+#include "askap/votable/VOTableResource.h"
+#include "askap/votable/VOTableField.h"
+#include "askap/votable/VOTableParam.h"
+#include "askap/votable/VOTableRow.h"
+#include "askap/votable/VOTableTable.h"
+#include "askap/votable/VOTableGroup.h"
 // NOTE: Some are unnecessarily included so the user can just include VOTable.h
 
 namespace askap {

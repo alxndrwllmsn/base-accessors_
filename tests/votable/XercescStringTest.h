@@ -32,7 +32,7 @@
 #include "xercesc/util/PlatformUtils.hpp"
 
 // Classes to test
-#include "votable/XercescString.h"
+#include "askap/votable/XercescString.h"
 
 using namespace std;
 

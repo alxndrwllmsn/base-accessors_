@@ -39,7 +39,7 @@
 #include "xercesc/util/XMLString.hpp"
 
 // Local package includes
-#include "votable/XercescString.h"
+#include "askap/votable/XercescString.h"
 
 using namespace xercesc;
 using namespace askap::accessors;

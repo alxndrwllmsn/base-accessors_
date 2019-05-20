@@ -35,7 +35,7 @@
 #include "xercesc/dom/DOM.hpp" // Includes all DOM
 
 // Local package includes
-#include "votable/VOTableParam.h"
+#include "askap/votable/VOTableParam.h"
 
 namespace askap {
     namespace accessors {

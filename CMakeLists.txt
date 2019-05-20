@@ -26,6 +26,7 @@ find_package(Casacore REQUIRED COMPONENTS  ms images mirlib coordinates fits lat
 find_package(Askap REQUIRED)
 find_package(AskapParallel REQUIRED)
 find_package(Scimath REQUIRED)
+find_package(XercesC REQUIRED)
 
 # uninstall target
 if(NOT TARGET uninstall)
@@ -64,6 +65,7 @@ add_definitions(-Dcasa=casacore)
 include_directories(${ASKAP_INCLUDE_DIRS})
 include_directories(${ASKAPPARALLEL_INCLUDE_DIRS})
 include_directories(${SCIMATH_INCLUDE_DIRS})
+include_directories(${XercesC_INCLUDE_DIR})
 
 if (CASACORE3 OR CXX11)
 	set(CMAKE_CXX_STANDARD 11)
@@ -74,11 +76,13 @@ endif()
 add_subdirectory(askap/imageaccess)
 add_subdirectory(askap/dataaccess)
 add_subdirectory(askap/calibaccess)
+add_subdirectory(askap/votable)
 
 add_library(askap_accessors SHARED
 	$<TARGET_OBJECTS:imageaccess>
 	$<TARGET_OBJECTS:dataaccess>
 	$<TARGET_OBJECTS:calibaccess>
+	$<TARGET_OBJECTS:votable>
 )
 # add some more tests and sub-directories
 
@@ -90,6 +94,7 @@ target_link_libraries(askap_accessors
 	${ASKAPPARALLEL_LIBRARY}
 	${SCIMATH_LIBRARY}
 	${ASKAP_LIBRARY}
+	${XercesC_LIBRARY}
 	)
 	
 install (

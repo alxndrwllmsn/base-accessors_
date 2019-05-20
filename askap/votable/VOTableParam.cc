@@ -36,12 +36,12 @@
 // ASKAPsoft includes
 #include "askap/AskapLogging.h"
 #include "askap/AskapError.h"
-#include "votable/XercescString.h"
+#include "askap/votable/XercescString.h"
 #include "xercesc/dom/DOM.hpp" // Includes all DOM
 
 // Local package includes
-#include "votable/XercescUtils.h"
-#include "votable/XercescString.h"
+#include "askap/votable/XercescUtils.h"
+#include "askap/votable/XercescString.h"
 
 ASKAP_LOGGER(logger, ".VOTableParam");
 

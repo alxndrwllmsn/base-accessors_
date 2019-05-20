@@ -44,8 +44,8 @@
 #include "boost/algorithm/string/trim.hpp"
 
 // For XML
-#include "votable/XercescString.h"
-#include "votable/XercescUtils.h"
+#include "askap/votable/XercescString.h"
+#include "askap/votable/XercescUtils.h"
 #include "xercesc/dom/DOM.hpp" // Includes all DOM
 #include "xercesc/framework/XMLFormatter.hpp"
 #include "xercesc/sax/InputSource.hpp"
@@ -56,8 +56,8 @@
 #include "xercesc/parsers/XercesDOMParser.hpp"
 
 // Local package includes
-#include "votable/VOTableInfo.h"
-#include "votable/VOTableResource.h"
+#include "askap/votable/VOTableInfo.h"
+#include "askap/votable/VOTableResource.h"
 
 ASKAP_LOGGER(logger, ".VOTable");
 

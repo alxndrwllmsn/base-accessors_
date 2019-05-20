@@ -40,10 +40,10 @@
 #include "xercesc/dom/DOM.hpp" // Includes all DOM
 
 // Local package includes
-#include "votable/XercescString.h"
-#include "votable/XercescUtils.h"
-#include "votable/VOTableInfo.h"
-#include "votable/VOTableTable.h"
+#include "askap/votable/XercescString.h"
+#include "askap/votable/XercescUtils.h"
+#include "askap/votable/VOTableInfo.h"
+#include "askap/votable/VOTableTable.h"
 
 ASKAP_LOGGER(logger, ".VOTableResource");
 

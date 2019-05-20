@@ -35,7 +35,7 @@
 #include <vector>
 
 // Classes to test
-#include "votable/VOTable.h"
+#include "askap/votable/VOTable.h"
 
 using namespace std;
 
