@@ -48,7 +48,7 @@
 
 #include <Common/ParameterSet.h>
 
-#include <askap_accessors.h>
+#include <askap/askap_accessors.h>
 #include <askap/askap/AskapLogging.h>
 
 
@@ -61,6 +61,7 @@ class FitsImageAccessTest : public CppUnit::TestFixture
 {
    CPPUNIT_TEST_SUITE(FitsImageAccessTest);
    CPPUNIT_TEST(testReadWrite);
+   CPPUNIT_TEST(testCreate);
    CPPUNIT_TEST_SUITE_END();
 public:
     void setUp() {
@@ -69,6 +70,48 @@ public:
         itsImageAccessor = imageAccessFactory(parset);
     }
 
+    void testCreate() {
+        // Create FITS image
+        const std::string name = "tmpemptyfitsimage";
+
+        CPPUNIT_ASSERT(itsImageAccessor);
+        size_t ra=100, dec=100, spec=5;
+        const casacore::IPosition shape(3,ra,dec,spec);
+        casacore::Array<float> arr(shape);
+        arr.set(1.);
+        // Build a coordinate system for the image
+        casacore::Matrix<double> xform(2,2);                                    // 1
+        xform = 0.0; xform.diagonal() = 1.0;                          // 2
+        casacore::DirectionCoordinate radec(casacore::MDirection::J2000,                  // 3
+            casacore::Projection(casacore::Projection::SIN),        // 4
+            135*casacore::C::pi/180.0, 60*casacore::C::pi/180.0,    // 5
+            -1*casacore::C::pi/180.0, 1*casacore::C::pi/180,        // 6
+            xform,                              // 7
+            ra/2., dec/2.);                       // 8
+
+
+        casacore::Vector<casacore::String> units(2); units = "deg";                        //  9
+        radec.setWorldAxisUnits(units);
+
+        // Build a coordinate system for the spectral axis
+        // SpectralCoordinate
+        casacore::SpectralCoordinate spectral(casacore::MFrequency::TOPO,               // 27
+    				1400 * 1.0E+6,                  // 28
+    				20 * 1.0E+3,                    // 29
+    				0,                              // 30
+    				1420.40575 * 1.0E+6);           // 31
+        units.resize(1);
+        units = "MHz";
+        spectral.setWorldAxisUnits(units);
+
+        casacore::CoordinateSystem coordsys;
+        coordsys.addCoordinate(radec);
+        coordsys.addCoordinate(spectral);
+
+
+        itsImageAccessor->create(name, shape, coordsys);
+    }
+ 
     void testReadWrite() {
         // Create FITS image
         const std::string name = "tmpfitsimage";

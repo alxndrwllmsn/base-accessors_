@@ -146,7 +146,7 @@ public:
         ParsetCalSolutionAccessor acc(fname);
         for (casacore::uInt ant=0; ant<10; ++ant) {
             for (casacore::uInt beam=0; beam<6; ++beam) {
-                 CPPUNIT_ASSERT_EQUAL(!ant && !beam, acc.jonesValid(ant,beam,0));
+                 CPPUNIT_ASSERT_EQUAL(!ant && !beam, acc.jonesAllValid(ant,beam,0));
                  const JonesIndex index(ant,beam);
                  CPPUNIT_ASSERT(index.antenna() == casacore::Short(ant));
                  CPPUNIT_ASSERT(index.beam() == casacore::Short(beam));
@@ -180,7 +180,7 @@ public:
         }
         // now read and check
         ParsetCalSolutionAccessor acc(fname);
-        CPPUNIT_ASSERT_EQUAL(false, acc.jonesValid(index,0));
+        CPPUNIT_ASSERT_EQUAL(false, acc.jonesAllValid(index,0));
         const casacore::SquareMatrix<casacore::Complex, 2> jones = acc.jones(index,0);
 
         testComplex(casacore::Complex(1.1,0.1), jones(0,0));
