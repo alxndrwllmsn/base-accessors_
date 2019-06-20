@@ -22,12 +22,12 @@
 ///
 
 // ASKAPsoft includes
-#include <askap_accessors.h>
+#include <askap/askap_accessors.h>
 #include <askap/askap/AskapLogging.h>
-#include <AskapTestRunner.h>
+#include <askap/askap/AskapTestRunner.h>
 // Test includes
-#include <CasaImageAccessTest.h>
-#include <FitsImageAccessTest.h>
+#include "CasaImageAccessTest.h"
+#include "FitsImageAccessTest.h"
 
 
 
