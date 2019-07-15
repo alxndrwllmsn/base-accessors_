@@ -51,10 +51,12 @@ class TableCalSolutionTest : public CppUnit::TestFixture
    CPPUNIT_TEST(testCreate);
    CPPUNIT_TEST(testRead);
    CPPUNIT_TEST(testChanAdapterRead);
+#ifdef ASKAP_DEBUG
    CPPUNIT_TEST_EXCEPTION(testChanAdapterUndefinedBandpass, AskapError);
+   CPPUNIT_TEST_EXCEPTION(testUndefinedBandpasses, AskapError);
+#endif   
    CPPUNIT_TEST_EXCEPTION(testUndefinedGains, AskapError);
    CPPUNIT_TEST_EXCEPTION(testUndefinedLeakages, AskapError);
-   CPPUNIT_TEST_EXCEPTION(testUndefinedBandpasses, AskapError);
    CPPUNIT_TEST_EXCEPTION(testUndefinedSolution, AskapError);
    CPPUNIT_TEST(testCreateManyRows);
    CPPUNIT_TEST(testCreateManyRows1);

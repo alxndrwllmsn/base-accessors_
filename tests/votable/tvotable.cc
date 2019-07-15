@@ -25,7 +25,7 @@
 /// @author Ben Humphreys <ben.humphreys@csiro.au>
 
 // ASKAPsoft includes
-#include <AskapTestRunner.h>
+#include <askap/askap/AskapTestRunner.h>
 
 // Test includes
 #include "XercescStringTest.h"

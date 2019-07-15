@@ -36,7 +36,7 @@
 #define __TABLE_TEST_RUNNER_H
 
 // cppunit includes
-#include <AskapTestRunner.h>
+#include <askap/askap/AskapTestRunner.h>
 
 // std includes
 #include <string>

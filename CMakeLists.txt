@@ -5,10 +5,12 @@ project(base-accessors VERSION 0.0.1 LANGUAGES C CXX)
 
 if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/askap-cmake)
     execute_process(COMMAND git pull 
-	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/askap-cmake)
+	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/askap-cmake
+	TIMEOUT 5)
 else ()	
     execute_process(COMMAND git clone https://bitbucket.csiro.au/scm/askapsdp/askap-cmake.git
-	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+	TIMEOUT 5)
 endif ()
 set (CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/askap-cmake")
 
@@ -16,17 +18,48 @@ option (CXX11 "Compile as C++11 if possible" YES)
 option (ENABLE_SHARED "Build shared libraries" YES)
 option (ENABLE_RPATH "Include rpath in executables and shared libraries" YES)
 
+# Yanda Packages
+# YandaSoft dependencies .. in order
+include(install_yanda_depends)
+find_package(LofarCommon)
+
+set (EXTERNAL_INSTALL_DIR ${CMAKE_INSTALL_PREFIX})
+
+if (NOT LofarCommon_FOUND)
+	install_yanda_depends(lofar-common)
+	find_package(LofarCommon REQUIRED)
+endif ()
+
+find_package(LofarBlob)
+if (NOT LofarBlob_FOUND)
+	install_yanda_depends(lofar-blob)
+	find_package(LofarBlob REQUIRED)
+endif ()
+
+find_package(Askap)
+if (NOT ASKAP_FOUND)
+	install_yanda_depends(base-askap)
+	find_package(Askap REQUIRED)
+endif ()
+
+find_package(Scimath)
+if (NOT SCIMATH_FOUND)
+	install_yanda_depends(base-scimath)
+	find_package(Scimath REQUIRED)
+endif ()
+
+find_package(AskapParallel)
+if (NOT ASKAPPARALLEL_FOUND)
+	install_yanda_depends(base-askapparallel)
+	find_package(AskapParallel REQUIRED)
+endif ()
 
 # find packages
 find_package(Boost REQUIRED)
-find_package(LofarCommon REQUIRED)
-find_package(LofarBlob REQUIRED)
 find_package(log4cxx REQUIRED)
 find_package(Casacore REQUIRED COMPONENTS  ms images mirlib coordinates fits lattices measures scimath scimath_f tables casa)
-find_package(Askap REQUIRED)
-find_package(AskapParallel REQUIRED)
-find_package(Scimath REQUIRED)
 find_package(XercesC REQUIRED)
+find_package(CPPUnit)
 
 # uninstall target
 if(NOT TARGET uninstall)
@@ -108,4 +141,23 @@ install (FILES
 	askap_accessors.h
 	DESTINATION include/askap/
 	)
+if (CPPUNIT_FOUND)
+  include(CTest)
+  enable_testing()
+
+  include_directories(${CMAKE_CURRENT_SOURCE_DIR}/tests/calibaccess)
+  add_subdirectory(tests/calibaccess)
+
+  include_directories(${CMAKE_CURRENT_SOURCE_DIR}/tests/dataaccess)
+  add_subdirectory(tests/dataaccess)
+
+  include_directories(${CMAKE_CURRENT_SOURCE_DIR}/tests/votable)
+  add_subdirectory(tests/votable)
+
+  include_directories(${CMAKE_CURRENT_SOURCE_DIR}/tests/timageaccess)
+  add_subdirectory(tests/imageaccess)
+
+
+endif (CPPUNIT_FOUND)
+
 

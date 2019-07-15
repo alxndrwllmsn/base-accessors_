@@ -77,9 +77,8 @@ xercesc::DOMElement* XercescUtils::getFirstElementByTagName(const xercesc::DOMEl
 
 std::string XercescUtils::getStringFromDOMText(const xercesc::DOMText& text)
 {
-        boost::scoped_ptr<const XMLCh> wholeText(text.getWholeText());
-        std::string str = XercescString(wholeText.get());
-        wholeText.reset(0);
+	const XMLCh* wholeText(text.getWholeText());
+        std::string str = XercescString(wholeText);
         return str;
 }
 
