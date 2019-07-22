@@ -22,7 +22,7 @@
 ///
 
 // ASKAPsoft includes
-#include <askap/askap_accessors.h>
+#include "askap_accessors.h"
 #include <askap/askap/AskapLogging.h>
 #include <askap/askap/AskapTestRunner.h>
 // Test includes
