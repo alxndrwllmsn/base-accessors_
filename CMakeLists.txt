@@ -100,6 +100,10 @@ include_directories(${ASKAPPARALLEL_INCLUDE_DIRS})
 include_directories(${SCIMATH_INCLUDE_DIRS})
 include_directories(${XercesC_INCLUDE_DIR})
 
+if (CPPUNIT_FOUND)
+    include_directories(${CPPUNIT_INCLUDE_DIR})
+endif ()
+
 if (CASACORE3 OR CXX11)
 	set(CMAKE_CXX_STANDARD 11)
 	set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -129,7 +133,12 @@ target_link_libraries(askap_accessors
 	${ASKAP_LIBRARY}
 	${XercesC_LIBRARY}
 	)
-	
+    
+if (CPPUNIT_FOUND)
+    target_link_libraries(askap_accessors
+        ${CPPUNIT_LIBRARY})
+endif () 
+
 install (
 	TARGETS askap_accessors
 	RUNTIME DESTINATION bin
