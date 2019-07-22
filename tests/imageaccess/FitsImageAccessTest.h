@@ -48,7 +48,7 @@
 
 #include <Common/ParameterSet.h>
 
-#include <askap/askap_accessors.h>
+#include "askap_accessors.h"
 #include <askap/askap/AskapLogging.h>
 
 
