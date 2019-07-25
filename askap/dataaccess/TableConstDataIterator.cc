@@ -500,29 +500,25 @@ void TableConstDataIterator::fillNoise(casacore::Cube<casacore::Complex> &noise)
   // if the sigma spectrum exists, use those sigmas to fill the noise cube
   if (table().actualTableDesc().isColumn("SIGMA_SPECTRUM")) {
       // noise is given per channel and polarisation
-      casacore::Matrix<Float> buf(itsNumberOfPols,itsNumberOfChannels);
+      // Setup a slicer to extract the specified channel range only
+      const Slicer chanSlicer(Slice(),Slice(startChan,nChan));
+      casa::Matrix<Float> buf(itsNumberOfPols,nChan);
       ROArrayColumn<Float> sigmaCol(itsCurrentIteration,"SIGMA_SPECTRUM");
       for (uInt row = 0; row<itsNumberOfRows; ++row) {
-           const casacore::IPosition shape = sigmaCol.shape(row);
+#ifdef ASKAP_DEBUG
+           const casa::IPosition shape = sigmaCol.shape(row);
            ASKAPDEBUGASSERT(shape.size()==2);
-           ASKAPDEBUGASSERT((shape[0] == casacore::Int(itsNumberOfPols)) &&
-                            (shape[1] == casacore::Int(itsNumberOfChannels)));
-
-           sigmaCol.get(row+itsCurrentTopRow,buf,False);
+           ASKAPDEBUGASSERT((shape[0] == casa::Int(itsNumberOfPols)) &&
+                            (shape[1] == casa::Int(itsNumberOfChannels)));
+#endif
+           sigmaCol.getSlice(row+itsCurrentTopRow,chanSlicer,buf,False);
 
            // SIGMA_SPECTRUM is ordered (pol,chan), so need to transpose
-           //const IPosition blc(2,0,startChan);
-           //const IPosition trc(2,itsNumberOfPols-1,startChan+nChan-1);
-           //casacore::Matrix<casacore::Complex> rowNoise = noise.yzPlane(row);
-           //const casacore::Matrix<casacore::Float> inVals = buf(blc,trc);
-           //convertArray(rowNoise, buf(blc,trc));
-           for (casacore::uInt chan=0; chan<nChan; chan++) {
-                for (casacore::uInt pol=0; pol<itsNumberOfPols; pol++) {
-                     //ASKAPDEBUGASSERT(y<inVals.nrow());
-                     //ASKAPDEBUGASSERT(x<inVals.ncolumn());
+           for (casa::uInt chan=0; chan<nChan; chan++) {
+                for (casa::uInt pol=0; pol<itsNumberOfPols; pol++) {
                      // same noise for both real and imaginary parts
-                     const casacore::Float val = buf(pol,chan+startChan);
-                     noise(row,chan,pol) = casacore::Complex(val,val);
+                     const casa::Float val = buf(pol,chan);
+                     noise(row,chan,pol) = casa::Complex(val,val);
                 }
            }
       } // loop over rows
