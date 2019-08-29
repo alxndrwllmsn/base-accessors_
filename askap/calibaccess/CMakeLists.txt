@@ -10,9 +10,7 @@ ChanAdapterCalSolutionConstSource.cc
 ICalSolutionAccessor.cc
 ICalSolutionConstAccessor.cc
 ICalSolutionConstSource.cc
-JonesDTerm.cc
 JonesIndex.cc
-JonesJTerm.cc
 MemCalSolutionAccessor.cc
 ParsetCalSolutionAccessor.cc
 ParsetCalSolutionConstSource.cc

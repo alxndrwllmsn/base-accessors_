@@ -66,7 +66,7 @@ class JonesDTerm {
         /// @brief obtain leakage from Y to X
         /// @details
         /// @return leakage from Y to X (element of the first row and second column of the Jones matrix)
-        casacore::Complex d12(void) const;
+        casacore::Complex d12(void) const {return itsD12;}
 
         /// @brief obtain validity flag for d12 leakage
         /// @return true, if d12 leakage is valid
@@ -75,7 +75,7 @@ class JonesDTerm {
         /// @brief obtain leakage from X to Y
         /// @details
         /// @return leakage from X to Y (element of the second row and first column of the Jones matrix)
-        casa::Complex d21(void) const { return itsD21; }
+        casa::Complex d21(void) const { return itsD21;}
 
         /// @brief obtain validity flag for d21 leakage
         /// @return true, if d21 leakage is valid
