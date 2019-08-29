@@ -42,22 +42,26 @@ class JonesDTerm {
         /// @brief Constructor
         /// This default (no-args) constructor is needed by various containers,
         /// for instance to populate a vector or matrix with default values.
-        JonesDTerm();
+        JonesDTerm(): itsD12(-1.0, -1.0), itsD12Valid(false), itsD21(-1.0, -1.0), itsD21Valid(false)
+        {}
 
         /// @brief Constructor.
-        /// @param[in] d12 leakage from Y to X (element of the first row and second column of the Jones matrix) 
+        /// @param[in] d12 leakage from Y to X (element of the first row and second column of the Jones matrix)
         /// @param[in] d21 leakage from X to Y (element of the second row and first column of the Jones matrix)
         /// @note validity flags are set (to true) for both d12 and d21
-        JonesDTerm(const casacore::Complex& d12,
-                   const casacore::Complex& d21);
+        JonesDTerm(const casa::Complex& d12,
+                   const casa::Complex& d21): itsD12(d12), itsD12Valid(true), itsD21(d21), itsD21Valid(true)
+        {}
 
         /// @brief Constructor.
-        /// @param[in] d12 leakage from Y to X (element of the first row and second column of the Jones matrix) 
+        /// @param[in] d12 leakage from Y to X (element of the first row and second column of the Jones matrix)
         /// @param[in] d12Valid true, if d12 has a valid value
         /// @param[in] d21 leakage from X to Y (element of the second row and first column of the Jones matrix)
         /// @param[in] d21Valid true, if d21 has a valid value
-        JonesDTerm(const casacore::Complex& d12, const casacore::Bool d12Valid,
-                   const casacore::Complex& d21, const casacore::Bool d21Valid);
+        JonesDTerm(const casa::Complex& d12, const casa::Bool d12Valid,
+                   const casa::Complex& d21, const casa::Bool d21Valid):
+                       itsD12(d12), itsD12Valid(d12Valid), itsD21(d21), itsD21Valid(d21Valid)
+        {}
 
         /// @brief obtain leakage from Y to X
         /// @details
@@ -69,13 +73,13 @@ class JonesDTerm {
         inline casacore::Bool d12IsValid() const { return itsD12Valid;}
 
         /// @brief obtain leakage from X to Y
-        /// @details 
+        /// @details
         /// @return leakage from X to Y (element of the second row and first column of the Jones matrix)
-        casacore::Complex d21(void) const;
-        
+        casa::Complex d21(void) const { return itsD21; }
+
         /// @brief obtain validity flag for d21 leakage
         /// @return true, if d21 leakage is valid
-        inline casacore::Bool d21IsValid() const { return itsD21Valid;}        
+        casa::Bool d21IsValid() const { return itsD21Valid;}        
 
     private:
         /// @brief leakage from Y to X (element of the first row and second column of the Jones matrix)

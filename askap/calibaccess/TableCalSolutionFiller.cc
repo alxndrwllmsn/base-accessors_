@@ -1,15 +1,15 @@
 /// @file
 /// @brief solution filler reading required cubes from casa table
-/// @details This is an example of a class which knows how to fill buffers 
-/// of MemCalSolutionAccessor. The cubes with calibration information are read 
+/// @details This is an example of a class which knows how to fill buffers
+/// of MemCalSolutionAccessor. The cubes with calibration information are read
 /// from (and written to) a casa table. The table has the following columns:
 /// TIME, GAIN, GAIN_VALID, LEAKAGE, LEAKAGE_VALID, BANDPASS and BANDPASS_VALID.
 /// This class is initialised with the reference row, which corresponds to the time
-/// requested by the user. If there are gains, leakages or bandpasses defined for 
+/// requested by the user. If there are gains, leakages or bandpasses defined for
 /// a given row, they are read. Otherwise, a backward search is performed to find
 /// the first defined value. An exception is thrown if the top of the table is reached.
 /// If a new entry needs to be created, the given numbers of antennas and beams are used.
-/// 
+///
 ///
 /// @copyright (c) 2011 CSIRO
 /// Australia Telescope National Facility (ATNF)
@@ -42,35 +42,18 @@ namespace askap {
 
 namespace accessors {
 
-/// @brief helper method to check whether we are creating a new row
-void TableCalSolutionFiller::checkForNewRow()
-{
-  ASKAPDEBUGASSERT(itsRefRow <= long(table().nrow()));
-  itsCreateNew = (itsRefRow + 1 == long(table().nrow()));
-  if (itsCreateNew) {
-      const bool gainsWritten = cellDefined<casacore::Complex>("GAIN", casacore::uInt(itsRefRow));
-      const bool leakagesWritten = cellDefined<casacore::Complex>("LEAKAGE", casacore::uInt(itsRefRow));
-      const bool bpWritten = cellDefined<casacore::Complex>("BANDPASS", casacore::uInt(itsRefRow));
-      itsCreateNew = !gainsWritten && !leakagesWritten && !bpWritten;
-  }
-  if (itsCreateNew) {
-      // this is a new row in the table to be created, only TIME column exists
-      ASKAPCHECK(itsNAnt > 0, "TableCalSolutionFiller needs to know the number of antennas to be able to setup new table rows");
-      ASKAPCHECK(itsNBeam > 0, "TableCalSolutionFiller needs to know the number of beams to be able to setup new table rows");
-      ASKAPCHECK(itsNChan > 0, "TableCalSolutionFiller needs to know the number of spectral channels to be able to setup new table rows");      
-  }
-}
-
 /// @brief construct the object and link it to the given table
 /// @details read-only operation is assumed
 /// @param[in] tab  table to use
 /// @param[in] row reference row
-TableCalSolutionFiller::TableCalSolutionFiller(const casacore::Table& tab, const long row) : TableHolder(tab), 
+TableCalSolutionFiller::TableCalSolutionFiller(const casa::Table& tab, const long row) : TableHolder(tab),
        TableBufferManager(tab), itsNAnt(0), itsNBeam(0), itsNChan(0), itsRefRow(row), itsGainsRow(-1),
-       itsLeakagesRow(-1), itsBandpassesRow(-1), itsCreateNew(false)
+       itsLeakagesRow(-1), itsBandpassesRow(-1)
 {
-  ASKAPDEBUGASSERT(row>=0);
-  checkForNewRow();
+  ASKAPCHECK((itsRefRow >= 0) && (itsRefRow <= long(table().nrow())), "Requested calibration solution ID = "<<itsRefRow<<" is outside calibration table");
+  // this is the reading case, we can use either of itsNAnt, itsNBeam or itsNChan to test this condition (they should be all 0). This is encapsulated in
+  // the  isReadOnly method
+  ASKAPDEBUGASSERT(isReadOnly());
 }
 
 /// @brief construct the object and link it to the given table
@@ -80,30 +63,30 @@ TableCalSolutionFiller::TableCalSolutionFiller(const casacore::Table& tab, const
 /// @param[in] tab  table to use
 /// @param[in] row reference row
 /// @param[in] nAnt maximum number of antennas
-/// @param[in] nBeam maximum number of beams   
-/// @param[in] nChan maximum number of channels   
-TableCalSolutionFiller::TableCalSolutionFiller(const casacore::Table& tab, const long row, const casacore::uInt nAnt, 
-          const casacore::uInt nBeam, const casacore::uInt nChan) : TableHolder(tab), 
+/// @param[in] nBeam maximum number of beams
+/// @param[in] nChan maximum number of channels
+TableCalSolutionFiller::TableCalSolutionFiller(const casa::Table& tab, const long row, const casa::uInt nAnt,
+          const casa::uInt nBeam, const casa::uInt nChan) : TableHolder(tab),
        TableBufferManager(tab), itsNAnt(nAnt), itsNBeam(nBeam), itsNChan(nChan), itsRefRow(row), itsGainsRow(-1),
-       itsLeakagesRow(-1), itsBandpassesRow(-1), itsCreateNew(false) 
+       itsLeakagesRow(-1), itsBandpassesRow(-1) 
 {
-  ASKAPDEBUGASSERT(row>=0);
-  checkForNewRow();
+  ASKAPCHECK((itsRefRow >= 0) && (itsRefRow <= long(table().nrow())), "Requested calibration solution ID = "<<itsRefRow<<" is outside calibration table");
+  // this is the writing case, so numbers of antennas, beams and channels should be positive
+  ASKAPCHECK(itsNAnt > 0, "TableCalSolutionFiller needs to know the number of antennas to be able to setup new table rows");
+  ASKAPCHECK(itsNBeam > 0, "TableCalSolutionFiller needs to know the number of beams to be able to setup new table rows");
+  ASKAPCHECK(itsNChan > 0, "TableCalSolutionFiller needs to know the number of spectral channels to be able to setup new table rows");      
+  ASKAPDEBUGASSERT(!isReadOnly());
 }
 
-/// @brief helper method to check that the given column exists
-/// @param[in] name column name
-/// @return true if the given column exists
-bool TableCalSolutionFiller::columnExists(const std::string &name) const
+/// @brief helper method to check that the filler is initialised for read only access
+/// @return true, if the filler is expected to do read only operations
+/// @note Look back until the last defined record is only done for read-only access. Read-write access 
+/// overwrites whatever row is requested
+bool TableCalSolutionFiller::isReadOnly() const
 {
-  const std::map<std::string, bool>::const_iterator it = itsColumnExistsCache.find(name);
-  if (it != itsColumnExistsCache.end()) {
-      return it->second;
-  } else {
-      const bool exists = table().actualTableDesc().isColumn(name);
-      itsColumnExistsCache[name] = exists;
-      return exists;
-  }
+   ASKAPDEBUGASSERT((itsNAnt == 0) == (itsNBeam == 0));
+   ASKAPDEBUGASSERT((itsNAnt == 0) == (itsNChan == 0));
+   return (itsNAnt == 0);
 }
 
 /// @brief check for gain solution
@@ -127,50 +110,81 @@ bool TableCalSolutionFiller::noBandpass() const
   return !columnExists("BANDPASS");
 }
 
+/// @brief helper method to check that the given column exists
+/// @param[in] name column name
+/// @return true if the given column exists
+bool TableCalSolutionFiller::columnExists(const std::string &name) const
+{
+  const std::map<std::string, bool>::const_iterator it = itsColumnExistsCache.find(name);
+  if (it != itsColumnExistsCache.end()) {
+      return it->second;
+  } else {
+      const bool exists = table().actualTableDesc().isColumn(name);
+      itsColumnExistsCache[name] = exists;
+      return exists;
+  }
+}
 
-/// @brief gains filler  
+/// @brief gains filler
 /// @details
 /// @param[in] gains pair of cubes with gains and validity flags (to be resised to 2 x nAnt x nBeam)
 void TableCalSolutionFiller::fillGains(std::pair<casacore::Cube<casacore::Complex>, casacore::Cube<casacore::Bool> > &gains) const
 {
-  if (itsCreateNew || noGain()) {
+  // cellDefined should not be called if noGain returns true according to C++ evaluation rules.
+  const bool needToCreateGains = noGain() || !cellDefined<casa::Complex>("GAIN", casa::uInt(itsRefRow));
+  if (!isReadOnly() && needToCreateGains) {
       ASKAPDEBUGASSERT(itsGainsRow < 0);
       gains.first.resize(2, itsNAnt, itsNBeam);
       gains.first.set(1.);
       gains.second.resize(2, itsNAnt, itsNBeam);
       gains.second.set(false);
-      itsGainsRow = itsRefRow;      
-  } else {  
+      itsGainsRow = itsRefRow;
+  } else {
+     // this is the case wwhere either the table is read-only or there is a need to read data first
+
      if (itsGainsRow < 0) {
          itsGainsRow = findDefinedCube("GAIN");
      }
      ASKAPASSERT(itsGainsRow>=0);
-     ASKAPCHECK(cellDefined<casacore::Bool>("GAIN_VALID", casacore::uInt(itsGainsRow)), 
+     if (itsGainsRow != itsRefRow) {
+         // backwards search should only be possible in the read-only mode
+         ASKAPDEBUGASSERT(isReadOnly());
+         ASKAPDEBUGASSERT(needToCreateGains);
+     }
+     ASKAPCHECK(cellDefined<casa::Bool>("GAIN_VALID", casa::uInt(itsGainsRow)), 
          "Wrong format of the calibration table: GAIN element should always be accompanied by GAIN_VALID");
      readCube(gains.first, "GAIN", casacore::uInt(itsGainsRow));
      readCube(gains.second, "GAIN_VALID", casacore::uInt(itsGainsRow));
   }
   ASKAPCHECK(gains.first.shape() == gains.second.shape(), "GAIN and GAIN_VALID cubes are expected to have the same shape");
 }
-  
-/// @brief leakage filler  
+
+/// @brief leakage filler
 /// @details
 /// @param[in] leakages pair of cubes with leakages and validity flags (to be resised to 2 x nAnt x nBeam)
 void TableCalSolutionFiller::fillLeakages(std::pair<casacore::Cube<casacore::Complex>, casacore::Cube<casacore::Bool> > &leakages) const
 {
-  if (itsCreateNew || noLeakage()) {
+  // cellDefined should not be called if noGain returns true according to C++ evaluation rules.
+  const bool needToCreateLeakage = noLeakage() || !cellDefined<casa::Complex>("LEAKAGE", casa::uInt(itsRefRow));
+  if (!isReadOnly() && needToCreateLeakage) {
       ASKAPDEBUGASSERT(itsLeakagesRow < 0);
       leakages.first.resize(2, itsNAnt, itsNBeam);
       leakages.first.set(0.);
       leakages.second.resize(2, itsNAnt, itsNBeam);
       leakages.second.set(false);
-      itsLeakagesRow = itsRefRow;      
-  } else {  
+      itsLeakagesRow = itsRefRow;
+  } else {
+     // this is the case wwhere either the table is read-only or there is a need to read data first
      if (itsLeakagesRow < 0) {
          itsLeakagesRow = findDefinedCube("LEAKAGE");
      }
      ASKAPASSERT(itsLeakagesRow>=0);
-     ASKAPCHECK(cellDefined<casacore::Bool>("LEAKAGE_VALID", casacore::uInt(itsLeakagesRow)), 
+     if (itsLeakagesRow != itsRefRow) {
+         // backwards search should only be possible in the read-only mode
+         ASKAPDEBUGASSERT(isReadOnly());
+         ASKAPDEBUGASSERT(needToCreateLeakage);
+     }
+     ASKAPCHECK(cellDefined<casa::Bool>("LEAKAGE_VALID", casa::uInt(itsLeakagesRow)), 
          "Wrong format of the calibration table: LEAKAGE element should always be accompanied by LEAKAGE_VALID");
      readCube(leakages.first, "LEAKAGE", casacore::uInt(itsLeakagesRow));
      readCube(leakages.second, "LEAKAGE_VALID", casacore::uInt(itsLeakagesRow));
@@ -178,31 +192,39 @@ void TableCalSolutionFiller::fillLeakages(std::pair<casacore::Cube<casacore::Com
   ASKAPCHECK(leakages.first.shape() == leakages.second.shape(), "LEAKAGE and LEAKAGE_VALID cubes are expected to have the same shape");
 }
 
-/// @brief bandpass filler  
+/// @brief bandpass filler
 /// @details
 /// @param[in] bp pair of cubes with bandpasses and validity flags (to be resised to (2*nChan) x nAnt x nBeam)
 void TableCalSolutionFiller::fillBandpasses(std::pair<casacore::Cube<casacore::Complex>, casacore::Cube<casacore::Bool> > &bp) const
 {
-  if (itsCreateNew || noBandpass()) {
+  // cellDefined should not be called if noGain returns true according to C++ evaluation rules.
+  const bool needToCreateBandpass = noBandpass() || !cellDefined<casa::Complex>("BANDPASS", casa::uInt(itsRefRow));
+  if (!isReadOnly() && needToCreateBandpass) {
       ASKAPDEBUGASSERT(itsBandpassesRow < 0);
       bp.first.resize(2 * itsNChan, itsNAnt, itsNBeam);
       bp.first.set(1.);
       bp.second.resize(2 * itsNChan, itsNAnt, itsNBeam);
       bp.second.set(false);
-      itsBandpassesRow = itsRefRow;      
-  } else {  
+      itsBandpassesRow = itsRefRow;
+  } else {
+     // this is the case wwhere either the table is read-only or there is a need to read data first
      if (itsBandpassesRow < 0) {
          itsBandpassesRow = findDefinedCube("BANDPASS");
      }
      ASKAPASSERT(itsBandpassesRow>=0);
-     ASKAPCHECK(cellDefined<casacore::Bool>("BANDPASS_VALID", casacore::uInt(itsBandpassesRow)), 
+     if (itsBandpassesRow != itsRefRow) {
+         // backwards search should only be possible in the read-only mode
+         ASKAPDEBUGASSERT(isReadOnly());
+         ASKAPDEBUGASSERT(needToCreateBandpass);
+     }
+     ASKAPCHECK(cellDefined<casa::Bool>("BANDPASS_VALID", casa::uInt(itsBandpassesRow)), 
          "Wrong format of the calibration table: BANDPASS element should always be accompanied by BANDPASS_VALID");
      readCube(bp.first, "BANDPASS", casacore::uInt(itsBandpassesRow));
      readCube(bp.second, "BANDPASS_VALID", casacore::uInt(itsBandpassesRow));
   }
   ASKAPCHECK(bp.first.shape() == bp.second.shape(), "BANDPASS and BANDPASS_VALID cubes are expected to have the same shape");
 }
-  
+
 /// @brief gains writer
 /// @details
 /// @param[in] gains pair of cubes with gains and validity flags (should be 2 x nAnt x nBeam)
@@ -210,30 +232,30 @@ void TableCalSolutionFiller::writeGains(const std::pair<casacore::Cube<casacore:
 {
   ASKAPASSERT(itsGainsRow>=0);
   ASKAPCHECK(gains.first.shape() == gains.second.shape(), "The cubes with gains and validity flags are expected to have the same shape");
-  writeCube(gains.first, "GAIN", casacore::uInt(itsGainsRow));
-  writeCube(gains.second, "GAIN_VALID", casacore::uInt(itsGainsRow));    
+  writeCube(gains.first, "GAIN", casa::uInt(itsGainsRow));
+  writeCube(gains.second, "GAIN_VALID", casa::uInt(itsGainsRow));
 }
-  
-/// @brief leakage writer  
+
+/// @brief leakage writer
 /// @details
 /// @param[in] leakages pair of cubes with leakages and validity flags (should be 2 x nAnt x nBeam)
 void TableCalSolutionFiller::writeLeakages(const std::pair<casacore::Cube<casacore::Complex>, casacore::Cube<casacore::Bool> > &leakages) const
 {
   ASKAPASSERT(itsLeakagesRow>=0);
   ASKAPCHECK(leakages.first.shape() == leakages.second.shape(), "The cubes with leakages and validity flags are expected to have the same shape");
-  writeCube(leakages.first, "LEAKAGE", casacore::uInt(itsLeakagesRow));
-  writeCube(leakages.second, "LEAKAGE_VALID", casacore::uInt(itsLeakagesRow));    
+  writeCube(leakages.first, "LEAKAGE", casa::uInt(itsLeakagesRow));
+  writeCube(leakages.second, "LEAKAGE_VALID", casa::uInt(itsLeakagesRow));
 }
 
-/// @brief bandpass writer  
+/// @brief bandpass writer
 /// @details
 /// @param[in] bp pair of cubes with bandpasses and validity flags (should be (2*nChan) x nAnt x nBeam)
 void TableCalSolutionFiller::writeBandpasses(const std::pair<casacore::Cube<casacore::Complex>, casacore::Cube<casacore::Bool> > &bp) const
 {
   ASKAPASSERT(itsBandpassesRow>=0);
   ASKAPCHECK(bp.first.shape() == bp.second.shape(), "The cubes with bandpasses and validity flags are expected to have the same shape");
-  writeCube(bp.first, "BANDPASS", casacore::uInt(itsBandpassesRow));
-  writeCube(bp.second, "BANDPASS_VALID", casacore::uInt(itsBandpassesRow));    
+  writeCube(bp.first, "BANDPASS", casa::uInt(itsBandpassesRow));
+  writeCube(bp.second, "BANDPASS_VALID", casa::uInt(itsBandpassesRow));
 }
 
 /// @brief find first defined cube searching backwards
@@ -257,5 +279,3 @@ long TableCalSolutionFiller::findDefinedCube(const std::string &name) const
 } // namespace accessors
 
 } // namespace askap
-
-

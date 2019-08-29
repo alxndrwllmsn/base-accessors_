@@ -41,7 +41,7 @@ namespace askap {
 
 namespace accessors {
 
-class ParsetCalSolutionTest : public CppUnit::TestFixture 
+class ParsetCalSolutionTest : public CppUnit::TestFixture
 {
    CPPUNIT_TEST_SUITE(ParsetCalSolutionTest);
    CPPUNIT_TEST(testReadWrite);
@@ -66,7 +66,7 @@ protected:
             }
        }
    }
-   
+
    static void createDummyParset(const std::string &fname) {
        ParsetCalSolutionAccessor acc(fname);
        createDummyParset(acc);
@@ -181,14 +181,17 @@ public:
         // now read and check
         ParsetCalSolutionAccessor acc(fname);
         CPPUNIT_ASSERT_EQUAL(false, acc.jonesAllValid(index,0));
-        const casacore::SquareMatrix<casacore::Complex, 2> jones = acc.jones(index,0);
+        CPPUNIT_ASSERT_EQUAL(false, acc.jonesValid(index,0));
+        const casa::SquareMatrix<casa::Complex, 2> jones = acc.jones(index,0);
 
-        testComplex(casacore::Complex(1.1,0.1), jones(0,0));
-        // undefined gain is one
-        testComplex(casacore::Complex(1.0,0.), jones(1,1));
-        // undefined leakage is zero
-        testComplex(casacore::Complex(0.,0.), jones(0,1));
-        testComplex(casacore::Complex(-0.14,0.11), -jones(1,0));
+        // both pols need to be valid, otherwise we get default values back
+        // other pol invalid, gain is one
+        testComplex(casa::Complex(1.0,0.0), jones(0,0));
+        // invalid or undefined gain is one
+        testComplex(casa::Complex(1.0,0.), jones(1,1));
+        // invalid or undefined leakage is zero
+        testComplex(casa::Complex(0.,0.), jones(0,1));
+        testComplex(casa::Complex(0.,0.), -jones(1,0));
    }
 
    void testSolutionSource() {
@@ -209,4 +212,3 @@ public:
 } // namespace accessors
 
 } // namespace askap
-

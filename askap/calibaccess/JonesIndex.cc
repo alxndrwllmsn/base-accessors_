@@ -56,15 +56,6 @@ JonesIndex::JonesIndex(const casacore::uInt antenna, casacore::uInt beam) :
   ASKAPCHECK(beam < 32768, "Beam index supposed to be less than 32768");
 }
 
-casacore::Short JonesIndex::antenna(void) const
-{
-    return itsAntenna;
-}
-casacore::Short JonesIndex::beam(void) const
-{
-    return itsBeam;
-}
-
 bool JonesIndex::operator==(const JonesIndex& rhs) const
 {
     if (rhs.antenna() == this->antenna() &&
