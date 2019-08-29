@@ -141,8 +141,11 @@ private:
   /// @note The code always returns non-negative number.
   long findDefinedCube(const std::string &name) const;
 
-  /// @brief helper method to check whether we are creating a new row
-  void checkForNewRow();
+  /// @brief helper method to check that the filler is initialised for read only access
+  /// @return true, if the filler is expected to do read only operations
+  /// @note Look back until the last defined record is only done for read-only access. Read-write access 
+  /// overwrites whatever row is requested
+  bool isReadOnly() const;
 
   /// @brief helper method to check that the given column exists
   /// @param[in] name column name
@@ -173,8 +176,6 @@ private:
   /// for columnExists() is quite expensive
   mutable std::map<std::string, bool> itsColumnExistsCache;
 
-  /// @brief true if a new row is to be created
-  bool itsCreateNew;
 }; // class TableCalSolutionFiller
 
 } // accessors

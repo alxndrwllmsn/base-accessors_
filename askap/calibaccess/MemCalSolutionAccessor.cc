@@ -35,6 +35,7 @@
 /// @author Max Voronkov <Maxim.Voronkov@csiro.au>
 
 #include <askap/calibaccess/MemCalSolutionAccessor.h>
+#include <askap/calibaccess/JonesDTerm.h>
 #include <askap/askap/AskapError.h>
 
 namespace askap {

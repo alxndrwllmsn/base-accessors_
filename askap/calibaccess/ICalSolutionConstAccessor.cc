@@ -3,7 +3,7 @@
 /// @brief An interface for accessing calibration solutions for reading.
 /// @details This interface is used to access calibration parameters
 /// read-only. A writable version of the interface is derived from this
-/// class. Various implementations are possible, i.e. parset-based, 
+/// class. Various implementations are possible, i.e. parset-based,
 /// table-based and working via database ice service.
 /// @copyright (c) 2011 CSIRO
 /// Australia Telescope National Facility (ATNF)
@@ -50,36 +50,17 @@ ICalSolutionConstAccessor::~ICalSolutionConstAccessor()
 /// @param[in] index ant/beam index
 /// @param[in] chan spectral channel of interest
 /// @return 2x2 Jones matrix
-/// @note The relation between leakage terms and Jones matrices matches 
-/// the definition of Hamaker, Bregman & Sault. See their equation 
+/// @note The relation between leakage terms and Jones matrices matches
+/// the definition of Hamaker, Bregman & Sault. See their equation
 /// (14) for details. Our parameters d12 (corresponding to Stokes:XY) and
 /// d21 (corresponding to Stokes::YX) correspond to d_{Ap} and d_{Aq} from
 /// Hamaker, Bregman & Sault, respectively. It is assumed that the gain errors
 /// are applied after leakages (i.e. R=GD).
 casacore::SquareMatrix<casacore::Complex, 2> ICalSolutionConstAccessor::jones(const JonesIndex &index, const casacore::uInt chan) const
 {
-  casacore::SquareMatrix<casacore::Complex, 2> result(casacore::SquareMatrix<casacore::Complex, 2>::General);
-  const JonesJTerm gTerm = gain(index);
-  result(0,0) = gTerm.g1IsValid() ? gTerm.g1() : casacore::Complex(1.,0.);
-  result(1,1) = gTerm.g2IsValid() ? gTerm.g2() : casacore::Complex(1.,0.);
-  const JonesDTerm dTerm = leakage(index);
-
-  result(0,1) = (dTerm.d12IsValid() ? dTerm.d12() : 0.) * result(0,0);
-  result(1,0) = (dTerm.d21IsValid() ? -dTerm.d21() : 0.) * result(1,1);
-
-  const JonesJTerm bpTerm = bandpass(index,chan);
-  if (bpTerm.g1IsValid()) {
-      result(0,0) *= bpTerm.g1();
-      result(1,0) *= bpTerm.g1();
-  }
-
-  if (bpTerm.g2IsValid()) {
-      result(0,1) *= bpTerm.g2();
-      result(1,1) *= bpTerm.g2();
-  }
-  return result;
+  return jonesAndValidity(index, chan).first;
 }
-      
+
 /// @brief obtain full 2x2 Jones Matrix taking all effects into account
 /// @details This version of the method accepts antenna and beam indices explicitly and
 /// does extra checks before calling the main method expressed via JonesIndex.
@@ -104,16 +85,9 @@ casacore::SquareMatrix<casacore::Complex, 2> ICalSolutionConstAccessor::jones(co
 /// valid, false otherwise
 bool ICalSolutionConstAccessor::jonesValid(const JonesIndex &index, const casacore::uInt chan) const
 {
-  const JonesJTerm gTerm = gain(index);
-  const JonesJTerm bpTerm = bandpass(index,chan);
-  const JonesDTerm dTerm = leakage(index);
-  // MV: there is a serious issue/contradiction in how we use the system now vs. how it was designed
-  // the following change is a hack changing the logic w.r.t. documentation (OR instead of AND), 
-  // we probably have to think how we approach it in the future when we have just bandpass or just gains, etc
-  return (gTerm.g1IsValid() && gTerm.g2IsValid()) || (bpTerm.g1IsValid() && bpTerm.g2IsValid()) ||
-         (dTerm.d12IsValid() && dTerm.d21IsValid());
+  return jonesAndValidity(index, chan).second;
 }
-   
+
 /// @brief obtain validity flag for the full 2x2 Jones Matrix
 /// @details This version of the method accepts antenna and beam indices explicitly and
 /// does extra checks before calling the main method expressed via JonesIndex.
@@ -156,12 +130,52 @@ bool ICalSolutionConstAccessor::jonesAllValid(const JonesIndex &index, const cas
   const JonesJTerm gTerm = gain(index);
   const JonesJTerm bpTerm = bandpass(index,chan);
   const JonesDTerm dTerm = leakage(index);
-  
+
   return gTerm.g1IsValid() && gTerm.g2IsValid() && bpTerm.g1IsValid() && bpTerm.g2IsValid() &&
          dTerm.d12IsValid() && dTerm.d21IsValid();
 }
-   
+
+std::pair<casa::SquareMatrix<casa::Complex, 2>, bool> ICalSolutionConstAccessor::jonesAndValidity(const JonesIndex &index, const casa::uInt chan) const
+{
+  const JonesJTerm gTerm = gain(index);
+  const JonesJTerm bpTerm = bandpass(index,chan);
+  const JonesDTerm dTerm = leakage(index);
+  const bool leakageValid = dTerm.d12IsValid() && dTerm.d21IsValid();
+
+  // MV: there is a serious issue/contradiction in how we use the system now vs. how it was designed
+  // the following change is a hack changing the logic w.r.t. documentation (OR instead of AND),
+  // we probably have to think how we approach it in the future when we have just bandpass or just gains, etc
+  bool valid = (gTerm.g1IsValid() && gTerm.g2IsValid()) || leakageValid ||
+           (dTerm.d12IsValid() && dTerm.d21IsValid());
+
+  if (!valid) return std::pair<casa::SquareMatrix<casa::Complex, 2>, bool>(casa::SquareMatrix<casa::Complex, 2>(),valid);
+
+  casa::SquareMatrix<casa::Complex, 2> result(leakageValid ? casa::SquareMatrix<casa::Complex, 2>::General :
+      casa::SquareMatrix<casa::Complex, 2>::Diagonal);
+
+  result(0,0) = gTerm.g1IsValid() ? gTerm.g1() : casa::Complex(1.,0.);
+  result(1,1) = gTerm.g2IsValid() ? gTerm.g2() : casa::Complex(1.,0.);
+
+  if (leakageValid) {
+     result(0,1) = (dTerm.d12IsValid() ? dTerm.d12() : 0.) * result(0,0);
+     result(1,0) = (dTerm.d21IsValid() ? -dTerm.d21() : 0.) * result(1,1);
+  }
+
+  if (bpTerm.g1IsValid()) {
+      result(0,0) *= bpTerm.g1();
+      if (leakageValid) result(1,0) *= bpTerm.g1();
+  }
+  if (bpTerm.g2IsValid()) {
+      if (leakageValid) result(0,1) *= bpTerm.g2();
+      result(1,1) *= bpTerm.g2();
+  }
+  return std::pair<casa::SquareMatrix<casa::Complex, 2>, bool>(result,valid);
+}
+
+std::pair<casa::SquareMatrix<casa::Complex, 2>, bool> ICalSolutionConstAccessor::jonesAndValidity(const casa::uInt ant, const::casa::uInt beam, const casa::uInt chan) const
+{
+    return jonesAndValidity(JonesIndex(ant,beam),chan);
+}
 
 } // namespace accessors
 } // namespace askap
-
