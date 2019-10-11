@@ -146,7 +146,7 @@ std::pair<casa::SquareMatrix<casa::Complex, 2>, bool> ICalSolutionConstAccessor:
   // the following change is a hack changing the logic w.r.t. documentation (OR instead of AND),
   // we probably have to think how we approach it in the future when we have just bandpass or just gains, etc
   bool valid = (gTerm.g1IsValid() && gTerm.g2IsValid()) || leakageValid ||
-           (dTerm.d12IsValid() && dTerm.d21IsValid());
+              (bpTerm.g1IsValid() && bpTerm.g2IsValid());
 
   if (!valid) return std::pair<casa::SquareMatrix<casa::Complex, 2>, bool>(casa::SquareMatrix<casa::Complex, 2>(),valid);
 
