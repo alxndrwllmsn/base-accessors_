@@ -138,7 +138,7 @@ protected:
 
 private:
    /// @brief method to access image
-   boost::shared_ptr<IImageAccess> itsImageAccessor;
+   boost::shared_ptr<IImageAccess<casacore::Float> > itsImageAccessor;
 };
 
 } // namespace accessors

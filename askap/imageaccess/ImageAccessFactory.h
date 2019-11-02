@@ -46,7 +46,7 @@ namespace accessors {
 /// @param[in] parset parameters containing description of image accessor to be constructed
 /// @return shared pointer to the image access object
 /// @note CASA images are used by default
-boost::shared_ptr<IImageAccess> imageAccessFactory(const LOFAR::ParameterSet &parset);
+boost::shared_ptr<IImageAccess< casacore::Float > > imageAccessFactory(const LOFAR::ParameterSet &parset);
 
 } // namespace accessors
 } // namespace askap

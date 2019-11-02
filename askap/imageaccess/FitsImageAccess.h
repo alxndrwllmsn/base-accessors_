@@ -47,7 +47,8 @@ namespace accessors {
 /// It therefore makes sense to heavily inherit from the CASA conversion
 /// classes.
 /// @ingroup imageaccess
-struct FitsImageAccess : public IImageAccess {
+
+struct FitsImageAccess : public IImageAccess<> {
 
     public:
 
