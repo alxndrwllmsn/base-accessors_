@@ -27,7 +27,7 @@
 /// @author Max Voronkov <maxim.voronkov@csiro.au>
 ///
 
-#include <askap_accessors.h>
+// have to remove this due to templating #include <askap_accessors.h>
 
 #include <askap/imageaccess/CasaImageAccess.h>
 
