@@ -102,7 +102,7 @@ casacore::Array<T> CasaImageAccess<T>::read(const std::string &name, const casac
         // generate an Array of zeros and copy the elements for which the mask is true
         const casacore::Slicer slicer(blc, trc, casacore::Slicer::endIsLast);
         casacore::Array<T> tempSlice(img.getSlice(slicer).shape(), 0.0);
-        tempSlice = casacore::MaskedArray<float>(img.getSlice(slicer), img.getMaskSlice(slicer), casacore::True);
+        tempSlice = casacore::MaskedArray<T>(img.getSlice(slicer), img.getMaskSlice(slicer), casacore::True);
         return tempSlice;
         // The following seems to avoid a copy but takes longer:
         //// Iterate over image array and set any unmasked pixels to zero
@@ -257,7 +257,7 @@ void CasaImageAccess<T>::writeMask(const std::string &name, const casacore::Arra
 template <class T>
 void CasaImageAccess<T>::setUnits(const std::string &name, const std::string &units)
 {
-    casacore::PagedImage<float> img(name);
+    casacore::PagedImage<T> img(name);
     img.setUnits(casacore::Unit(units));
 }
 
