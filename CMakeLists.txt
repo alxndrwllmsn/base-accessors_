@@ -139,6 +139,8 @@ target_include_directories(askap_accessors PUBLIC
 	$<INSTALL_INTERFACE:include>
 )
 
+add_library(askap::accessors ALIAS askap_accessors)
+
 install (
 	TARGETS askap_accessors
 	RUNTIME DESTINATION bin
