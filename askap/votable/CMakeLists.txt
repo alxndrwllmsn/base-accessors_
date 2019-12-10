@@ -14,6 +14,10 @@ XercescString.cc
 XercescUtils.cc
 )
 
+target_link_libraries(votable PRIVATE
+	askap::askap
+)
+
 target_include_directories(votable PRIVATE
 	${PROJECT_SOURCE_DIR}
 )

@@ -89,14 +89,9 @@ include_directories (${Boost_INCLUDE_DIRS})
 add_definitions(-DHAVE_BOOST)
 include_directories(${log4cxx_INCLUDE_DIRS})
 add_definitions(-DHAVE_LOG4CXX)
-include_directories(${LofarCommon_INCLUDE_DIRS})
-include_directories(${LofarBlob_INCLUDE_DIRS})
 include_directories(${CASACORE_INCLUDE_DIRS})
 add_definitions(-DHAVE_AIPSPP)
 add_definitions(-Dcasa=casacore)
-include_directories(${ASKAP_INCLUDE_DIRS})
-include_directories(${ASKAPPARALLEL_INCLUDE_DIRS})
-include_directories(${SCIMATH_INCLUDE_DIRS})
 include_directories(${XercesC_INCLUDE_DIR})
 
 if (CPPUNIT_FOUND)
@@ -123,13 +118,13 @@ add_library(askap_accessors SHARED
 # add some more tests and sub-directories
 
 target_link_libraries(askap_accessors
+	lofar::Blob
+	lofar::Common
+	askap::parallel
+	askap::scimath
+	askap::askap
 	${CASACORE_LIBRARIES}
 	${log4cxx_LIBRARY}
-	${LofarBlob_LIBRARY}
-	${LofarCommon_LIBRARY}
-	${ASKAPPARALLEL_LIBRARY}
-	${SCIMATH_LIBRARY}
-	${ASKAP_LIBRARY}
 	${XercesC_LIBRARY}
 	)
     

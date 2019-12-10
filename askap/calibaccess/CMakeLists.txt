@@ -21,6 +21,10 @@ TableCalSolutionFiller.cc
 TableCalSolutionSource.cc
 )
 
+target_link_libraries(calibaccess PRIVATE
+	askap::askap
+	askap::scimath
+)
 target_include_directories(calibaccess PRIVATE
 	${PROJECT_SOURCE_DIR}
 )

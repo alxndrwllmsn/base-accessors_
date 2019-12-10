@@ -10,6 +10,11 @@ IImageAccess.cc
 ImageAccessFactory.cc
 )
 
+target_link_libraries(imageaccess PRIVATE
+	askap::askap
+	askap::parallel
+)
+
 target_include_directories(imageaccess PRIVATE
 	${PROJECT_SOURCE_DIR}
 )

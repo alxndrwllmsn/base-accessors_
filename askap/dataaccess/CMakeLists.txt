@@ -58,6 +58,11 @@ UVWMachineCache.cc
 UVWRotationHandler.cc
 )
 
+target_link_libraries(dataaccess PRIVATE
+	askap::askap
+	askap::scimath
+)
+
 target_include_directories(dataaccess PRIVATE
 	${PROJECT_SOURCE_DIR}
 )
