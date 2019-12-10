@@ -85,7 +85,6 @@ endif(ENABLE_SHARED)
 
 
 # include directories
-include_directories( ${CMAKE_SOURCE_DIR} )
 include_directories (${Boost_INCLUDE_DIRS})
 add_definitions(-DHAVE_BOOST)
 include_directories(${log4cxx_INCLUDE_DIRS})
@@ -138,6 +137,12 @@ if (CPPUNIT_FOUND)
     target_link_libraries(askap_accessors
         ${CPPUNIT_LIBRARY})
 endif () 
+
+target_include_directories(askap_accessors PUBLIC
+	$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
+	$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/askap>
+	$<INSTALL_INTERFACE:include>
+)
 
 install (
 	TARGETS askap_accessors

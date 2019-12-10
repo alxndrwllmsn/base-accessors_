@@ -21,6 +21,10 @@ TableCalSolutionFiller.cc
 TableCalSolutionSource.cc
 )
 
+target_include_directories(calibaccess PRIVATE
+	${PROJECT_SOURCE_DIR}
+)
+
 set_property(TARGET calibaccess PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 install (

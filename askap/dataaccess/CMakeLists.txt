@@ -58,6 +58,10 @@ UVWMachineCache.cc
 UVWRotationHandler.cc
 )
 
+target_include_directories(dataaccess PRIVATE
+	${PROJECT_SOURCE_DIR}
+)
+
 set_property(TARGET dataaccess PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 install (FILES

@@ -10,6 +10,10 @@ IImageAccess.cc
 ImageAccessFactory.cc
 )
 
+target_include_directories(imageaccess PRIVATE
+	${PROJECT_SOURCE_DIR}
+)
+
 set_property(TARGET imageaccess PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 install (FILES

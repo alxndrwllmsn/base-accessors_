@@ -14,6 +14,10 @@ XercescString.cc
 XercescUtils.cc
 )
 
+target_include_directories(votable PRIVATE
+	${PROJECT_SOURCE_DIR}
+)
+
 set_property(TARGET votable PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 install (FILES
