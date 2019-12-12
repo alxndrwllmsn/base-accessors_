@@ -46,12 +46,12 @@ using namespace askap::accessors;
 /// @param[in] parset parameters containing description of image accessor to be constructed
 /// @return shared pointer to the image access object
 /// @note CASA images are used by default
-boost::shared_ptr<IImageAccess> askap::accessors::imageAccessFactory(const LOFAR::ParameterSet &parset)
+boost::shared_ptr<IImageAccess<casacore::Float> > askap::accessors::imageAccessFactory(const LOFAR::ParameterSet &parset)
 {
    const std::string imageType = parset.getString("imagetype","casa");
-   boost::shared_ptr<IImageAccess> result;
+   boost::shared_ptr<IImageAccess<> > result;
    if (imageType == "casa") {
-       boost::shared_ptr<CasaImageAccess> iaCASA(new CasaImageAccess());
+       boost::shared_ptr<CasaImageAccess<casacore::Float> > iaCASA(new CasaImageAccess<casacore::Float>());
        // optional parameter setting may come here
        result = iaCASA;
    } else if (imageType == "fits"){

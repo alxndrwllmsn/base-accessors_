@@ -50,6 +50,8 @@ namespace accessors {
 /// In the future we can benefit from using this minimalistic interface because it should be
 /// relatively easy to do parallel operations on the same image or even distributed storage.
 /// @ingroup imageaccess
+
+template < class T = casacore::Float >
 struct IImageAccess {
     /// @brief void virtual desctructor, to keep the compiler happy
     virtual ~IImageAccess();
@@ -66,14 +68,14 @@ struct IImageAccess {
     /// @brief read full image
     /// @param[in] name image name
     /// @return array with pixels
-    virtual casacore::Array<float> read(const std::string &name) const = 0;
+    virtual casacore::Array<T> read(const std::string &name) const = 0;
 
     /// @brief read part of the image
     /// @param[in] name image name
     /// @param[in] blc bottom left corner of the selection
     /// @param[in] trc top right corner of the selection
     /// @return array with pixels for the selection only
-    virtual casacore::Array<float> read(const std::string &name, const casacore::IPosition &blc,
+    virtual casacore::Array<T> read(const std::string &name, const casacore::IPosition &blc,
                                     const casacore::IPosition &trc) const = 0;
 
     /// @brief obtain coordinate system info
@@ -119,13 +121,13 @@ struct IImageAccess {
     /// @brief write full image
     /// @param[in] name image name
     /// @param[in] arr array with pixels
-    virtual void write(const std::string &name, const casacore::Array<float> &arr) = 0;
+    virtual void write(const std::string &name, const casacore::Array<T> &arr) = 0;
 
     /// @brief write a slice of an image
     /// @param[in] name image name
     /// @param[in] arr array with pixels
     /// @param[in] where bottom left corner where to put the slice to (trc is deduced from the array shape)
-    virtual void write(const std::string &name, const casacore::Array<float> &arr,
+    virtual void write(const std::string &name, const casacore::Array<T> &arr,
                        const casacore::IPosition &where) = 0;
 
     /// @brief write a slice of an image pixel mask
@@ -184,5 +186,6 @@ struct IImageAccess {
 
 } // namespace accessors
 } // namespace askap
+#include "IImageAccess.tcc"
 
 #endif
