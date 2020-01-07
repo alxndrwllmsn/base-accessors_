@@ -5,12 +5,10 @@ project(base-accessors VERSION 0.0.1 LANGUAGES C CXX)
 
 if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/askap-cmake)
     execute_process(COMMAND git pull 
-	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/askap-cmake
-	TIMEOUT 5)
+	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/askap-cmake)
 else ()	
     execute_process(COMMAND git clone https://bitbucket.csiro.au/scm/askapsdp/askap-cmake.git
-	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-	TIMEOUT 5)
+	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 endif ()
 set (CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/askap-cmake")
 
