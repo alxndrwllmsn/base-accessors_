@@ -28,61 +28,12 @@
 #define ASKAP_ACCESSORS_JONES_INDEX_H
 
 // ASKAPsoft includes
-#include "casacore/casa/aipstype.h"
+#include <askap/scimath/fitting/JonesIndex.h>
 
-namespace askap {
-namespace accessors {
+namespace askap { namespace accessors {
 
-/// @brief antenna/beam indices combined in a class to be used as an index
-/// @details Key type used for indexing into the calibration solution maps for the
-/// GainSolution, LeakageSolution and BandpassSolution classes.
-/// @ingroup calibaccess
-class JonesIndex {
+    typedef askap::scimath::JonesIndex JonesIndex;
 
-    public:
-        /// Constructor
-        ///
-        /// @param[in] antenna  ID of the antenna. This must be the physical
-        ///                     antenna ID.
-        /// @param[in] beam     ID of the beam. Again, must map to an actual
-        ///                     beam.
-        JonesIndex(const casacore::Short antenna, casacore::Short beam);
-        
-        /// @brief constructor accepting uInt
-        /// @param[in] antenna  ID of the antenna. This must be the physical
-        ///                     antenna ID.
-        /// @param[in] beam     ID of the beam. Again, must map to an actual
-        ///                     beam.
-        JonesIndex(const casacore::uInt antenna, casacore::uInt beam);
-        
-
-        /// Obtain the antenna ID
-        /// @return the antenna ID
-        casacore::Short antenna(void) const;
-
-        /// Obtain the beam ID
-        /// @return the beam ID
-        casacore::Short beam(void) const;
-
-        /// Operator...
-        bool operator==(const JonesIndex& rhs) const;
-
-        /// Operator...
-        bool operator!=(const JonesIndex& rhs) const;
-
-        /// Operator...
-        bool operator<(const JonesIndex& rhs) const;
-
-    private:
-        casacore::Short itsAntenna;
-        casacore::Short itsBeam;
-};
-
-    inline casa::Short JonesIndex::antenna(void) const { return itsAntenna;}
-
-    inline casa::Short JonesIndex::beam(void) const { return itsBeam;}
-
-};
-};
+}};
 
 #endif // #ifndef ASKAP_ACCESSORS_JONES_INDEX_H

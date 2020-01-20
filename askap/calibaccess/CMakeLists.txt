@@ -1,7 +1,6 @@
 add_library( calibaccess OBJECT
 
 CachedCalSolutionAccessor.cc
-CalParamNameHelper.cc
 CalSolutionConstSourceStub.cc
 CalSolutionSourceStub.cc
 CalibAccessFactory.cc
@@ -10,7 +9,6 @@ ChanAdapterCalSolutionConstSource.cc
 ICalSolutionAccessor.cc
 ICalSolutionConstAccessor.cc
 ICalSolutionConstSource.cc
-JonesIndex.cc
 MemCalSolutionAccessor.cc
 ParsetCalSolutionAccessor.cc
 ParsetCalSolutionConstSource.cc
