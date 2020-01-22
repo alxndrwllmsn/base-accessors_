@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.1.0)
 
-project(base-accessors VERSION 0.0.1 LANGUAGES C CXX)
+project(askap-accessors VERSION 0.0.1 LANGUAGES C CXX)
 
 
 if (EXISTS ${CMAKE_SOURCE_DIR}/askap-cmake)
@@ -18,43 +18,12 @@ option (CXX11 "Compile as C++11 if possible" YES)
 option (ENABLE_SHARED "Build shared libraries" YES)
 option (ENABLE_RPATH "Include rpath in executables and shared libraries" YES)
 
-# Yanda Packages
-# YandaSoft dependencies .. in order
-include(install_yanda_depends)
-find_package(LofarCommon)
-
-set (EXTERNAL_INSTALL_DIR ${CMAKE_INSTALL_PREFIX})
-
-if (NOT LofarCommon_FOUND)
-	install_yanda_depends(lofar-common)
-	find_package(LofarCommon REQUIRED)
-endif ()
-
-find_package(LofarBlob)
-if (NOT LofarBlob_FOUND)
-	install_yanda_depends(lofar-blob)
-	find_package(LofarBlob REQUIRED)
-endif ()
-
-find_package(Askap)
-if (NOT ASKAP_FOUND)
-	install_yanda_depends(base-askap)
-	find_package(Askap REQUIRED)
-endif ()
-
-find_package(Scimath)
-if (NOT SCIMATH_FOUND)
-	install_yanda_depends(base-scimath)
-	find_package(Scimath REQUIRED)
-endif ()
-
-find_package(AskapParallel)
-if (NOT ASKAPPARALLEL_FOUND)
-	install_yanda_depends(base-askapparallel)
-	find_package(AskapParallel REQUIRED)
-endif ()
-
 # find packages
+find_package(lofar-common REQUIRED)
+find_package(lofar-blob REQUIRED)
+find_package(askap-askap REQUIRED)
+find_package(askap-scimath REQUIRED)
+find_package(askap-parallel REQUIRED)
 find_package(Boost REQUIRED)
 find_package(log4cxx REQUIRED)
 find_package(Casacore REQUIRED COMPONENTS  ms images mirlib coordinates fits lattices measures scimath scimath_f tables casa)
@@ -82,42 +51,38 @@ option (BUILD_SHARED_LIBS "" YES)
     endif (ENABLE_RPATH)
 endif(ENABLE_SHARED)
 
-
-
-# include directories
-include_directories (${Boost_INCLUDE_DIRS})
-add_definitions(-DHAVE_BOOST)
-include_directories(${log4cxx_INCLUDE_DIRS})
-add_definitions(-DHAVE_LOG4CXX)
-include_directories(${CASACORE_INCLUDE_DIRS})
-add_definitions(-DHAVE_AIPSPP)
-add_definitions(-Dcasa=casacore)
-include_directories(${XercesC_INCLUDE_DIR})
-
-if (CPPUNIT_FOUND)
-    include_directories(${CPPUNIT_INCLUDE_DIR})
-endif ()
-
 if (CASACORE3 OR CXX11)
 	set(CMAKE_CXX_STANDARD 11)
 	set(CMAKE_CXX_STANDARD_REQUIRED ON)
 endif()
 
 
+add_library(accessors SHARED)
+
+macro(add_sources_to_accessors)
+	foreach(arg IN ITEMS ${ARGN})
+		target_sources(accessors PRIVATE ${CMAKE_CURRENT_LIST_DIR}/${arg})
+	endforeach()
+endmacro()
+
 add_subdirectory(askap/imageaccess)
 add_subdirectory(askap/dataaccess)
 add_subdirectory(askap/calibaccess)
 add_subdirectory(askap/votable)
 
-add_library(askap_accessors SHARED
-	$<TARGET_OBJECTS:imageaccess>
-	$<TARGET_OBJECTS:dataaccess>
-	$<TARGET_OBJECTS:calibaccess>
-	$<TARGET_OBJECTS:votable>
+target_compile_definitions(accessors PUBLIC
+	casa=casacore
+	HAVE_AIPSPP
+	HAVE_BOOST
+	HAVE_LOG4CXX
 )
 # add some more tests and sub-directories
 
-target_link_libraries(askap_accessors
+set_target_properties(accessors PROPERTIES
+	OUTPUT_NAME askap_accessors
+)
+
+target_link_libraries(accessors
 	lofar::Blob
 	lofar::Common
 	askap::parallel
@@ -126,23 +91,32 @@ target_link_libraries(askap_accessors
 	${CASACORE_LIBRARIES}
 	${log4cxx_LIBRARY}
 	${XercesC_LIBRARY}
-	)
-    
-if (CPPUNIT_FOUND)
-    target_link_libraries(askap_accessors
-        ${CPPUNIT_LIBRARY})
-endif () 
+)
 
-target_include_directories(askap_accessors PUBLIC
+if (CPPUNIT_FOUND)
+    target_link_libraries(accessors
+        ${CPPUNIT_LIBRARY})
+    target_include_directories(accessors PUBLIC
+        ${CPPUNIT_INCLUDE_DIR}
+    )
+endif ()
+
+target_include_directories(accessors PUBLIC
 	$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
 	$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/askap>
 	$<INSTALL_INTERFACE:include>
+	$<INSTALL_INTERFACE:include/askap>
+	${Boost_INCLUDE_DIRS}
+	${log4cxx_INCLUDE_DIRS}
+	${CASACORE_INCLUDE_DIRS}
+	${XercesC_INCLUDE_DIR}
 )
 
-add_library(askap::accessors ALIAS askap_accessors)
+add_library(askap::accessors ALIAS accessors)
 
 install (
-	TARGETS askap_accessors
+	TARGETS accessors
+	EXPORT askap-accessors-targets
 	RUNTIME DESTINATION bin
 	LIBRARY DESTINATION lib
 	ARCHIVE DESTINATION lib
@@ -152,23 +126,16 @@ install (FILES
 	askap_accessors.h
 	DESTINATION include/askap/
 	)
+
 if (CPPUNIT_FOUND)
   include(CTest)
   enable_testing()
-
-  include_directories(${CMAKE_CURRENT_SOURCE_DIR}/tests/calibaccess)
   add_subdirectory(tests/calibaccess)
-
-  include_directories(${CMAKE_CURRENT_SOURCE_DIR}/tests/dataaccess)
   add_subdirectory(tests/dataaccess)
-
-  include_directories(${CMAKE_CURRENT_SOURCE_DIR}/tests/votable)
   add_subdirectory(tests/votable)
-
-  include_directories(${CMAKE_CURRENT_SOURCE_DIR}/tests/timageaccess)
   add_subdirectory(tests/imageaccess)
-
-
 endif (CPPUNIT_FOUND)
 
 
+include(yanda_export)
+yanda_export(askap)

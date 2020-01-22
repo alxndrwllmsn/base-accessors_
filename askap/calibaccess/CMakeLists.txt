@@ -1,5 +1,4 @@
-add_library( calibaccess OBJECT
-
+add_sources_to_accessors(
 CachedCalSolutionAccessor.cc
 CalSolutionConstSourceStub.cc
 CalSolutionSourceStub.cc
@@ -18,16 +17,6 @@ TableCalSolutionConstSource.cc
 TableCalSolutionFiller.cc
 TableCalSolutionSource.cc
 )
-
-target_link_libraries(calibaccess PRIVATE
-	askap::askap
-	askap::scimath
-)
-target_include_directories(calibaccess PRIVATE
-	${PROJECT_SOURCE_DIR}
-)
-
-set_property(TARGET calibaccess PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 install (
 FILES

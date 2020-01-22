@@ -1,23 +1,12 @@
 #
 # base/accessors/imageaccess
 #
-add_library(imageaccess OBJECT
+add_sources_to_accessors(
 BeamLogger.cc
 FITSImageRW.cc
 FitsImageAccess.cc
 ImageAccessFactory.cc
 )
-
-target_link_libraries(imageaccess PRIVATE
-	askap::askap
-	askap::parallel
-)
-
-target_include_directories(imageaccess PRIVATE
-	${PROJECT_SOURCE_DIR}
-)
-
-set_property(TARGET imageaccess PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 install (FILES
 BeamLogger.h

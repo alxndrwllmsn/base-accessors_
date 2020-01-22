@@ -1,7 +1,7 @@
 #
 # base/accessors/votable
 #
-add_library(votable OBJECT
+add_sources_to_accessors(
 VOTable.cc
 VOTableField.cc
 VOTableGroup.cc
@@ -13,16 +13,6 @@ VOTableTable.cc
 XercescString.cc
 XercescUtils.cc
 )
-
-target_link_libraries(votable PRIVATE
-	askap::askap
-)
-
-target_include_directories(votable PRIVATE
-	${PROJECT_SOURCE_DIR}
-)
-
-set_property(TARGET votable PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 install (FILES
 VOTable.h
