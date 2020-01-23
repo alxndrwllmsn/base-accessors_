@@ -127,14 +127,17 @@ install (FILES
 	DESTINATION include/askap/
 	)
 
-if (CPPUNIT_FOUND)
-  include(CTest)
+include(CTest)
+if (BUILD_TESTING)
+  if (NOT CPPUNIT_FOUND)
+    message(FATAL_ERROR "CPPUnit is needed for building and running unit tests")
+  endif()
   enable_testing()
   add_subdirectory(tests/calibaccess)
   add_subdirectory(tests/dataaccess)
   add_subdirectory(tests/votable)
   add_subdirectory(tests/imageaccess)
-endif (CPPUNIT_FOUND)
+endif ()
 
 
 include(yanda_export)
