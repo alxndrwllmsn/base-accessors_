@@ -1,7 +1,4 @@
 get_filename_component(ASKAP_ACCESSORS_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
-if (NOT TARGET askap::accessors)
-	include("${ASKAP_ACCESSORS_CMAKE_DIR}/askap-accessors-targets.cmake")
-endif()
 
 include(CMakeFindDependencyMacro)
 find_dependency(lofar-common)
@@ -14,4 +11,8 @@ find_dependency(log4cxx)
 find_dependency(Casacore COMPONENTS ms images mirlib coordinates fits lattices measures scimath scimath_f tables casa)
 if ("@CPPUNIT_FOUND@")
 	find_dependency(CPPUnit)
+endif()
+
+if (NOT TARGET askap::accessors)
+	include("${ASKAP_ACCESSORS_CMAKE_DIR}/askap-accessors-targets.cmake")
 endif()
