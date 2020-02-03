@@ -229,7 +229,7 @@ public:
   /// non-const implementation, which works with a different type of the
   /// iterator.
   /// @return a const reference to the associated iterator
-  const TableConstDataIterator& iterator() const throw(DataAccessLogicError);
+  const TableConstDataIterator& iterator() const;
 private:  
   /// a helper adapter method to set the time via non-const reference
   /// @param[in] time a reference to buffer to fill with the current time 

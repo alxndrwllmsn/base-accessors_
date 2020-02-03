@@ -316,7 +316,6 @@ void TableConstDataAccessor::invalidateRotatedUVW() const throw()
 /// iterator.
 /// @return a const reference to the associated iterator
 const TableConstDataIterator& TableConstDataAccessor::iterator() const
-                                            throw(DataAccessLogicError)
 {
   return itsIterator;
 }
