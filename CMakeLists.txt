@@ -10,10 +10,12 @@ else ()
 	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
 	TIMEOUT 5)
 endif ()
+set (CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/askap-cmake")
+include(version_utils)
+get_version_string()
 
 project(askap-accessors VERSION ${VERSION_SHORT} LANGUAGES C CXX)
 
-set (CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/askap-cmake")
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/askap_accessors.h.in
                 ${CMAKE_CURRENT_SOURCE_DIR}/askap_accessors.h)
