@@ -1,0 +1,8 @@
+#include <string>
+#include "askap_accessors.h"
+
+  /// @return version of the package
+std::string askap::getAskapPackageVersion_accessors() {
+    return "@VERSION_SHORT@";
+}
+

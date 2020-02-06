@@ -1,7 +1,5 @@
 cmake_minimum_required (VERSION 3.1.0)
 
-project(askap-accessors VERSION 0.0.1 LANGUAGES C CXX)
-
 
 if (EXISTS ${CMAKE_SOURCE_DIR}/askap-cmake)
     execute_process(COMMAND git pull 
@@ -13,6 +11,24 @@ else ()
 	TIMEOUT 5)
 endif ()
 set (CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/askap-cmake")
+include(version_utils)
+get_version_string()
+
+project(askap-accessors VERSION ${VERSION_SHORT} LANGUAGES C CXX)
+
+
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/askap_accessors.h.in
+                ${CMAKE_CURRENT_SOURCE_DIR}/askap_accessors.h)
+
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/askap_accessors.cc.in
+                ${CMAKE_CURRENT_SOURCE_DIR}/askp_accessors.cc)
+
+# Required Version of ASKAP dependencies is the MAJOR and MINOR version
+# of this package. This allows the PATCH versions to change on everything
+# but the version number cannot be less or more than the current version
+# 
+set(REQUIRED_VERSION "${VERSION_MAJOR}.${VERSION_MINOR}")
+
 
 option (CXX11 "Compile as C++11 if possible" YES)
 option (ENABLE_SHARED "Build shared libraries" YES)
@@ -21,9 +37,9 @@ option (ENABLE_RPATH "Include rpath in executables and shared libraries" YES)
 # find packages
 find_package(lofar-common REQUIRED)
 find_package(lofar-blob REQUIRED)
-find_package(askap-askap REQUIRED)
-find_package(askap-scimath REQUIRED)
-find_package(askap-parallel REQUIRED)
+find_package(askap-askap ${REQUIRED_VERSION} REQUIRED)
+find_package(askap-scimath ${REQUIRED_VERSION} REQUIRED)
+find_package(askap-parallel ${REQUIRED_VERSION} REQUIRED)
 find_package(Boost REQUIRED)
 find_package(log4cxx REQUIRED)
 find_package(Casacore REQUIRED COMPONENTS  ms images mirlib coordinates fits lattices measures scimath scimath_f tables casa)
@@ -64,6 +80,10 @@ macro(add_sources_to_accessors)
 		target_sources(accessors PRIVATE ${CMAKE_CURRENT_LIST_DIR}/${arg})
 	endforeach()
 endmacro()
+
+add_sources_to_accessors(
+askap_accessors.cc
+)
 
 add_subdirectory(askap/imageaccess)
 add_subdirectory(askap/dataaccess)
