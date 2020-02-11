@@ -21,7 +21,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/askap_accessors.h.in
                 ${CMAKE_CURRENT_SOURCE_DIR}/askap_accessors.h)
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/askap_accessors.cc.in
-                ${CMAKE_CURRENT_SOURCE_DIR}/askp_accessors.cc)
+                ${CMAKE_CURRENT_SOURCE_DIR}/askap_accessors.cc)
 
 # Required Version of ASKAP dependencies is the MAJOR and MINOR version
 # of this package. This allows the PATCH versions to change on everything
