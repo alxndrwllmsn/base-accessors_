@@ -118,6 +118,9 @@ void askap::accessors::operator<<(const boost::shared_ptr<IDataSelector> &sel,
   if (parset.isDefined("MinUV")) {
       sel->chooseMinUVDistance(parset.getDouble("MinUV"));
   }
+  if (parset.isDefined("MinNonZeroUV")) {
+      sel->chooseMinNonZeroUVDistance(parset.getDouble("MinNonZeroUV"));
+  }
   if (parset.isDefined("MaxUV")) {
       sel->chooseMaxUVDistance(parset.getDouble("MaxUV"));
   }

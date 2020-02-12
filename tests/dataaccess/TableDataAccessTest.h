@@ -262,8 +262,7 @@ void TableDataAccessTest::nonZeroMinUVSelectionTest()
 {
   TableConstDataSource ds(TableTestRunner::msName());
   IDataSelectorPtr sel = ds.createSelector();   
-  // there will be min uv selection for non-zero uv here
-  sel->chooseMinUVDistance(1000.);
+  sel->chooseMinNonZeroUVDistance(1000.);
   for (IConstDataSharedIter it=ds.createConstIterator(sel);it!=it.end();++it) {  
        for (casacore::uInt row=0;row<it->nRow();++row) {
             const casacore::RigidVector<casacore::Double, 3> &uvw = it->uvw()(row);
