@@ -89,6 +89,7 @@ add_subdirectory(askap/imageaccess)
 add_subdirectory(askap/dataaccess)
 add_subdirectory(askap/calibaccess)
 add_subdirectory(askap/votable)
+add_subdirectory(apps)
 
 target_compile_definitions(accessors PUBLIC
 	casa=casacore
