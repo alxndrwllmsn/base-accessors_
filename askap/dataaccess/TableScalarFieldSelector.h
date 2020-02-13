@@ -109,6 +109,16 @@ public:
   /// @param[in] uvDist threshold (in metres)
   virtual void chooseMinUVDistance(casacore::Double uvDist);
 
+  /// @brief Choose samples corresponding to either zero uv-distance or larger than threshold
+  /// @details This effectively rejects the baselines giving a smaller
+  /// uv-distance than the specified threshold (in metres), but unlike chooseMinUVDistance
+  /// preserve samples with uvw equal to exatly zero. One example of such zero uvw samples is
+  /// auto-correlation (which can be filtered out separately by another selector call), but the 
+  /// main motivation behind such method is to preserve completely flagged samples which may not
+  /// have uvw defined (and therefore it could be set to zero)
+  /// @param[in] uvDist threshold
+  virtual void chooseMinNonZeroUVDistance(casacore::Double uvDist);
+
   /// @brief Choose samples corresponding to a uv-distance smaller than threshold
   /// @details This effectively rejects the baselines giving a larger
   /// uv-distance than the specified threshold

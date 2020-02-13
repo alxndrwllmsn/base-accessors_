@@ -5,6 +5,7 @@ add_sources_to_accessors(
 BeamLogger.cc
 FITSImageRW.cc
 FitsImageAccess.cc
+FitsImageAccessParallel.cc
 ImageAccessFactory.cc
 )
 
@@ -14,6 +15,7 @@ CasaImageAccess.h
 CasaImageAccess.tcc
 FITSImageRW.h
 FitsImageAccess.h
+FitsImageAccessParallel.h
 IImageAccess.h
 IImageAccess.tcc
 ImageAccessFactory.h
