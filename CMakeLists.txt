@@ -33,6 +33,7 @@ set(REQUIRED_VERSION "${VERSION_MAJOR}.${VERSION_MINOR}")
 option (CXX11 "Compile as C++11 if possible" YES)
 option (ENABLE_SHARED "Build shared libraries" YES)
 option (ENABLE_RPATH "Include rpath in executables and shared libraries" YES)
+option (ENABLE_OPENMP "Build with OPENMP Support" NO)
 
 # find packages
 find_package(lofar-common REQUIRED)
@@ -56,6 +57,22 @@ if(NOT TARGET uninstall)
     add_custom_target(uninstall
         COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
 endif()
+
+if (ENABLE_OPENMP)
+	find_package(OpenMP)
+    if (OPENMP_FOUND)
+        if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
+            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -qopenmp")
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -qopenmp")
+        else( )
+            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+        endif( )
+    else (OPENMP_FOUND)
+        message(WARNING "Cannot fullfill USE_OPENMP, compiler does not support it")
+    endif (OPENMP_FOUND)
+endif()
+
 
 if (ENABLE_SHARED)
 option (BUILD_SHARED_LIBS "" YES)
@@ -113,6 +130,10 @@ target_link_libraries(accessors
 	${log4cxx_LIBRARY}
 	${XercesC_LIBRARY}
 )
+
+if (OPENMP_FOUND)
+    target_link_libraries(accessors PRIVATE OpenMP::OpenMP_CXX)
+endif (OPENMP_FOUND)
 
 if (CPPUNIT_FOUND)
     target_link_libraries(accessors
