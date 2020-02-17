@@ -132,7 +132,7 @@ target_link_libraries(accessors
 )
 
 if (OPENMP_FOUND)
-    target_link_libraries(accessors PRIVATE OpenMP::OpenMP_CXX)
+    target_link_libraries(accessors OpenMP::OpenMP_CXX)
 endif (OPENMP_FOUND)
 
 if (CPPUNIT_FOUND)
