@@ -47,6 +47,7 @@
 #ifdef _OPENMP
 //boost include
 #include <boost/thread/mutex.hpp>
+#include <boost/thread/lock_guard.hpp>
 #endif
 
 namespace askap {
