@@ -17,11 +17,7 @@ get_version_string()
 project(askap-accessors VERSION ${VERSION_SHORT} LANGUAGES C CXX)
 
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/askap_accessors.h.in
-                ${CMAKE_CURRENT_SOURCE_DIR}/askap_accessors.h)
-
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/askap_accessors.cc.in
-                ${CMAKE_CURRENT_SOURCE_DIR}/askap_accessors.cc)
+configure_file(askap_accessors.cc.in askap_accessors.cc)
 
 # Required Version of ASKAP dependencies is the MAJOR and MINOR version
 # of this package. This allows the PATCH versions to change on everything
@@ -90,17 +86,15 @@ if (CASACORE3 OR CXX11)
 endif()
 
 
-add_library(accessors SHARED)
+add_library(accessors SHARED
+	${CMAKE_CURRENT_BINARY_DIR}/askap_accessors.cc
+)
 
 macro(add_sources_to_accessors)
 	foreach(arg IN ITEMS ${ARGN})
 		target_sources(accessors PRIVATE ${CMAKE_CURRENT_LIST_DIR}/${arg})
 	endforeach()
 endmacro()
-
-add_sources_to_accessors(
-askap_accessors.cc
-)
 
 add_subdirectory(askap/imageaccess)
 add_subdirectory(askap/dataaccess)
