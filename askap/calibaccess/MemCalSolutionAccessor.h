@@ -119,6 +119,17 @@ public:
    /// @return JonesJTerm object with gains and validity flags
    virtual JonesJTerm bandpass(const JonesIndex &index, const casacore::uInt chan) const;
 
+   /// @brief obtain bandpass leakage (D-Jones)
+   /// @details This method retrieves cross-hand elements of the
+   /// channel dependent Jones matrix (polarisation leakages). There are two values
+   /// (corresponding to XY and YX) returned (as members of JonesDTerm
+   /// class). If no leakages are defined for a particular index,
+   /// zero leakages are returned with invalid flags set.
+   /// @param[in] index ant/beam index
+   /// @param[in] chan spectral channel of interest
+   /// @return JonesDTerm object with leakages and validity flags
+   virtual JonesDTerm bpleakage(const JonesIndex &index, const casacore::uInt chan) const;
+
    /// @brief set gains (J-Jones)
    /// @details This method writes parallel-hand gains for both
    /// polarisations (corresponding to XX and YY)
@@ -143,6 +154,14 @@ public:
    /// approximated somehow, e.g. by a polynomial. For simplicity, for now we deal with
    /// gains set explicitly for each channel.
    virtual void setBandpass(const JonesIndex &index, const JonesJTerm &bp, const casacore::uInt chan);
+
+   /// @brief set leakages for a single bandpass channel
+   /// @details This method writes cross-pol leakages corresponding to a single
+   /// spectral channel.
+   /// @param[in] index ant/beam index
+   /// @param[in] bpleakages JonesDTerm object with leakages for the given channel and validity flags
+   /// @param[in] chan spectral channel
+   virtual void setBPLeakage(const JonesIndex &index, const JonesDTerm &bpleakages, const casacore::uInt chan);
 
    /// @brief write back cache, if necessary
    /// @details This method checks whether caches need flush and calls appropriate methods of the filler
@@ -183,6 +202,9 @@ private:
 
    /// @brief bandpasses and validity flags ((2*nChan) x nAnt x nBeam), rows are XX chan 0, YX
    CachedAccessorField<std::pair<casacore::Cube<casacore::Complex>, casacore::Cube<casacore::Bool> > >  itsBandpasses;
+
+   /// @brief bpleakages and validity flags ((2*nChan) x nAnt x nBeam), rows are XX chan 0, YX
+   CachedAccessorField<std::pair<casacore::Cube<casacore::Complex>, casacore::Cube<casacore::Bool> > >  itsBPLeakages;
 
    /// @brief shared pointer to the filler which knows how to write and read cubes
    const boost::shared_ptr<ICalSolutionFiller> itsSolutionFiller;
