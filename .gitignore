@@ -1,5 +1,3 @@
-askap_accessors.h
-askap_accessors.cc
 calibdata.tab/*
 tests/calibaccess-cppunit-results.xml
 tests/imageaccess-cppunit-results.xml
