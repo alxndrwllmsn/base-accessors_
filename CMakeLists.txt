@@ -17,7 +17,7 @@ get_version_string()
 project(askap-accessors VERSION ${VERSION_SHORT} LANGUAGES C CXX)
 
 
-configure_file(askap_accessors.cc.in ${CMAKE_BINARY_DIR}/askap_accessors.cc)
+configure_file(askap_accessors.cc.in ${CMAKE_CURRENT_BINARY_DIR}/askap_accessors.cc)
 
 # Required Version of ASKAP dependencies is the MAJOR and MINOR version
 # of this package. This allows the PATCH versions to change on everything
