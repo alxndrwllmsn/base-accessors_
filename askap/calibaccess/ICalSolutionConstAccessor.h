@@ -96,14 +96,25 @@ struct ICalSolutionConstAccessor {
    /// @param[in] chan spectral channel of interest
    /// @return JonesJTerm object with gains and validity flags
    virtual JonesJTerm bandpass(const JonesIndex &index, const casacore::uInt chan) const = 0;
-   
+
+   /// @brief obtain bandpass leakage (D-Jones)
+   /// @details This method retrieves cross-hand elements of the
+   /// channel dependent Jones matrix (polarisation leakages). There are two values
+   /// (corresponding to XY and YX) returned (as members of JonesDTerm
+   /// class). If no leakages are defined for a particular index,
+   /// zero leakages are returned with invalid flags set.
+   /// @param[in] index ant/beam index
+   /// @param[in] chan spectral channel of interest
+   /// @return JonesDTerm object with leakages and validity flags
+   virtual JonesDTerm bpleakage(const JonesIndex &index, const casacore::uInt chan) const = 0;
+
    // helper methods to simplify access to the calibration parameters
 
    /// @brief obtain full 2x2 Jones Matrix taking all effects into account
    /// @details This method returns resulting 2x2 matrix taking gain, leakage and
    /// bandpass effects (for a given channel) into account. Invalid gains (and bandpass
    /// values) are replaced by 1., invalid leakages are replaced by zeros. This method
-   /// calls gain, bandpass and leakage virtual methods
+   /// calls gain, bandpass, leakage and bpleakage virtual methods
    /// @param[in] index ant/beam index
    /// @param[in] chan spectral channel of interest
    /// @return 2x2 Jones matrix
@@ -112,9 +123,9 @@ struct ICalSolutionConstAccessor {
    /// (14) for details. Our parameters d12 (corresponding to Stokes:XY) and
    /// d21 (corresponding to Stokes::YX) correspond to d_{Ap} and d_{Aq} from
    /// Hamaker, Bregman & Sault, respectively. It is assumed that the gain errors
-   /// are applied after leakages (i.e. R=GD).  
+   /// are applied after leakages (i.e. R=GD).
    casacore::SquareMatrix<casacore::Complex, 2> jones(const JonesIndex &index, const casacore::uInt chan) const;
-      
+
    /// @brief obtain full 2x2 Jones Matrix taking all effects into account
    /// @details This version of the method accepts antenna and beam indices explicitly and
    /// does extra checks before calling the main method expressed via JonesIndex.
@@ -123,7 +134,7 @@ struct ICalSolutionConstAccessor {
    /// @param[in] chan spectral channel of interest
    /// @return 2x2 Jones matrix
    casacore::SquareMatrix<casacore::Complex, 2> jones(const casacore::uInt ant, const casacore::uInt beam, const casacore::uInt chan) const;
-   
+
    /// @brief obtain validity flag for the full 2x2 Jones Matrix
    /// @details This method combines all validity flags for parameters used to compose Jones
    /// matrix and returns true if all elements are valid and false if at least one constituent
@@ -133,7 +144,7 @@ struct ICalSolutionConstAccessor {
    /// @return true, if the matrix returned by jones(...) method called with the same parameters is
    /// valid, false otherwise
    bool jonesAllValid(const JonesIndex &index, const casacore::uInt chan) const;
-   
+
    /// @brief obtain validity flag for the full 2x2 Jones Matrix
    /// @details This version of the method accepts antenna and beam indices explicitly and
    /// does extra checks before calling the main method expressed via JonesIndex.
@@ -153,7 +164,7 @@ struct ICalSolutionConstAccessor {
    /// @return true, if the matrix returned by jones(...) method called with the same parameters is
    /// valid, false otherwise
    bool jonesValid(const JonesIndex &index, const casacore::uInt chan) const;
-   
+
    /// @brief obtain validity flag for the full 2x2 Jones Matrix
    /// @details This version of the method accepts antenna and beam indices explicitly and
    /// does extra checks before calling the main method expressed via JonesIndex.

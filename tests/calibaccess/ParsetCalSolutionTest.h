@@ -52,7 +52,7 @@ class ParsetCalSolutionTest : public CppUnit::TestFixture
 protected:
    static void createDummyParset(ICalSolutionAccessor &acc) {
        for (casacore::uInt ant=0; ant<5; ++ant) {
-            for (casacore::uInt beam=0; beam<4; ++beam) { 
+            for (casacore::uInt beam=0; beam<4; ++beam) {
                  const float tag = float(ant)/100. + float(beam)/1000.;
                  acc.setJonesElement(ant,beam,casacore::Stokes::XX,casacore::Complex(1.1+tag,0.1));
                  acc.setJonesElement(ant,beam,casacore::Stokes::YY,casacore::Complex(1.1,-0.1-tag));
@@ -62,6 +62,8 @@ protected:
                  for (casacore::uInt chan=0; chan<20; ++chan) {
                      acc.setBandpassElement(ant,beam,casacore::Stokes::XX,chan,casacore::Complex(1.,0.));
                      acc.setBandpassElement(ant,beam,casacore::Stokes::YY,chan,casacore::Complex(1.,0.));
+                     acc.setBandpassElement(ant,beam,casacore::Stokes::XY,chan,casacore::Complex(0.,0.));
+                     acc.setBandpassElement(ant,beam,casacore::Stokes::YX,chan,casacore::Complex(0.,0.));
                  }
             }
        }
@@ -106,7 +108,7 @@ protected:
                  const JonesDTerm dTerm = acc.leakage(index);
                  CPPUNIT_ASSERT(dTerm.d12IsValid() && dTerm.d21IsValid());
                  testComplex(casacore::Complex(0.1+tag,-0.1), dTerm.d12());
-                 testComplex(casacore::Complex(-0.1,0.1+tag), dTerm.d21()); 
+                 testComplex(casacore::Complex(-0.1,0.1+tag), dTerm.d21());
 
                  for (casacore::uInt chan=0; chan<20; ++chan) {
                       const JonesJTerm bpTerm = acc.bandpass(index, chan);
@@ -141,6 +143,8 @@ public:
           // Write bandpass for the first channel/antenna/beam.
           acc.setBandpassElement(0,0,casacore::Stokes::XX,0,casacore::Complex(1.,0.));
           acc.setBandpassElement(0,0,casacore::Stokes::YY,0,casacore::Complex(1.,0.));
+          acc.setBandpassElement(0,0,casacore::Stokes::XY,0,casacore::Complex(0.,0.));
+          acc.setBandpassElement(0,0,casacore::Stokes::YX,0,casacore::Complex(0.,0.));
         }
         // now read
         ParsetCalSolutionAccessor acc(fname);
@@ -169,7 +173,7 @@ public:
 
    void testPartiallyUndefined() {
         const std::string fname = "tmp.testparset";
-        const JonesIndex index(0u,0u); 
+        const JonesIndex index(0u,0u);
         {
           // actual write happens in destructor, hence the curly brackets
           ParsetCalSolutionAccessor acc(fname);

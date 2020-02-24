@@ -127,6 +127,28 @@ JonesJTerm MemCalSolutionAccessor::bandpass(const JonesIndex &index, const casac
   return JonesJTerm(g1.first, g1.second, g2.first, g2.second);
 }
 
+/// @brief obtain bandpass leakage (D-Jones)
+/// @details This method retrieves cross-hand elements of the
+/// channel dependent Jones matrix (polarisation leakages). There are two values
+/// (corresponding to XY and YX) returned (as members of JonesDTerm
+/// class). If no leakages are defined for a particular index,
+/// zero leakages are returned with invalid flags set.
+/// @param[in] index ant/beam index
+/// @param[in] chan spectral channel of interest
+/// @return JonesDTerm object with leakages and validity flags
+JonesDTerm MemCalSolutionAccessor::bpleakage(const JonesIndex &index, const casacore::uInt chan) const
+{
+  ASKAPASSERT(itsSolutionFiller);
+  if (itsSolutionFiller->noBPLeakage() && !itsBPLeakages.flushNeeded()) {
+      // return default leakages
+      return JonesDTerm(0., false, 0., false);
+  }
+  const std::pair<casacore::Cube<casacore::Complex>, casacore::Cube<casacore::Bool> >& bpleakages =
+        itsBPLeakages.value(*itsSolutionFiller, &ICalSolutionFiller::fillBPLeakages);
+  const std::pair<casacore::Complex, casacore::Bool> d12 = extract(bpleakages, 2 * chan, index);
+  const std::pair<casacore::Complex, casacore::Bool> d21 = extract(bpleakages, 2 * chan + 1, index);
+  return JonesDTerm(d12.first, d12.second, d21.first, d21.second);
+}
 /// @brief set gains (J-Jones)
 /// @details This method writes parallel-hand gains for both
 /// polarisations (corresponding to XX and YY)
@@ -175,6 +197,21 @@ void MemCalSolutionAccessor::setBandpass(const JonesIndex &index, const JonesJTe
   store(bandpasses, bp.g1(),bp.g1IsValid(), chan * 2, index);
   store(bandpasses, bp.g2(),bp.g2IsValid(), chan * 2 + 1, index);
 }
+/// @brief set leakages for a single bandpass channel
+/// @details This method writes cross-pol leakages corresponding to a single
+/// spectral channel.
+/// @param[in] index ant/beam index
+/// @param[in] bpleakages JonesDTerm object with leakages for the given channel and validity flags
+/// @param[in] chan spectral channel
+void MemCalSolutionAccessor::setBPLeakage(const JonesIndex &index, const JonesDTerm &bpleakages, const casacore::uInt chan)
+{
+  ASKAPCHECK(itsSettersAllowed, "Setters methods are now allowed - roCheck=true in the constructor");
+  ASKAPASSERT(itsSolutionFiller);
+  std::pair<casacore::Cube<casacore::Complex>, casacore::Cube<casacore::Bool> >& bplpair =
+       itsBPLeakages.rwValue(*itsSolutionFiller, &ICalSolutionFiller::fillBPLeakages);
+  store(bplpair, bpleakages.d12(),bpleakages.d12IsValid(), chan * 2, index);
+  store(bplpair, bpleakages.d21(),bpleakages.d21IsValid(), chan * 2 + 1, index);
+}
 
 /// @details helper method to extract value and validity flag for a given ant/beam pair
 /// @param[in] cubes const reference to a cube pair
@@ -184,12 +221,13 @@ void MemCalSolutionAccessor::setBandpass(const JonesIndex &index, const JonesJTe
 std::pair<casacore::Complex, casacore::Bool> MemCalSolutionAccessor::extract(const std::pair<casacore::Cube<casacore::Complex>, casacore::Cube<casacore::Bool> >  &cubes,
                    const casacore::uInt row, const JonesIndex &index)
 {
-  ASKAPDEBUGASSERT(row < cubes.first.nrow());
+  //ASKAPDEBUGASSERT(row < cubes.first.nrow());
   const casacore::Short ant = index.antenna();
   const casacore::Short beam = index.beam();
   ASKAPDEBUGASSERT(cubes.first.shape() == cubes.second.shape());
   ASKAPCHECK((ant >= 0) && (casacore::uInt(ant) < cubes.first.ncolumn()), "Requested antenna index "<<ant<<" is outside the shape of the cache: "<<cubes.first.shape());
   ASKAPCHECK((beam >= 0) && (casacore::uInt(beam) < cubes.first.nplane()), "Requested beam index "<<beam<<" is outside the shape of the cache: "<<cubes.first.shape());
+  ASKAPCHECK((row >= 0) && (casacore::uInt(row) < cubes.first.nrow()), "Requested row (=2*channel) index "<<row<<" is outside the shape of the cache: "<<cubes.first.shape());
   return std::pair<casacore::Complex, casacore::Bool>(cubes.first(row,casacore::uInt(ant),casacore::uInt(beam)),
               cubes.second(row,casacore::uInt(ant),casacore::uInt(beam)));
 }
@@ -231,6 +269,10 @@ void MemCalSolutionAccessor::syncCache() const
       if (itsBandpasses.flushNeeded()) {
           itsSolutionFiller->writeBandpasses(itsBandpasses.value());
           itsBandpasses.flushed();
+      }
+      if (itsBPLeakages.flushNeeded()) {
+          itsSolutionFiller->writeBPLeakages(itsBPLeakages.value());
+          itsBPLeakages.flushed();
       }
   }
 }

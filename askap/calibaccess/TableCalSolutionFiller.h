@@ -57,7 +57,8 @@ namespace accessors {
 /// @details This is an example of a class which knows how to fill buffers
 /// of MemCalSolutionAccessor. The cubes with calibration information are read
 /// from (and written to) a casa table. The table has the following columns:
-/// TIME, GAIN, GAIN_VALID, LEAKAGE, LEAKAGE_VALID, BANDPASS and BANDPASS_VALID.
+/// TIME, GAIN, GAIN_VALID, LEAKAGE, LEAKAGE_VALID, BANDPASS, BANDPASS_VALID,
+/// BPLEAKAGE, BPLEAKAGE_VALID.
 /// This class is initialised with the reference row, which corresponds to the time
 /// requested by the user. If there are gains, leakages or bandpasses defined for
 /// a given row, they are read. Otherwise, a backward search is performed to find
@@ -100,6 +101,11 @@ public:
   /// @param[in] bp pair of cubes with bandpasses and validity flags (to be resised to (2*nChan) x nAnt x nBeam)
   virtual void fillBandpasses(std::pair<casacore::Cube<casacore::Complex>, casacore::Cube<casacore::Bool> > &bp) const;
 
+  /// @brief bpleakage filler
+  /// @details
+  /// @param[in] bp pair of cubes with bandpasses and validity flags (to be resized to (2*nChan) x nAnt x nBeam)
+  virtual void fillBPLeakages(std::pair<casacore::Cube<casacore::Complex>, casacore::Cube<casacore::Bool> > &bpleakages) const;
+
   /// @brief gains writer
   /// @details
   /// @param[in] gains pair of cubes with gains and validity flags (should be 2 x nAnt x nBeam)
@@ -115,6 +121,11 @@ public:
   /// @param[in] bp pair of cubes with bandpasses and validity flags (should be (2*nChan) x nAnt x nBeam)
   virtual void writeBandpasses(const std::pair<casacore::Cube<casacore::Complex>, casacore::Cube<casacore::Bool> > &bp) const;
 
+  /// @brief bpleakage writer
+  /// @details
+  /// @param[in] bpleakages pair of cubes with bpleakages and validity flags (should be (2*nChan) x nAnt x nBeam)
+  virtual void writeBPLeakages(const std::pair<casacore::Cube<casacore::Complex>, casacore::Cube<casacore::Bool> > &bpleakages) const;
+
   /// @brief check for gain solution
   /// @return true, if there is no gain solution, false otherwise
   virtual bool noGain() const;
@@ -126,6 +137,10 @@ public:
   /// @brief check for bandpass solution
   /// @return true, if there is no bandpass solution, false otherwise
   virtual bool noBandpass() const;
+
+  /// @brief check for bpleakage solution
+  /// @return true, if there is no bandpass leakage solution, false otherwise
+  virtual bool noBPLeakage() const;
 
   /// @brief flush the table to disk
   virtual bool flush() { table().flush(); return true; }
@@ -143,7 +158,7 @@ private:
 
   /// @brief helper method to check that the filler is initialised for read only access
   /// @return true, if the filler is expected to do read only operations
-  /// @note Look back until the last defined record is only done for read-only access. Read-write access 
+  /// @note Look back until the last defined record is only done for read-only access. Read-write access
   /// overwrites whatever row is requested
   bool isReadOnly() const;
 
@@ -171,6 +186,9 @@ private:
 
   /// @brief row for bandpasses
   mutable long itsBandpassesRow;
+
+  /// @brief row for bpleakages
+  mutable long itsBPLeakagesRow;
 
   /// @brief Caches the existance of columns as the implementation
   /// for columnExists() is quite expensive
