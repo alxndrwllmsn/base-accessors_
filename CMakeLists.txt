@@ -1,4 +1,8 @@
 cmake_minimum_required (VERSION 3.12.0)
+option(UPDATE_CMAKE "Update the cmake modules" ON)
+ 
+if (UPDATE_CMAKE)
+# Reuse common cmake infrastructure
 
 
 if (EXISTS ${CMAKE_SOURCE_DIR}/askap-cmake)
@@ -10,6 +14,9 @@ else ()
 	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
 	TIMEOUT 5)
 endif ()
+
+endif ()
+
 set (CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/askap-cmake")
 include(version_utils)
 get_version_string()
