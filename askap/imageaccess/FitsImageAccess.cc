@@ -269,16 +269,37 @@ void FitsImageAccess::write(const std::string &name, const casacore::Array<float
 void FitsImageAccess::writeMask(const std::string &name, const casacore::Array<bool> &mask,
                                 const casacore::IPosition &where)
 {
-    casacore::String error = casacore::String("FITS pixel mask not yet implemented");
-    ASKAPLOG_INFO_STR(logger, error);
+    // casacore::String error = casacore::String("FITS pixel mask not yet implemented");
+    // ASKAPLOG_INFO_STR(logger, error);
+
+    casacore::IPosition blc(where);
+    casacore::IPosition trc = blc + mask.shape();
+
+    casacore::Array<float> arr = read(name,blc,trc);
+    for(size_t i=0;i<arr.size();i++){
+        if(!mask.data()[i]){
+            casacore::setNaN(arr.data()[i]);
+        }
+    }
+    write(name,arr,where);
+
 }
 /// @brief write a slice of an image mask
 /// @param[in] name image name
 /// @param[in] arr array with pixels
 void FitsImageAccess::writeMask(const std::string &name, const casacore::Array<bool> &mask)
 {
-    casacore::String error = casacore::String("FITS pixel mask not yet implemented");
-    ASKAPLOG_INFO_STR(logger, error);
+    // casacore::String error = casacore::String("FITS pixel mask not yet implemented");
+    // ASKAPLOG_INFO_STR(logger, error);
+
+    casacore::Array<float> arr = read(name);
+    for(size_t i=0;i<arr.size();i++){
+        if(!mask.data()[i]){
+            casacore::setNaN(arr.data()[i]);
+        }
+    }
+    write(name,arr);
+    
 }
 /// @brief set brightness units of the image
 /// @details
