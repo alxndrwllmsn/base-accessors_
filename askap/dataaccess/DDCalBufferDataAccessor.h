@@ -96,12 +96,19 @@ public:
   /// all visibility data
   ///
   virtual casacore::Cube<casacore::Complex>& rwVisibility();
-    
+   
+  /// Set the number of DD calibration directions for increased buffer size
+  /// (a cube is (nDir*nRow) x nChannel x nPol; each element is a complex visibility)
+  ///
+  void setNDir(casacore::uInt nDir) { itsNDir = nDir; }
+ 
   
 private:
   /// @brief a helper method to ensure the buffer has appropriate shape
   void resizeBufferIfNeeded() const;
-  
+ 
+  mutable casacore::uInt itsNDir;
+ 
   /// @brief actual buffer
   mutable casacore::Cube<casacore::Complex> itsBuffer;
   

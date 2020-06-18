@@ -48,7 +48,7 @@ using namespace askap::accessors;
 /// construct an object linked with the given const accessor
 /// @param[in] acc a reference to the associated accessor
 DDCalBufferDataAccessor::DDCalBufferDataAccessor(const IConstDataAccessor &acc) :
-      MetaDataAccessor(acc) {}
+      MetaDataAccessor(acc), itsNDir(1) {}
   
 /// Read-only visibilities (a cube is nRow x nChannel x nPol; 
 /// each element is a complex visibility)
@@ -82,9 +82,9 @@ void DDCalBufferDataAccessor::resizeBufferIfNeeded() const
   #endif
   
   const IConstDataAccessor &acc = getROAccessor();
-  if (itsBuffer.nrow() != acc.nRow() || itsBuffer.ncolumn() != acc.nChannel() ||
+  if (itsBuffer.nrow() != itsNDir*acc.nRow() || itsBuffer.ncolumn() != acc.nChannel() ||
                                         itsBuffer.nplane() != acc.nPol()) {
-      itsBuffer.resize(acc.nRow(), acc.nChannel(), acc.nPol());
+      itsBuffer.resize(itsNDir*acc.nRow(), acc.nChannel(), acc.nPol());
   }
 }
 
