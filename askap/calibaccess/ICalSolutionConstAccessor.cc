@@ -68,13 +68,13 @@ casacore::SquareMatrix<casacore::Complex, 2> ICalSolutionConstAccessor::jones(co
 /// @param[in] beam beam index
 /// @param[in] chan spectral channel of interest
 /// @return 2x2 Jones matrix
-casacore::SquareMatrix<casacore::Complex, 2> ICalSolutionConstAccessor::jones(const casacore::uInt ant, 
+casacore::SquareMatrix<casacore::Complex, 2> ICalSolutionConstAccessor::jones(const casacore::uInt ant,
                                      const casacore::uInt beam, const casacore::uInt chan) const
 {
   ASKAPCHECK(chan < 16416, "Channel number is supposed to be less than 16416");
   return jones(JonesIndex(ant, beam), chan);
 }
-   
+
 /// @brief obtain validity flag for the full 2x2 Jones Matrix
 /// @details This method combines all validity flags for parameters used to compose Jones
 /// matrix and returns true if at least one component is defined and false if all constituents
@@ -130,9 +130,10 @@ bool ICalSolutionConstAccessor::jonesAllValid(const JonesIndex &index, const cas
   const JonesJTerm gTerm = gain(index);
   const JonesJTerm bpTerm = bandpass(index,chan);
   const JonesDTerm dTerm = leakage(index);
+  const JonesDTerm bpdTerm = bpleakage(index,chan);
 
   return gTerm.g1IsValid() && gTerm.g2IsValid() && bpTerm.g1IsValid() && bpTerm.g2IsValid() &&
-         dTerm.d12IsValid() && dTerm.d21IsValid();
+         dTerm.d12IsValid() && dTerm.d21IsValid() && bpdTerm.d12IsValid() && bpdTerm.d21IsValid();
 }
 
 std::pair<casa::SquareMatrix<casa::Complex, 2>, bool> ICalSolutionConstAccessor::jonesAndValidity(const JonesIndex &index, const casa::uInt chan) const
@@ -140,33 +141,41 @@ std::pair<casa::SquareMatrix<casa::Complex, 2>, bool> ICalSolutionConstAccessor:
   const JonesJTerm gTerm = gain(index);
   const JonesJTerm bpTerm = bandpass(index,chan);
   const JonesDTerm dTerm = leakage(index);
+  const JonesDTerm bpdTerm = bpleakage(index,chan);
   const bool leakageValid = dTerm.d12IsValid() && dTerm.d21IsValid();
+  const bool bpleakageValid = bpdTerm.d12IsValid() && bpdTerm.d21IsValid();
+  const bool anyLeakageValid = leakageValid || bpleakageValid;
 
   // MV: there is a serious issue/contradiction in how we use the system now vs. how it was designed
   // the following change is a hack changing the logic w.r.t. documentation (OR instead of AND),
   // we probably have to think how we approach it in the future when we have just bandpass or just gains, etc
-  bool valid = (gTerm.g1IsValid() && gTerm.g2IsValid()) || leakageValid ||
+  bool valid = (gTerm.g1IsValid() && gTerm.g2IsValid()) || anyLeakageValid ||
               (bpTerm.g1IsValid() && bpTerm.g2IsValid());
 
   if (!valid) return std::pair<casa::SquareMatrix<casa::Complex, 2>, bool>(casa::SquareMatrix<casa::Complex, 2>(),valid);
 
-  casa::SquareMatrix<casa::Complex, 2> result(leakageValid ? casa::SquareMatrix<casa::Complex, 2>::General :
+  casa::SquareMatrix<casa::Complex, 2> result(anyLeakageValid ? casa::SquareMatrix<casa::Complex, 2>::General :
       casa::SquareMatrix<casa::Complex, 2>::Diagonal);
 
   result(0,0) = gTerm.g1IsValid() ? gTerm.g1() : casa::Complex(1.,0.);
   result(1,1) = gTerm.g2IsValid() ? gTerm.g2() : casa::Complex(1.,0.);
 
+  // Note: here we assume that only one of leakage and bpleakage is valid for the cases of interest.
+  // The maths will get more complicated otherwise
   if (leakageValid) {
      result(0,1) = (dTerm.d12IsValid() ? dTerm.d12() : 0.) * result(0,0);
      result(1,0) = (dTerm.d21IsValid() ? -dTerm.d21() : 0.) * result(1,1);
+  } else if (bpleakageValid) {
+     result(0,1) = (bpdTerm.d12IsValid() ? bpdTerm.d12() : 0.) * result(0,0);
+     result(1,0) = (bpdTerm.d21IsValid() ? -bpdTerm.d21() : 0.) * result(1,1);
   }
 
   if (bpTerm.g1IsValid()) {
       result(0,0) *= bpTerm.g1();
-      if (leakageValid) result(1,0) *= bpTerm.g1();
+      if (anyLeakageValid) result(1,0) *= bpTerm.g1();
   }
   if (bpTerm.g2IsValid()) {
-      if (leakageValid) result(0,1) *= bpTerm.g2();
+      if (anyLeakageValid) result(0,1) *= bpTerm.g2();
       result(1,1) *= bpTerm.g2();
   }
   return std::pair<casa::SquareMatrix<casa::Complex, 2>, bool>(result,valid);

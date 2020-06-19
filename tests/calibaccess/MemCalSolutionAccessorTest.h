@@ -1,7 +1,7 @@
 /// @file
 ///
 /// Unit test for the memory-based implementation of the interface to access
-/// calibration solutions. It is also used in the table-based implementation. 
+/// calibration solutions. It is also used in the table-based implementation.
 ///
 ///
 /// @copyright (c) 2007 CSIRO
@@ -54,13 +54,13 @@ class MemCalSolutionAccessorTest : public CppUnit::TestFixture,
    CPPUNIT_TEST(testCache);
    CPPUNIT_TEST(testWriteGains);
    CPPUNIT_TEST(testWriteLeakages);
-   CPPUNIT_TEST(testWriteBandpasses);   
+   CPPUNIT_TEST(testWriteBandpasses);
    CPPUNIT_TEST_EXCEPTION(testOverwriteROGains,AskapError);
    CPPUNIT_TEST_EXCEPTION(testOverwriteROLeakages,AskapError);
    CPPUNIT_TEST_EXCEPTION(testOverwriteROBandpasses,AskapError);
    CPPUNIT_TEST_EXCEPTION(testOverwriteXX,AskapError);
    CPPUNIT_TEST_EXCEPTION(testOverwriteXY,AskapError);
-   CPPUNIT_TEST_EXCEPTION(testOverwriteBPElement,AskapError);   
+   CPPUNIT_TEST_EXCEPTION(testOverwriteBPElement,AskapError);
    CPPUNIT_TEST_SUITE_END();
 protected:
    static void fillCube(casacore::Cube<casacore::Complex> &cube) {
@@ -74,7 +74,7 @@ protected:
            }
       }
    }
-   
+
    void testValue(const casacore::Complex &val, const JonesIndex &index, const casacore::uInt row) const {
       const casacore::uInt ant = casacore::uInt(index.antenna());
       const casacore::uInt beam = casacore::uInt(index.beam());
@@ -82,18 +82,18 @@ protected:
       CPPUNIT_ASSERT(beam < itsNBeam);
       const float scale = (row / 2 + 1) * (row % 2 == 0 ? 1. : -1.);
       const casacore::Complex expected(scale*(float(ant)/100. + float(beam)/10.),
-                                                  -scale*(float(ant)/100. + float(beam)/10.));      
+                                                  -scale*(float(ant)/100. + float(beam)/10.));
       CPPUNIT_ASSERT_DOUBLES_EQUAL(real(expected), real(val), 1e-6);
-      CPPUNIT_ASSERT_DOUBLES_EQUAL(imag(expected), imag(val), 1e-6);      
+      CPPUNIT_ASSERT_DOUBLES_EQUAL(imag(expected), imag(val), 1e-6);
    }
-   
+
    boost::shared_ptr<ICalSolutionAccessor> initAccessor(const bool roFlag) {
       boost::shared_ptr<ICalSolutionFiller> csf(this, utility::NullDeleter());
       boost::shared_ptr<MemCalSolutionAccessor> acc(new MemCalSolutionAccessor(csf,roFlag));
       CPPUNIT_ASSERT(acc);
       return acc;
    }
-   
+
 public:
    void setUp() {
       itsNAnt = 36;
@@ -102,47 +102,58 @@ public:
       // flags showing  that write operation has taken place
       itsGainsWritten  = false;
       itsLeakagesWritten  = false;
-      itsBandpassesWritten  = false;      
+      itsBandpassesWritten  = false;
       // flags showing that read operation has taken place
       itsGainsRead  = false;
       itsLeakagesRead  = false;
-      itsBandpassesRead  = false;            
+      itsBandpassesRead  = false;
    }
 
   // methods of the solution filler
-  /// @brief gains filler  
+  /// @brief gains filler
   /// @details
   /// @param[in] gains pair of cubes with gains and validity flags (to be resised to 2 x nAnt x nBeam)
   virtual void fillGains(std::pair<casacore::Cube<casacore::Complex>, casacore::Cube<casacore::Bool> > &gains) const {
      gains.first.resize(2, itsNAnt, itsNBeam);
      gains.second.resize(2, itsNAnt, itsNBeam);
-     gains.second.set(true);     
+     gains.second.set(true);
      fillCube(gains.first);
      itsGainsRead = true;
   }
-  
-  /// @brief leakage filler  
+
+  /// @brief leakage filler
   /// @details
   /// @param[in] leakages pair of cubes with leakages and validity flags (to be resised to 2 x nAnt x nBeam)
   virtual void fillLeakages(std::pair<casacore::Cube<casacore::Complex>, casacore::Cube<casacore::Bool> > &leakages) const {
      leakages.first.resize(2, itsNAnt, itsNBeam);
      leakages.second.resize(2, itsNAnt, itsNBeam);
-     leakages.second.set(true);     
+     leakages.second.set(true);
      fillCube(leakages.first);
      itsLeakagesRead = true;
   }
 
-  /// @brief bandpass filler  
+  /// @brief bandpass filler
   /// @details
   /// @param[in] bp pair of cubes with bandpasses and validity flags (to be resised to (2*nChan) x nAnt x nBeam)
   virtual void fillBandpasses(std::pair<casacore::Cube<casacore::Complex>, casacore::Cube<casacore::Bool> > &bp) const {
      bp.first.resize(2*itsNChan, itsNAnt, itsNBeam);
      bp.second.resize(2*itsNChan, itsNAnt, itsNBeam);
-     bp.second.set(true);     
-     fillCube(bp.first);  
+     bp.second.set(true);
+     fillCube(bp.first);
      itsBandpassesRead = true;
   }
-  
+
+  /// @brief bandpass leakage filler
+  /// @details
+  /// @param[in] bp pair of cubes with bandpasses and validity flags (to be resised to (2*nChan) x nAnt x nBeam)
+  virtual void fillBPLeakages(std::pair<casacore::Cube<casacore::Complex>, casacore::Cube<casacore::Bool> > &bpl) const {
+     bpl.first.resize(2*itsNChan, itsNAnt, itsNBeam);
+     bpl.second.resize(2*itsNChan, itsNAnt, itsNBeam);
+     bpl.second.set(true);
+     fillCube(bpl.first);
+     itsBPLeakagesRead = true;
+  }
+
   /// @brief gains writer
   /// @details
   /// @param[in] gains pair of cubes with gains and validity flags (should be 2 x nAnt x nBeam)
@@ -150,74 +161,91 @@ public:
      CPPUNIT_ASSERT(gains.first.shape() == gains.second.shape());
      CPPUNIT_ASSERT_EQUAL(size_t(2u),gains.first.nrow());
      CPPUNIT_ASSERT_EQUAL(size_t(itsNAnt),gains.first.ncolumn());
-     CPPUNIT_ASSERT_EQUAL(size_t(itsNBeam),gains.first.nplane());      
+     CPPUNIT_ASSERT_EQUAL(size_t(itsNBeam),gains.first.nplane());
      itsGainsWritten = true;
   }
-  
-  /// @brief leakage writer  
+
+  /// @brief leakage writer
   /// @details
   /// @param[in] leakages pair of cubes with leakages and validity flags (should be 2 x nAnt x nBeam)
   virtual void writeLeakages(const std::pair<casacore::Cube<casacore::Complex>, casacore::Cube<casacore::Bool> > &leakages) const {
      CPPUNIT_ASSERT(leakages.first.shape() == leakages.second.shape());
      CPPUNIT_ASSERT_EQUAL(size_t(2u),leakages.first.nrow());
      CPPUNIT_ASSERT_EQUAL(size_t(itsNAnt),leakages.first.ncolumn());
-     CPPUNIT_ASSERT_EQUAL(size_t(itsNBeam),leakages.first.nplane());      
-     itsLeakagesWritten = true;  
+     CPPUNIT_ASSERT_EQUAL(size_t(itsNBeam),leakages.first.nplane());
+     itsLeakagesWritten = true;
   }
 
-  /// @brief bandpass writer  
+  /// @brief bandpass writer
   /// @details
   /// @param[in] bp pair of cubes with bandpasses and validity flags (should be (2*nChan) x nAnt x nBeam)
   virtual void writeBandpasses(const std::pair<casacore::Cube<casacore::Complex>, casacore::Cube<casacore::Bool> > &bp) const {
      CPPUNIT_ASSERT(bp.first.shape() == bp.second.shape());
      CPPUNIT_ASSERT_EQUAL(size_t(2*itsNChan),bp.first.nrow());
      CPPUNIT_ASSERT_EQUAL(size_t(itsNAnt),bp.first.ncolumn());
-     CPPUNIT_ASSERT_EQUAL(size_t(itsNBeam),bp.first.nplane());      
-     itsBandpassesWritten = true;    
+     CPPUNIT_ASSERT_EQUAL(size_t(itsNBeam),bp.first.nplane());
+     itsBandpassesWritten = true;
   }
-   
+
+  /// @brief bandpass leakage writer
+  /// @details
+  /// @param[in] bpl pair of cubes with bandpass leakages and validity flags (should be (2*nChan) x nAnt x nBeam)
+  virtual void writeBPLeakages(const std::pair<casacore::Cube<casacore::Complex>, casacore::Cube<casacore::Bool> > &bpl) const {
+     CPPUNIT_ASSERT(bpl.first.shape() == bpl.second.shape());
+     CPPUNIT_ASSERT_EQUAL(size_t(2*itsNChan),bpl.first.nrow());
+     CPPUNIT_ASSERT_EQUAL(size_t(itsNAnt),bpl.first.ncolumn());
+     CPPUNIT_ASSERT_EQUAL(size_t(itsNBeam),bpl.first.nplane());
+     itsBPLeakagesWritten = true;
+  }
+
   // test methods
   void testRead() {
      boost::shared_ptr<ICalSolutionAccessor> acc = initAccessor(true);
      CPPUNIT_ASSERT(!itsGainsRead);
      CPPUNIT_ASSERT(!itsLeakagesRead);
      CPPUNIT_ASSERT(!itsBandpassesRead);
+     CPPUNIT_ASSERT(!itsBPLeakagesRead);
      CPPUNIT_ASSERT(!itsGainsWritten);
      CPPUNIT_ASSERT(!itsLeakagesWritten);
      CPPUNIT_ASSERT(!itsBandpassesWritten);
+     CPPUNIT_ASSERT(!itsBPLeakagesWritten);
      for (casacore::uInt ant = 0; ant<itsNAnt; ++ant) {
           for (casacore::uInt beam = 0; beam<itsNBeam; ++beam) {
                const JonesIndex index(ant,beam);
                const JonesJTerm gain = acc->gain(index);
                CPPUNIT_ASSERT(gain.g1IsValid());
-               CPPUNIT_ASSERT(gain.g2IsValid());               
+               CPPUNIT_ASSERT(gain.g2IsValid());
                testValue(gain.g1(),index,0);
-               testValue(gain.g2(),index,1);               
+               testValue(gain.g2(),index,1);
           }
      }
      CPPUNIT_ASSERT(itsGainsRead);
      CPPUNIT_ASSERT(!itsLeakagesRead);
      CPPUNIT_ASSERT(!itsBandpassesRead);
+     CPPUNIT_ASSERT(!itsBPLeakagesRead);
      CPPUNIT_ASSERT(!itsGainsWritten);
      CPPUNIT_ASSERT(!itsLeakagesWritten);
      CPPUNIT_ASSERT(!itsBandpassesWritten);
+     CPPUNIT_ASSERT(!itsBPLeakagesWritten);
 
      for (casacore::uInt ant = 0; ant<itsNAnt; ++ant) {
           for (casacore::uInt beam = 0; beam<itsNBeam; ++beam) {
                const JonesIndex index(ant,beam);
                const JonesDTerm leakage = acc->leakage(index);
                CPPUNIT_ASSERT(leakage.d12IsValid());
-               CPPUNIT_ASSERT(leakage.d21IsValid());               
+               CPPUNIT_ASSERT(leakage.d21IsValid());
                testValue(leakage.d12(),index,0);
-               testValue(leakage.d21(),index,1);               
+               testValue(leakage.d21(),index,1);
           }
      }
      CPPUNIT_ASSERT(itsGainsRead);
      CPPUNIT_ASSERT(itsLeakagesRead);
      CPPUNIT_ASSERT(!itsBandpassesRead);
+     CPPUNIT_ASSERT(!itsBPLeakagesRead);
      CPPUNIT_ASSERT(!itsGainsWritten);
      CPPUNIT_ASSERT(!itsLeakagesWritten);
      CPPUNIT_ASSERT(!itsBandpassesWritten);
+     CPPUNIT_ASSERT(!itsBPLeakagesWritten);
 
      for (casacore::uInt ant = 0; ant<itsNAnt; ++ant) {
           for (casacore::uInt beam = 0; beam<itsNBeam; ++beam) {
@@ -225,52 +253,82 @@ public:
                for (casacore::uInt chan = 0; chan<itsNChan; ++chan) {
                     const JonesJTerm bp = acc->bandpass(index,chan);
                     CPPUNIT_ASSERT(bp.g1IsValid());
-                    CPPUNIT_ASSERT(bp.g2IsValid());               
+                    CPPUNIT_ASSERT(bp.g2IsValid());
                     testValue(bp.g1(), index, 2 * chan);
-                    testValue(bp.g2(), index, 2 * chan + 1);               
+                    testValue(bp.g2(), index, 2 * chan + 1);
                }
           }
      }
      CPPUNIT_ASSERT(itsGainsRead);
      CPPUNIT_ASSERT(itsLeakagesRead);
      CPPUNIT_ASSERT(itsBandpassesRead);
+     CPPUNIT_ASSERT(!itsBPLeakagesRead);
      CPPUNIT_ASSERT(!itsGainsWritten);
      CPPUNIT_ASSERT(!itsLeakagesWritten);
      CPPUNIT_ASSERT(!itsBandpassesWritten);
+     CPPUNIT_ASSERT(!itsBPLeakagesWritten);
+
+     for (casacore::uInt ant = 0; ant<itsNAnt; ++ant) {
+          for (casacore::uInt beam = 0; beam<itsNBeam; ++beam) {
+               const JonesIndex index(ant,beam);
+               for (casacore::uInt chan = 0; chan<itsNChan; ++chan) {
+                    const JonesDTerm bpl = acc->bpleakage(index,chan);
+                    CPPUNIT_ASSERT(bpl.d12IsValid());
+                    CPPUNIT_ASSERT(bpl.d21IsValid());
+                    testValue(bpl.d12(), index, 2 * chan);
+                    testValue(bpl.d21(), index, 2 * chan + 1);
+               }
+          }
+     }
+     CPPUNIT_ASSERT(itsGainsRead);
+     CPPUNIT_ASSERT(itsLeakagesRead);
+     CPPUNIT_ASSERT(itsBandpassesRead);
+     CPPUNIT_ASSERT(itsBPLeakagesRead);
+     CPPUNIT_ASSERT(!itsGainsWritten);
+     CPPUNIT_ASSERT(!itsLeakagesWritten);
+     CPPUNIT_ASSERT(!itsBandpassesWritten);
+     CPPUNIT_ASSERT(!itsBPLeakagesWritten);
      // reset accessor and check that there was no write
      acc.reset();
      CPPUNIT_ASSERT(itsGainsRead);
      CPPUNIT_ASSERT(itsLeakagesRead);
      CPPUNIT_ASSERT(itsBandpassesRead);
+     CPPUNIT_ASSERT(itsBPLeakagesRead);
      CPPUNIT_ASSERT(!itsGainsWritten);
      CPPUNIT_ASSERT(!itsLeakagesWritten);
-     CPPUNIT_ASSERT(!itsBandpassesWritten);     
+     CPPUNIT_ASSERT(!itsBandpassesWritten);
+     CPPUNIT_ASSERT(!itsBPLeakagesWritten);
   }
-  
+
   void testCache() {
-     boost::shared_ptr<ICalSolutionAccessor> acc = initAccessor(true);     
+     boost::shared_ptr<ICalSolutionAccessor> acc = initAccessor(true);
      // the following should read gains, bandpasses and leakages
      acc->jones(0,0,0);
      CPPUNIT_ASSERT(itsGainsRead);
      CPPUNIT_ASSERT(itsLeakagesRead);
      CPPUNIT_ASSERT(itsBandpassesRead);
+     CPPUNIT_ASSERT(itsBPLeakagesRead);
      CPPUNIT_ASSERT(!itsGainsWritten);
      CPPUNIT_ASSERT(!itsLeakagesWritten);
      CPPUNIT_ASSERT(!itsBandpassesWritten);
+     CPPUNIT_ASSERT(!itsBPLeakagesWritten);
      // reset read flags
      itsGainsRead = false;
      itsLeakagesRead = false;
      itsBandpassesRead = false;
+     itsBPLeakagesRead = false;
      // now read operation shouldn't happen because it has been done already
      acc->jones(0,0,0);
      CPPUNIT_ASSERT(!itsGainsRead);
      CPPUNIT_ASSERT(!itsLeakagesRead);
      CPPUNIT_ASSERT(!itsBandpassesRead);
+     CPPUNIT_ASSERT(!itsBPLeakagesRead);
      CPPUNIT_ASSERT(!itsGainsWritten);
      CPPUNIT_ASSERT(!itsLeakagesWritten);
-     CPPUNIT_ASSERT(!itsBandpassesWritten);     
+     CPPUNIT_ASSERT(!itsBandpassesWritten);
+     CPPUNIT_ASSERT(!itsBPLeakagesWritten);
   }
-  
+
   void testWriteGains() {
      boost::shared_ptr<ICalSolutionAccessor> acc = initAccessor(false);
      for (casacore::uInt ant = 0; ant<itsNAnt; ++ant) {
@@ -283,17 +341,19 @@ public:
      CPPUNIT_ASSERT(itsGainsRead);
      CPPUNIT_ASSERT(!itsLeakagesRead);
      CPPUNIT_ASSERT(!itsBandpassesRead);
+     CPPUNIT_ASSERT(!itsBPLeakagesRead);
      // no write happened yet, the values are cached
      CPPUNIT_ASSERT(!itsGainsWritten);
      CPPUNIT_ASSERT(!itsLeakagesWritten);
-     CPPUNIT_ASSERT(!itsBandpassesWritten);     
+     CPPUNIT_ASSERT(!itsBandpassesWritten);
+     CPPUNIT_ASSERT(!itsBPLeakagesWritten);
      // check values
      for (casacore::uInt ant = 0; ant<itsNAnt; ++ant) {
           for (casacore::uInt beam = 0; beam<itsNBeam; ++beam) {
                const JonesIndex index(ant,beam);
                const JonesJTerm gain = acc->gain(index);
                CPPUNIT_ASSERT_EQUAL((ant % 2 == 0),gain.g1IsValid());
-               CPPUNIT_ASSERT_EQUAL((beam % 2 == 0),gain.g2IsValid());               
+               CPPUNIT_ASSERT_EQUAL((beam % 2 == 0),gain.g2IsValid());
                CPPUNIT_ASSERT_DOUBLES_EQUAL(1.,real(gain.g1()),1e-6);
                CPPUNIT_ASSERT_DOUBLES_EQUAL(-1.,imag(gain.g1()),1e-6);
                CPPUNIT_ASSERT_DOUBLES_EQUAL(-1.,real(gain.g2()),1e-6);
@@ -304,7 +364,8 @@ public:
      // now write should be done as the accessor has gone out of scope
      CPPUNIT_ASSERT(itsGainsWritten);
      CPPUNIT_ASSERT(!itsLeakagesWritten);
-     CPPUNIT_ASSERT(!itsBandpassesWritten);     
+     CPPUNIT_ASSERT(!itsBandpassesWritten);
+     CPPUNIT_ASSERT(!itsBPLeakagesWritten);
   }
 
   void testWriteLeakages() {
@@ -319,17 +380,19 @@ public:
      CPPUNIT_ASSERT(!itsGainsRead);
      CPPUNIT_ASSERT(itsLeakagesRead);
      CPPUNIT_ASSERT(!itsBandpassesRead);
+     CPPUNIT_ASSERT(!itsBPLeakagesRead);
      // no write happened yet, the values are cached
      CPPUNIT_ASSERT(!itsGainsWritten);
      CPPUNIT_ASSERT(!itsLeakagesWritten);
-     CPPUNIT_ASSERT(!itsBandpassesWritten);     
+     CPPUNIT_ASSERT(!itsBandpassesWritten);
+     CPPUNIT_ASSERT(!itsBPLeakagesWritten);
      // check values
      for (casacore::uInt ant = 0; ant<itsNAnt; ++ant) {
           for (casacore::uInt beam = 0; beam<itsNBeam; ++beam) {
                const JonesIndex index(ant,beam);
                const JonesDTerm leakage = acc->leakage(index);
                CPPUNIT_ASSERT_EQUAL((ant % 2 == 0),leakage.d12IsValid());
-               CPPUNIT_ASSERT_EQUAL((beam % 2 == 0),leakage.d21IsValid());               
+               CPPUNIT_ASSERT_EQUAL((beam % 2 == 0),leakage.d21IsValid());
                CPPUNIT_ASSERT_DOUBLES_EQUAL(1.,real(leakage.d12()),1e-6);
                CPPUNIT_ASSERT_DOUBLES_EQUAL(-1.,imag(leakage.d12()),1e-6);
                CPPUNIT_ASSERT_DOUBLES_EQUAL(-1.,real(leakage.d21()),1e-6);
@@ -340,45 +403,98 @@ public:
      // now write should be done as the accessor has gone out of scope
      CPPUNIT_ASSERT(!itsGainsWritten);
      CPPUNIT_ASSERT(itsLeakagesWritten);
-     CPPUNIT_ASSERT(!itsBandpassesWritten);     
+     CPPUNIT_ASSERT(!itsBandpassesWritten);
+     CPPUNIT_ASSERT(!itsBPLeakagesWritten);
   }
 
-  void testWriteBandpasses() {
+void testWriteBandpasses() {
+   boost::shared_ptr<ICalSolutionAccessor> acc = initAccessor(false);
+   for (casacore::uInt ant = 0; ant<itsNAnt; ++ant) {
+        for (casacore::uInt beam = 0; beam<itsNBeam; ++beam) {
+             const JonesIndex index(ant,beam);
+             const JonesJTerm bp(casacore::Complex(1.,-1.), (ant % 2 == 0), casacore::Complex(-1.,1.), (beam % 2 == 0));
+             for (casacore::uInt chan = 0; chan<itsNChan; chan+=2) {
+                  acc->setBandpass(index,bp,chan);
+             }
+        }
+   }
+   CPPUNIT_ASSERT(!itsGainsRead);
+   CPPUNIT_ASSERT(!itsLeakagesRead);
+   CPPUNIT_ASSERT(itsBandpassesRead);
+   CPPUNIT_ASSERT(!itsBPLeakagesRead);
+   // no write happened yet, the values are cached
+   CPPUNIT_ASSERT(!itsGainsWritten);
+   CPPUNIT_ASSERT(!itsLeakagesWritten);
+   CPPUNIT_ASSERT(!itsBandpassesWritten);
+   CPPUNIT_ASSERT(!itsBPLeakagesWritten);
+   // check values
+   for (casacore::uInt ant = 0; ant<itsNAnt; ++ant) {
+        for (casacore::uInt beam = 0; beam<itsNBeam; ++beam) {
+             const JonesIndex index(ant,beam);
+             for (casacore::uInt chan = 0; chan<itsNChan; ++chan) {
+                  const JonesJTerm bp = acc->bandpass(index,chan);
+                  if (chan % 2 == 0) {
+                      CPPUNIT_ASSERT_EQUAL((ant % 2 == 0),bp.g1IsValid());
+                      CPPUNIT_ASSERT_EQUAL((beam % 2 == 0),bp.g2IsValid());
+                      CPPUNIT_ASSERT_DOUBLES_EQUAL(1.,real(bp.g1()),1e-6);
+                      CPPUNIT_ASSERT_DOUBLES_EQUAL(-1.,imag(bp.g1()),1e-6);
+                      CPPUNIT_ASSERT_DOUBLES_EQUAL(-1.,real(bp.g2()),1e-6);
+                      CPPUNIT_ASSERT_DOUBLES_EQUAL(1.,imag(bp.g2()),1e-6);
+                  } else {
+                      CPPUNIT_ASSERT(bp.g1IsValid());
+                      CPPUNIT_ASSERT(bp.g2IsValid());
+                      testValue(bp.g1(), index, 2 * chan);
+                      testValue(bp.g2(), index, 2 * chan + 1);
+                  }
+             }
+        }
+   }
+   acc.reset();
+   // now write should be done as the accessor has gone out of scope
+   CPPUNIT_ASSERT(!itsGainsWritten);
+   CPPUNIT_ASSERT(!itsLeakagesWritten);
+   CPPUNIT_ASSERT(itsBandpassesWritten);
+   CPPUNIT_ASSERT(!itsBPLeakagesWritten);
+}
+
+  void testWriteBPLeakages() {
      boost::shared_ptr<ICalSolutionAccessor> acc = initAccessor(false);
      for (casacore::uInt ant = 0; ant<itsNAnt; ++ant) {
           for (casacore::uInt beam = 0; beam<itsNBeam; ++beam) {
                const JonesIndex index(ant,beam);
-               const JonesJTerm bp(casacore::Complex(1.,-1.), (ant % 2 == 0), casacore::Complex(-1.,1.), (beam % 2 == 0));
+               const JonesDTerm bpl(casacore::Complex(1.,-1.), (ant % 2 == 0), casacore::Complex(-1.,1.), (beam % 2 == 0));
                for (casacore::uInt chan = 0; chan<itsNChan; chan+=2) {
-                    acc->setBandpass(index,bp,chan);
+                    acc->setBPLeakage(index,bpl,chan);
                }
           }
      }
      CPPUNIT_ASSERT(!itsGainsRead);
      CPPUNIT_ASSERT(!itsLeakagesRead);
-     CPPUNIT_ASSERT(itsBandpassesRead);
+     CPPUNIT_ASSERT(!itsBandpassesRead);
+     CPPUNIT_ASSERT(itsBPLeakagesRead);
      // no write happened yet, the values are cached
      CPPUNIT_ASSERT(!itsGainsWritten);
      CPPUNIT_ASSERT(!itsLeakagesWritten);
-     CPPUNIT_ASSERT(!itsBandpassesWritten);     
+     CPPUNIT_ASSERT(!itsBandpassesWritten);
+     CPPUNIT_ASSERT(!itsBPLeakagesWritten);
      // check values
      for (casacore::uInt ant = 0; ant<itsNAnt; ++ant) {
           for (casacore::uInt beam = 0; beam<itsNBeam; ++beam) {
                const JonesIndex index(ant,beam);
                for (casacore::uInt chan = 0; chan<itsNChan; ++chan) {
-                    const JonesJTerm bp = acc->bandpass(index,chan);
+                    const JonesDTerm bpl = acc->bpleakage(index,chan);
                     if (chan % 2 == 0) {
-                        CPPUNIT_ASSERT_EQUAL((ant % 2 == 0),bp.g1IsValid());
-                        CPPUNIT_ASSERT_EQUAL((beam % 2 == 0),bp.g2IsValid());               
-                        CPPUNIT_ASSERT_DOUBLES_EQUAL(1.,real(bp.g1()),1e-6);
-                        CPPUNIT_ASSERT_DOUBLES_EQUAL(-1.,imag(bp.g1()),1e-6);
-                        CPPUNIT_ASSERT_DOUBLES_EQUAL(-1.,real(bp.g2()),1e-6);
-                        CPPUNIT_ASSERT_DOUBLES_EQUAL(1.,imag(bp.g2()),1e-6);
+                        CPPUNIT_ASSERT_EQUAL((ant % 2 == 0),bpl.d12IsValid());
+                        CPPUNIT_ASSERT_EQUAL((beam % 2 == 0),bpl.d21IsValid());
+                        CPPUNIT_ASSERT_DOUBLES_EQUAL(1.,real(bpl.d12()),1e-6);
+                        CPPUNIT_ASSERT_DOUBLES_EQUAL(-1.,imag(bpl.d12()),1e-6);
+                        CPPUNIT_ASSERT_DOUBLES_EQUAL(-1.,real(bpl.d21()),1e-6);
+                        CPPUNIT_ASSERT_DOUBLES_EQUAL(1.,imag(bpl.d21()),1e-6);
                     } else {
-                        CPPUNIT_ASSERT(bp.g1IsValid());
-                        CPPUNIT_ASSERT(bp.g2IsValid());               
-                        testValue(bp.g1(), index, 2 * chan);
-                        testValue(bp.g2(), index, 2 * chan + 1);                    
+                        CPPUNIT_ASSERT(bpl.d12IsValid());
+                        CPPUNIT_ASSERT(bpl.d21IsValid());
+                        testValue(bpl.d12(), index, 2 * chan);
+                        testValue(bpl.d21(), index, 2 * chan + 1);
                     }
                }
           }
@@ -387,35 +503,42 @@ public:
      // now write should be done as the accessor has gone out of scope
      CPPUNIT_ASSERT(!itsGainsWritten);
      CPPUNIT_ASSERT(!itsLeakagesWritten);
-     CPPUNIT_ASSERT(itsBandpassesWritten);     
+     CPPUNIT_ASSERT(!itsBandpassesWritten);
+     CPPUNIT_ASSERT(itsBPLeakagesWritten);
   }
-  
+
   void testOverwriteROGains() {
      boost::shared_ptr<ICalSolutionAccessor> acc = initAccessor(true);
      const JonesJTerm gain;
-     acc->setGain(JonesIndex(0u,0u),gain);     
+     acc->setGain(JonesIndex(0u,0u),gain);
   }
 
   void testOverwriteROLeakages() {
      boost::shared_ptr<ICalSolutionAccessor> acc = initAccessor(true);
      const JonesDTerm leakage;
-     acc->setLeakage(JonesIndex(0u,0u),leakage);     
+     acc->setLeakage(JonesIndex(0u,0u),leakage);
   }
 
   void testOverwriteROBandpasses() {
      boost::shared_ptr<ICalSolutionAccessor> acc = initAccessor(true);
      const JonesJTerm gain;
-     acc->setBandpass(JonesIndex(0u,0u),gain,0);     
+     acc->setBandpass(JonesIndex(0u,0u),gain,0);
   }
-  
+
+  void testOverwriteROBPLeakages() {
+     boost::shared_ptr<ICalSolutionAccessor> acc = initAccessor(true);
+     const JonesDTerm leakage;
+     acc->setBPLeakage(JonesIndex(0u,0u),leakage,0);
+  }
+
   void testOverwriteXX() {
      boost::shared_ptr<ICalSolutionAccessor> acc = initAccessor(true);
      try {
-       acc->setJonesElement(0,0,casacore::Stokes::XX, casacore::Complex(0.));       
+       acc->setJonesElement(0,0,casacore::Stokes::XX, casacore::Complex(0.));
      }
      catch (const AskapError &) {
        // we should read the gains before write is attempted
-       CPPUNIT_ASSERT(itsGainsRead); 
+       CPPUNIT_ASSERT(itsGainsRead);
        throw;
      }
   }
@@ -423,11 +546,11 @@ public:
   void testOverwriteXY() {
      boost::shared_ptr<ICalSolutionAccessor> acc = initAccessor(true);
      try {
-       acc->setJonesElement(0,0,casacore::Stokes::XY, casacore::Complex(0.));       
+       acc->setJonesElement(0,0,casacore::Stokes::XY, casacore::Complex(0.));
      }
      catch (const AskapError &) {
        // we should read the leakages before write is attempted
-       CPPUNIT_ASSERT(itsLeakagesRead); 
+       CPPUNIT_ASSERT(itsLeakagesRead);
        throw;
      }
   }
@@ -435,29 +558,41 @@ public:
   void testOverwriteBPElement() {
      boost::shared_ptr<ICalSolutionAccessor> acc = initAccessor(true);
      try {
-       acc->setBandpassElement(0,0,casacore::Stokes::XX, 0, casacore::Complex(0.));       
+       acc->setBandpassElement(0,0,casacore::Stokes::XX, 0, casacore::Complex(0.));
      }
      catch (const AskapError &) {
        // we should read the bandpass before write is attempted
-       CPPUNIT_ASSERT(itsBandpassesRead); 
+       CPPUNIT_ASSERT(itsBandpassesRead);
        throw;
      }
   }
-  
+
+  void testOverwriteBPLeakageElement() {
+     boost::shared_ptr<ICalSolutionAccessor> acc = initAccessor(true);
+     try {
+       acc->setBandpassElement(0,0,casacore::Stokes::XY, 0, casacore::Complex(0.));
+     }
+     catch (const AskapError &) {
+       // we should read the bandpass leakage before write is attempted
+       CPPUNIT_ASSERT(itsBPLeakagesRead);
+       throw;
+     }
+  }
+
 private:
   casacore::uInt itsNAnt;
   casacore::uInt itsNBeam;
-  casacore::uInt itsNChan; 
+  casacore::uInt itsNChan;
   mutable bool itsGainsWritten;
   mutable bool itsLeakagesWritten;
   mutable bool itsBandpassesWritten;
+  mutable bool itsBPLeakagesWritten;
   mutable bool itsGainsRead;
   mutable bool itsLeakagesRead;
-  mutable bool itsBandpassesRead;    
+  mutable bool itsBandpassesRead;
+  mutable bool itsBPLeakagesRead;
 };
 
 } // namespace accessors
 
 } // namespace askap
-
-

@@ -1,7 +1,7 @@
 #
 # base/accessors/votable
 #
-add_library(votable OBJECT
+add_sources_to_accessors(
 VOTable.cc
 VOTableField.cc
 VOTableGroup.cc
@@ -13,8 +13,6 @@ VOTableTable.cc
 XercescString.cc
 XercescUtils.cc
 )
-
-set_property(TARGET votable PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 install (FILES
 VOTable.h

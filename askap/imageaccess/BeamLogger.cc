@@ -77,7 +77,7 @@ void BeamLogger::extractBeams(const std::vector<std::string>& imageList)
 
     unsigned int chan = 0;
     for (; image != imageList.end(); image++) {
-        CasaImageAccess ia;
+        CasaImageAccess<> ia;
         itsBeamList[chan] = ia.beamInfo(*image);
         chan++;
     }

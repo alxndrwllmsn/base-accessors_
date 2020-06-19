@@ -1,59 +1,50 @@
-cmake_minimum_required (VERSION 3.1.0)
+cmake_minimum_required (VERSION 3.12.0)
+option(UPDATE_CMAKE "Update the cmake modules" ON)
+ 
+if (UPDATE_CMAKE)
+# Reuse common cmake infrastructure
 
-project(base-accessors VERSION 0.0.1 LANGUAGES C CXX)
 
-
-if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/askap-cmake)
+if (EXISTS ${CMAKE_SOURCE_DIR}/askap-cmake)
     execute_process(COMMAND git pull 
-	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/askap-cmake)
+	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/askap-cmake
+	TIMEOUT 5)
 else ()	
     execute_process(COMMAND git clone https://bitbucket.csiro.au/scm/askapsdp/askap-cmake.git
-	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+	TIMEOUT 5)
 endif ()
-set (CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/askap-cmake")
+
+endif ()
+
+set (CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/askap-cmake")
+include(version_utils)
+get_version_string()
+
+project(askap-accessors VERSION ${VERSION_SHORT} LANGUAGES C CXX)
+
+
+configure_file(askap_accessors.cc.in ${CMAKE_CURRENT_BINARY_DIR}/askap_accessors.cc)
+
+# Required Version of ASKAP dependencies is the MAJOR and MINOR version
+# of this package. This allows the PATCH versions to change on everything
+# but the version number cannot be less or more than the current version
+# 
+set(REQUIRED_VERSION "${VERSION_MAJOR}.${VERSION_MINOR}")
+
 
 option (CXX11 "Compile as C++11 if possible" YES)
 option (ENABLE_SHARED "Build shared libraries" YES)
 option (ENABLE_RPATH "Include rpath in executables and shared libraries" YES)
-
-# Yanda Packages
-# YandaSoft dependencies .. in order
-include(install_yanda_depends)
-find_package(LofarCommon)
-
-set (EXTERNAL_INSTALL_DIR ${CMAKE_INSTALL_PREFIX})
-
-if (NOT LofarCommon_FOUND)
-	install_yanda_depends(lofar-common)
-	find_package(LofarCommon REQUIRED)
-endif ()
-
-find_package(LofarBlob)
-if (NOT LofarBlob_FOUND)
-	install_yanda_depends(lofar-blob)
-	find_package(LofarBlob REQUIRED)
-endif ()
-
-find_package(Askap)
-if (NOT ASKAP_FOUND)
-	install_yanda_depends(base-askap)
-	find_package(Askap REQUIRED)
-endif ()
-
-find_package(Scimath)
-if (NOT SCIMATH_FOUND)
-	install_yanda_depends(base-scimath)
-	find_package(Scimath REQUIRED)
-endif ()
-
-find_package(AskapParallel)
-if (NOT ASKAPPARALLEL_FOUND)
-	install_yanda_depends(base-askapparallel)
-	find_package(AskapParallel REQUIRED)
-endif ()
+option (ENABLE_OPENMP "Build with OPENMP Support" NO)
 
 # find packages
-find_package(Boost REQUIRED)
+find_package(lofar-common REQUIRED)
+find_package(lofar-blob REQUIRED)
+find_package(askap-askap ${REQUIRED_VERSION} REQUIRED)
+find_package(askap-scimath ${REQUIRED_VERSION} REQUIRED)
+find_package(askap-parallel ${REQUIRED_VERSION} REQUIRED)
+find_package(Boost REQUIRED COMPONENTS thread chrono)
 find_package(log4cxx REQUIRED)
 find_package(Casacore REQUIRED COMPONENTS  ms images mirlib coordinates fits lattices measures scimath scimath_f tables casa)
 find_package(XercesC REQUIRED)
@@ -70,6 +61,22 @@ if(NOT TARGET uninstall)
         COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
 endif()
 
+if (ENABLE_OPENMP)
+	find_package(OpenMP)
+    if (OPENMP_FOUND)
+        if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
+            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -qopenmp")
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -qopenmp")
+        else( )
+            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+        endif( )
+    else (OPENMP_FOUND)
+        message(WARNING "Cannot fullfill USE_OPENMP, compiler does not support it")
+    endif (OPENMP_FOUND)
+endif()
+
+
 if (ENABLE_SHARED)
 option (BUILD_SHARED_LIBS "" YES)
     if (ENABLE_RPATH)
@@ -80,65 +87,79 @@ option (BUILD_SHARED_LIBS "" YES)
     endif (ENABLE_RPATH)
 endif(ENABLE_SHARED)
 
-
-
-# include directories
-include_directories( ${CMAKE_SOURCE_DIR} )
-include_directories (${Boost_INCLUDE_DIRS})
-add_definitions(-DHAVE_BOOST)
-include_directories(${log4cxx_INCLUDE_DIRS})
-add_definitions(-DHAVE_LOG4CXX)
-include_directories(${LofarCommon_INCLUDE_DIRS})
-include_directories(${LofarBlob_INCLUDE_DIRS})
-include_directories(${CASACORE_INCLUDE_DIRS})
-add_definitions(-DHAVE_AIPSPP)
-add_definitions(-Dcasa=casacore)
-include_directories(${ASKAP_INCLUDE_DIRS})
-include_directories(${ASKAPPARALLEL_INCLUDE_DIRS})
-include_directories(${SCIMATH_INCLUDE_DIRS})
-include_directories(${XercesC_INCLUDE_DIR})
-
-if (CPPUNIT_FOUND)
-    include_directories(${CPPUNIT_INCLUDE_DIR})
-endif ()
-
 if (CASACORE3 OR CXX11)
 	set(CMAKE_CXX_STANDARD 11)
 	set(CMAKE_CXX_STANDARD_REQUIRED ON)
 endif()
 
 
+add_library(accessors SHARED
+	${CMAKE_CURRENT_BINARY_DIR}/askap_accessors.cc
+)
+
+macro(add_sources_to_accessors)
+	foreach(arg IN ITEMS ${ARGN})
+		target_sources(accessors PRIVATE ${CMAKE_CURRENT_LIST_DIR}/${arg})
+	endforeach()
+endmacro()
+
 add_subdirectory(askap/imageaccess)
 add_subdirectory(askap/dataaccess)
 add_subdirectory(askap/calibaccess)
 add_subdirectory(askap/votable)
+add_subdirectory(apps)
 
-add_library(askap_accessors SHARED
-	$<TARGET_OBJECTS:imageaccess>
-	$<TARGET_OBJECTS:dataaccess>
-	$<TARGET_OBJECTS:calibaccess>
-	$<TARGET_OBJECTS:votable>
+target_compile_definitions(accessors PUBLIC
+	casa=casacore
+	HAVE_AIPSPP
+	HAVE_BOOST
+	HAVE_LOG4CXX
 )
 # add some more tests and sub-directories
 
-target_link_libraries(askap_accessors
+set_target_properties(accessors PROPERTIES
+	OUTPUT_NAME askap_accessors
+)
+
+target_link_libraries(accessors
+	lofar::Blob
+	lofar::Common
+	askap::parallel
+	askap::scimath
+	askap::askap
 	${CASACORE_LIBRARIES}
 	${log4cxx_LIBRARY}
-	${LofarBlob_LIBRARY}
-	${LofarCommon_LIBRARY}
-	${ASKAPPARALLEL_LIBRARY}
-	${SCIMATH_LIBRARY}
-	${ASKAP_LIBRARY}
 	${XercesC_LIBRARY}
-	)
-    
+)
+
+if (OPENMP_FOUND)
+    target_link_libraries(accessors OpenMP::OpenMP_CXX)
+endif (OPENMP_FOUND)
+
 if (CPPUNIT_FOUND)
-    target_link_libraries(askap_accessors
+    target_link_libraries(accessors
         ${CPPUNIT_LIBRARY})
-endif () 
+    target_include_directories(accessors PUBLIC
+        ${CPPUNIT_INCLUDE_DIR}
+    )
+endif ()
+
+target_include_directories(accessors PUBLIC
+	$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
+	$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/askap>
+	$<INSTALL_INTERFACE:include>
+	$<INSTALL_INTERFACE:include/askap>
+	${Boost_INCLUDE_DIRS}
+	${log4cxx_INCLUDE_DIRS}
+	${CASACORE_INCLUDE_DIRS}
+	${XercesC_INCLUDE_DIR}
+)
+
+add_library(askap::accessors ALIAS accessors)
 
 install (
-	TARGETS askap_accessors
+	TARGETS accessors
+	EXPORT askap-accessors-targets
 	RUNTIME DESTINATION bin
 	LIBRARY DESTINATION lib
 	ARCHIVE DESTINATION lib
@@ -148,23 +169,19 @@ install (FILES
 	askap_accessors.h
 	DESTINATION include/askap/
 	)
-if (CPPUNIT_FOUND)
-  include(CTest)
+
+include(CTest)
+if (BUILD_TESTING)
+  if (NOT CPPUNIT_FOUND)
+    message(FATAL_ERROR "CPPUnit is needed for building and running unit tests")
+  endif()
   enable_testing()
-
-  include_directories(${CMAKE_CURRENT_SOURCE_DIR}/tests/calibaccess)
   add_subdirectory(tests/calibaccess)
-
-  include_directories(${CMAKE_CURRENT_SOURCE_DIR}/tests/dataaccess)
   add_subdirectory(tests/dataaccess)
-
-  include_directories(${CMAKE_CURRENT_SOURCE_DIR}/tests/votable)
   add_subdirectory(tests/votable)
-
-  include_directories(${CMAKE_CURRENT_SOURCE_DIR}/tests/timageaccess)
   add_subdirectory(tests/imageaccess)
+endif ()
 
 
-endif (CPPUNIT_FOUND)
-
-
+include(yanda_export)
+yanda_export(askap)

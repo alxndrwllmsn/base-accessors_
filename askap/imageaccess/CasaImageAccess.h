@@ -39,7 +39,9 @@ namespace accessors {
 /// @brief Access casa image
 /// @details This class implements IImageAccess interface for CASA image
 /// @ingroup imageaccess
-struct CasaImageAccess : public IImageAccess {
+
+template <class T = casacore::Float>
+struct CasaImageAccess : public IImageAccess<T> {
 
     //////////////////
     // Reading methods
@@ -53,14 +55,14 @@ struct CasaImageAccess : public IImageAccess {
     /// @brief read full image
     /// @param[in] name image name
     /// @return array with pixels
-    virtual casacore::Array<float> read(const std::string &name) const;
+    virtual casacore::Array<T> read(const std::string &name) const;
 
     /// @brief read part of the image
     /// @param[in] name image name
     /// @param[in] blc bottom left corner of the selection
     /// @param[in] trc top right corner of the selection
     /// @return array with pixels for the selection only
-    virtual casacore::Array<float> read(const std::string &name, const casacore::IPosition &blc,
+    virtual casacore::Array<T> read(const std::string &name, const casacore::IPosition &blc,
                                     const casacore::IPosition &trc) const;
 
     /// @brief obtain coordinate system info
@@ -106,13 +108,13 @@ struct CasaImageAccess : public IImageAccess {
     /// @brief write full image
     /// @param[in] name image name
     /// @param[in] arr array with pixels
-    virtual void write(const std::string &name, const casacore::Array<float> &arr);
+    virtual void write(const std::string &name, const casacore::Array<T> &arr);
 
     /// @brief write a slice of an image
     /// @param[in] name image name
     /// @param[in] arr array with pixels
     /// @param[in] where bottom left corner where to put the slice to (trc is deduced from the array shape)
-    virtual void write(const std::string &name, const casacore::Array<float> &arr,
+    virtual void write(const std::string &name, const casacore::Array<T> &arr,
                        const casacore::IPosition &where);
 
     /// @brief write a slice of an image mask
@@ -172,4 +174,5 @@ struct CasaImageAccess : public IImageAccess {
 } // namespace accessors
 } // namespace askap
 
+#include "CasaImageAccess.tcc"
 #endif

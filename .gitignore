@@ -1,0 +1,6 @@
+calibdata.tab/*
+tests/calibaccess-cppunit-results.xml
+tests/imageaccess-cppunit-results.xml
+tmp.testparset
+tmpemptyfitsimage.fits
+tmpfitsimage.fits

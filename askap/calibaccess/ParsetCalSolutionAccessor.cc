@@ -4,7 +4,7 @@
 /// the parset directly and with a number of tests. It doesn't implement anything related
 /// to bandpass table (and always returns 1. for bandpass and throws an exception if one
 /// attempts to write a bandpass). This is because none of the code written so far deals with
-/// bandpass tables (and any future code will used in conjunction with more a flexible 
+/// bandpass tables (and any future code will used in conjunction with more a flexible
 /// implementation, e.g. table-based). This implementation is just to convert the legacy code.
 /// There is only one implementation of this class which is used for both reading and writing.
 ///
@@ -52,13 +52,13 @@ namespace askap {
 
 namespace accessors {
 
-/// @brief constructor 
+/// @brief constructor
 /// @details It reads the given parset file, if it exists, and caches the values. Write
 /// operations are performed via this cache which is stored into file in the destructor.
 /// @param[in] parset parset file name
 /// @param[in] readonly if true, additional checks are done that file exists, otherwise
 /// it is assumed that we may write a new file
-ParsetCalSolutionAccessor::ParsetCalSolutionAccessor(const std::string &parset, bool readonly) : itsParsetFileName(parset), 
+ParsetCalSolutionAccessor::ParsetCalSolutionAccessor(const std::string &parset, bool readonly) : itsParsetFileName(parset),
         itsWriteRequired(false), itsFirstWrite(true)
 {
   try {
@@ -71,7 +71,7 @@ ParsetCalSolutionAccessor::ParsetCalSolutionAccessor(const std::string &parset, 
          throw;
      }
      ASKAPLOG_INFO_STR(logger, "Set up ParsetCalSolutionAccessor to write results into "<<itsParsetFileName);
-  } 
+  }
 }
 
 /// @brief destructor, stores the cache
@@ -83,11 +83,11 @@ ParsetCalSolutionAccessor::~ParsetCalSolutionAccessor()
       ASKAPLOG_INFO_STR(logger, "Writing out calibration results into a parset file "<<itsParsetFileName);
       const std::vector<std::string> parlist = cache().names();
       std::ofstream os(itsParsetFileName.c_str());
-      for (std::vector<std::string>::const_iterator it = parlist.begin(); 
+      for (std::vector<std::string>::const_iterator it = parlist.begin();
            it != parlist.end(); ++it) {
            const casacore::Complex val = cache().complexValue(*it);
            os<<*it<<" = ["<<real(val)<<","<<imag(val)<<"]"<<std::endl;
-      }     
+      }
   }
 }
 
@@ -108,9 +108,9 @@ void ParsetCalSolutionAccessor::prepareToWrite()
 }
 
 /// @brief set gains (J-Jones)
-/// @details This method writes parallel-hand gains for both 
+/// @details This method writes parallel-hand gains for both
 /// polarisations (corresponding to XX and YY)
-/// @param[in] index ant/beam index 
+/// @param[in] index ant/beam index
 /// @param[in] gains JonesJTerm object with gains and validity flags
 void ParsetCalSolutionAccessor::setGain(const JonesIndex &index, const JonesJTerm &gains)
 {
@@ -119,9 +119,9 @@ void ParsetCalSolutionAccessor::setGain(const JonesIndex &index, const JonesJTer
 }
 
 /// @brief set leakages (D-Jones)
-/// @details This method writes cross-pol leakages  
+/// @details This method writes cross-pol leakages
 /// (corresponding to XY and YX)
-/// @param[in] index ant/beam index 
+/// @param[in] index ant/beam index
 /// @param[in] leakages JonesDTerm object with leakages and validity flags
 void ParsetCalSolutionAccessor::setLeakage(const JonesIndex &index, const JonesDTerm &leakages)
 {
@@ -139,8 +139,17 @@ void ParsetCalSolutionAccessor::setBandpass(const JonesIndex &index, const Jones
   CachedCalSolutionAccessor::setBandpass(index, bp, chan);
 }
 
+/// @brief set gains for a single bandpass leakage channel
+/// @param[in] index ant/beam index
+/// @param[in] bpl JonesDTerm object with gains for the given channel and validity flags
+/// @param[in] chan spectral channel
+void ParsetCalSolutionAccessor::setBPLeakage(const JonesIndex &index, const JonesDTerm &bpl, const casacore::uInt chan)
+{
+  prepareToWrite();
+  CachedCalSolutionAccessor::setBPLeakage(index, bpl, chan);
+}
+
 
 } // namespace accessors
 
 } // namespace askap
-

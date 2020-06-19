@@ -1,6 +1,7 @@
 add_executable(tdataaccess tdataaccess.cc)
+include_directories(${CMAKE_CURRENT_LIST_DIR})
 target_link_libraries(tdataaccess
-	askap_accessors
+	askap::accessors
 	${CPPUNIT_LIBRARY}
 )
 add_test(

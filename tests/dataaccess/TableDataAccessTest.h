@@ -61,6 +61,7 @@ class TableDataAccessTest : public CppUnit::TestFixture {
   CPPUNIT_TEST(corrTypeSelectionTest);
   CPPUNIT_TEST(userDefinedIndexSelectionTest);
   CPPUNIT_TEST(uvDistanceSelectionTest);
+  CPPUNIT_TEST(nonZeroMinUVSelectionTest);
   CPPUNIT_TEST(antennaSelectionTest);
   CPPUNIT_TEST_EXCEPTION(bufferManagerExceptionTest,casacore::TableError);
   CPPUNIT_TEST(bufferManagerTest);
@@ -88,6 +89,8 @@ public:
   void userDefinedIndexSelectionTest();
   /// test of selection based on uv-distance
   void uvDistanceSelectionTest();
+  /// test of selection based on non-zero min uv-distance
+  void nonZeroMinUVSelectionTest();
   /// test of selection based on antenna index
   void antennaSelectionTest();
   /// test of read only operations of the whole table-based implementation
@@ -253,6 +256,37 @@ void TableDataAccessTest::corrTypeSelectionTest()
                            (it->feed1()[row] != it->feed2()[row])); 
        }
   }
+}
+/// test of selection based on non-zero min uv-distance
+void TableDataAccessTest::nonZeroMinUVSelectionTest()
+{
+  TableConstDataSource ds(TableTestRunner::msName());
+  IDataSelectorPtr sel = ds.createSelector();   
+  sel->chooseMinNonZeroUVDistance(1000.);
+  for (IConstDataSharedIter it=ds.createConstIterator(sel);it!=it.end();++it) {  
+       for (casacore::uInt row=0;row<it->nRow();++row) {
+            const casacore::RigidVector<casacore::Double, 3> &uvw = it->uvw()(row);
+            const casacore::Double uvDist = sqrt(casacore::square(uvw(0))+
+                                             casacore::square(uvw(1)));
+            // it's ok to compare doubles with zero here because the specific case with zero uvw
+            // arises from direct assignment of 0. to each uvw coordinate and selection rule
+            // also checks for match
+            CPPUNIT_ASSERT(uvDist>=1000. || (uvw(0) == 0. && uvw(1) == 0. && uvw(2) == 0.)); 
+       }
+  }
+  // explicit selection of auto-correlations to ensure zero uv gets through
+  sel->chooseAutoCorrelations();
+  casacore::uInt counter = 0;
+  for (IConstDataSharedIter it=ds.createConstIterator(sel);it!=it.end();++it) {  
+       counter += it->nRow();
+       for (casacore::uInt row=0;row<it->nRow();++row) {
+            const casacore::RigidVector<casacore::Double, 3> &uvw = it->uvw()(row);
+            const casacore::Double uvDist = sqrt(casacore::square(uvw(0))+
+                                             casacore::square(uvw(1)));
+            CPPUNIT_ASSERT(uvDist < 1e-6);
+       }
+  }
+  CPPUNIT_ASSERT(counter > 0);
 }
 
 /// test of selection based on the minimum/maximum uv distance

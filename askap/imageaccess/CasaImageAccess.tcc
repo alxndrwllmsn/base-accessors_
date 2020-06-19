@@ -27,7 +27,7 @@
 /// @author Max Voronkov <maxim.voronkov@csiro.au>
 ///
 
-#include <askap_accessors.h>
+// have to remove this due to templating #include <askap_accessors.h>
 
 #include <askap/imageaccess/CasaImageAccess.h>
 
@@ -37,7 +37,7 @@
 #include <casacore/images/Regions/ImageRegion.h>
 #include <casacore/images/Regions/RegionHandler.h>
 
-ASKAP_LOGGER(logger, ".casaImageAccessor");
+ASKAP_LOGGER(casaImAccessLogger, ".casaImageAccessor");
 
 using namespace askap;
 using namespace askap::accessors;
@@ -47,24 +47,26 @@ using namespace askap::accessors;
 /// @brief obtain the shape
 /// @param[in] name image name
 /// @return full shape of the given image
-casacore::IPosition CasaImageAccess::shape(const std::string &name) const
+template <class T>
+casacore::IPosition CasaImageAccess<T>::shape(const std::string &name) const
 {
-    casacore::PagedImage<float> img(name);
+    casacore::PagedImage<T> img(name);
     return img.shape();
 }
 
 /// @brief read full image
 /// @param[in] name image name
 /// @return array with pixels
-casacore::Array<float> CasaImageAccess::read(const std::string &name) const
+template <class T>
+casacore::Array<T> CasaImageAccess<T>::read(const std::string &name) const
 {
-    ASKAPLOG_INFO_STR(logger, "Reading CASA image " << name);
-    casacore::PagedImage<float> img(name);
+    ASKAPLOG_INFO_STR(casaImAccessLogger, "Reading CASA image " << name);
+    casacore::PagedImage<T> img(name);
     if (img.hasPixelMask()) {
-        ASKAPLOG_INFO_STR(logger, " - setting unmasked pixels to zero");
+        ASKAPLOG_INFO_STR(casaImAccessLogger, " - setting unmasked pixels to zero");
         // generate an Array of zeros and copy the elements for which the mask is true
-        casacore::Array<float> tempArray(img.get().shape(), 0.0);
-        tempArray = casacore::MaskedArray<float>(img.get(), img.getMask(), casacore::True);
+        casacore::Array<T> tempArray(img.get().shape(), 0.0);
+        tempArray = casacore::MaskedArray<T>(img.get(), img.getMask(), casacore::True);
         return tempArray;
         // The following seems to avoid a copy but takes longer:
         //// Iterate over image array and set any unmasked pixels to zero
@@ -89,17 +91,18 @@ casacore::Array<float> CasaImageAccess::read(const std::string &name) const
 /// @param[in] blc bottom left corner of the selection
 /// @param[in] trc top right corner of the selection
 /// @return array with pixels for the selection only
-casacore::Array<float> CasaImageAccess::read(const std::string &name, const casacore::IPosition &blc,
+template <class T>
+casacore::Array<T> CasaImageAccess<T>::read(const std::string &name, const casacore::IPosition &blc,
         const casacore::IPosition &trc) const
 {
-    ASKAPLOG_INFO_STR(logger, "Reading a slice of the CASA image " << name << " from " << blc << " to " << trc);
-    casacore::PagedImage<float> img(name);
+    ASKAPLOG_INFO_STR(casaImAccessLogger, "Reading a slice of the CASA image " << name << " from " << blc << " to " << trc);
+    casacore::PagedImage<T> img(name);
     if (img.hasPixelMask()) {
-        ASKAPLOG_INFO_STR(logger, " - setting unmasked pixels to zero");
+        ASKAPLOG_INFO_STR(casaImAccessLogger, " - setting unmasked pixels to zero");
         // generate an Array of zeros and copy the elements for which the mask is true
         const casacore::Slicer slicer(blc, trc, casacore::Slicer::endIsLast);
-        casacore::Array<float> tempSlice(img.getSlice(slicer).shape(), 0.0);
-        tempSlice = casacore::MaskedArray<float>(img.getSlice(slicer), img.getMaskSlice(slicer), casacore::True);
+        casacore::Array<T> tempSlice(img.getSlice(slicer).shape(), 0.0);
+        tempSlice = casacore::MaskedArray<T>(img.getSlice(slicer), img.getMaskSlice(slicer), casacore::True);
         return tempSlice;
         // The following seems to avoid a copy but takes longer:
         //// Iterate over image array and set any unmasked pixels to zero
@@ -123,18 +126,20 @@ casacore::Array<float> CasaImageAccess::read(const std::string &name, const casa
 /// @brief obtain coordinate system info
 /// @param[in] name image name
 /// @return coordinate system object
-casacore::CoordinateSystem CasaImageAccess::coordSys(const std::string &name) const
+template <class T>
+casacore::CoordinateSystem CasaImageAccess<T>::coordSys(const std::string &name) const
 {
-    casacore::PagedImage<float> img(name);
+    casacore::PagedImage<T> img(name);
     return img.coordinates();
 }
-casacore::CoordinateSystem CasaImageAccess::coordSysSlice(const std::string &name, const casacore::IPosition &blc,
+template <class T>
+casacore::CoordinateSystem CasaImageAccess<T>::coordSysSlice(const std::string &name, const casacore::IPosition &blc,
         const casacore::IPosition &trc) const
 {
     casacore::Slicer slc(blc, trc, casacore::Slicer::endIsLast);
-    ASKAPLOG_INFO_STR(logger, " CasaImageAccess - Slicer " << slc);
-    casacore::PagedImage<float> img(name);
-    casacore::SubImage<casacore::Float> si = casacore::SubImage<casacore::Float>(img, slc, casacore::AxesSpecifier(casacore::True));
+    ASKAPLOG_INFO_STR(casaImAccessLogger, " CasaImageAccess - Slicer " << slc);
+    casacore::PagedImage<T> img(name);
+    casacore::SubImage<T> si = casacore::SubImage<T>(img, slc, casacore::AxesSpecifier(casacore::True));
     return si.coordinates();
 
 
@@ -142,14 +147,15 @@ casacore::CoordinateSystem CasaImageAccess::coordSysSlice(const std::string &nam
 /// @brief obtain beam info
 /// @param[in] name image name
 /// @return beam info vector
-casacore::Vector<casacore::Quantum<double> > CasaImageAccess::beamInfo(const std::string &name) const
+template <class T>
+casacore::Vector<casacore::Quantum<double> > CasaImageAccess<T>::beamInfo(const std::string &name) const
 {
-    casacore::PagedImage<float> img(name);
+    casacore::PagedImage<T> img(name);
     casacore::ImageInfo ii = img.imageInfo();
     return ii.restoringBeam().toVector();
 }
-
-std::string CasaImageAccess::getUnits(const std::string &name) const
+template <class T>
+std::string CasaImageAccess<T>::getUnits(const std::string &name) const
 {
     casacore::Table tmpTable(name);
     std::string units = tmpTable.keywordSet().asString("units");
@@ -160,17 +166,18 @@ std::string CasaImageAccess::getUnits(const std::string &name) const
 /// @details This reads a given keyword to the image metadata.
 /// @param[in] name Image name
 /// @param[in] keyword The name of the metadata keyword
-std::string CasaImageAccess::getMetadataKeyword(const std::string &name,
+template <class T>
+std::string CasaImageAccess<T>::getMetadataKeyword(const std::string &name,
         const std::string &keyword) const
 {
 
-    casacore::PagedImage<float> img(name);
+    casacore::PagedImage<T> img(name);
     casacore::TableRecord miscinfo = img.miscInfo();
     std::string value = "";
     if (miscinfo.isDefined(keyword)) {
         value = miscinfo.asString(keyword);
     } else {
-        ASKAPLOG_WARN_STR(logger, "Keyword " << keyword << " is not defined in metadata for image " << name);
+        ASKAPLOG_WARN_STR(casaImAccessLogger, "Keyword " << keyword << " is not defined in metadata for image " << name);
     }
     return value;
 
@@ -186,20 +193,22 @@ std::string CasaImageAccess::getMetadataKeyword(const std::string &name,
 /// @param[in] name image name
 /// @param[in] shape full shape of the image
 /// @param[in] csys coordinate system of the full image
-void CasaImageAccess::create(const std::string &name, const casacore::IPosition &shape,
+template <class T>
+void CasaImageAccess<T>::create(const std::string &name, const casacore::IPosition &shape,
                              const casacore::CoordinateSystem &csys)
 {
-    ASKAPLOG_INFO_STR(logger, "Creating a new CASA image " << name << " with the shape " << shape);
-    casacore::PagedImage<float> img(casacore::TiledShape(shape), csys, name);
+    ASKAPLOG_INFO_STR(casaImAccessLogger, "Creating a new CASA image " << name << " with the shape " << shape);
+    casacore::PagedImage<T> img(casacore::TiledShape(shape), csys, name);
 }
 
 /// @brief write full image
 /// @param[in] name image name
 /// @param[in] arr array with pixels
-void CasaImageAccess::write(const std::string &name, const casacore::Array<float> &arr)
+template <class T>
+void CasaImageAccess<T>::write(const std::string &name, const casacore::Array<T> &arr)
 {
-    ASKAPLOG_INFO_STR(logger, "Writing an array with the shape " << arr.shape() << " into a CASA image " << name);
-    casacore::PagedImage<float> img(name);
+    ASKAPLOG_INFO_STR(casaImAccessLogger, "Writing an array with the shape " << arr.shape() << " into a CASA image " << name);
+    casacore::PagedImage<T> img(name);
     img.put(arr);
 }
 
@@ -207,45 +216,48 @@ void CasaImageAccess::write(const std::string &name, const casacore::Array<float
 /// @param[in] name image name
 /// @param[in] arr array with pixels
 /// @param[in] where bottom left corner where to put the slice to (trc is deduced from the array shape)
-void CasaImageAccess::write(const std::string &name, const casacore::Array<float> &arr,
+template <class T>
+void CasaImageAccess<T>::write(const std::string &name, const casacore::Array<T> &arr,
                             const casacore::IPosition &where)
 {
-    ASKAPLOG_INFO_STR(logger, "Writing a slice with the shape " << arr.shape() << " into a CASA image " <<
+    ASKAPLOG_INFO_STR(casaImAccessLogger, "Writing a slice with the shape " << arr.shape() << " into a CASA image " <<
                       name << " at " << where);
-    casacore::PagedImage<float> img(name);
+    casacore::PagedImage<T> img(name);
     img.putSlice(arr, where);
 }
 /// @brief write a slice of an image mask
 /// @param[in] name image name
 /// @param[in] arr array with pixels
 /// @param[in] where bottom left corner where to put the slice to (trc is deduced from the array shape)
-void CasaImageAccess::writeMask(const std::string &name, const casacore::Array<bool> &mask,
+template <class T>
+void CasaImageAccess<T>::writeMask(const std::string &name, const casacore::Array<bool> &mask,
                                 const casacore::IPosition &where)
 {
-    ASKAPLOG_INFO_STR(logger, "Writing a slice with the shape " << mask.shape() << " into a CASA image " <<
+    ASKAPLOG_INFO_STR(casaImAccessLogger, "Writing a slice with the shape " << mask.shape() << " into a CASA image " <<
                       name << " at " << where);
-    casacore::PagedImage<float> img(name);
+    casacore::PagedImage<T> img(name);
     img.pixelMask().putSlice(mask, where);
 }
 
 /// @brief write a slice of an image mask
 /// @param[in] name image name
 /// @param[in] arr array with pixels
-
-void CasaImageAccess::writeMask(const std::string &name, const casacore::Array<bool> &mask)
+template <class T>
+void CasaImageAccess<T>::writeMask(const std::string &name, const casacore::Array<bool> &mask)
 {
-    ASKAPLOG_INFO_STR(logger, "Writing a full mask with the shape " << mask.shape() << " into a CASA image " <<
+    ASKAPLOG_INFO_STR(casaImAccessLogger, "Writing a full mask with the shape " << mask.shape() << " into a CASA image " <<
                       name);
-    casacore::PagedImage<float> img(name);
+    casacore::PagedImage<T> img(name);
     img.pixelMask().put(mask);
 }
 /// @brief set brightness units of the image
 /// @details
 /// @param[in] name image name
 /// @param[in] units string describing brightness units of the image (e.g. "Jy/beam")
-void CasaImageAccess::setUnits(const std::string &name, const std::string &units)
+template <class T>
+void CasaImageAccess<T>::setUnits(const std::string &name, const std::string &units)
 {
-    casacore::PagedImage<float> img(name);
+    casacore::PagedImage<T> img(name);
     img.setUnits(casacore::Unit(units));
 }
 
@@ -256,9 +268,10 @@ void CasaImageAccess::setUnits(const std::string &name, const std::string &units
 /// @param[in] maj major axis in radians
 /// @param[in] min minor axis in radians
 /// @param[in] pa position angle in radians
-void CasaImageAccess::setBeamInfo(const std::string &name, double maj, double min, double pa)
+template <class T>
+void CasaImageAccess<T>::setBeamInfo(const std::string &name, double maj, double min, double pa)
 {
-    casacore::PagedImage<float> img(name);
+    casacore::PagedImage<T> img(name);
     casacore::ImageInfo ii = img.imageInfo();
     ii.setRestoringBeam(casacore::Quantity(maj, "rad"), casacore::Quantity(min, "rad"), casacore::Quantity(pa, "rad"));
     img.setImageInfo(ii);
@@ -269,10 +282,10 @@ void CasaImageAccess::setBeamInfo(const std::string &name, double maj, double mi
 /// but FITS images will have it applied to the pixels ... which is an irreversible process
 /// @param[in] name image name
 /// @param[in] the mask
-
-void CasaImageAccess::makeDefaultMask(const std::string &name)
+template <class T>
+void CasaImageAccess<T>::makeDefaultMask(const std::string &name)
 {
-    casacore::PagedImage<float> img(name);
+    casacore::PagedImage<T> img(name);
 
     // Create a mask and make it default region.
     // need to assert sizes etc ...
@@ -290,11 +303,12 @@ void CasaImageAccess::makeDefaultMask(const std::string &name)
 /// @param[in] keyword The name of the metadata keyword
 /// @param[in] value The value for the keyword, in string format
 /// @param[in] desc A description of the keyword
-void CasaImageAccess::setMetadataKeyword(const std::string &name, const std::string &keyword,
+template <class T>
+void CasaImageAccess<T>::setMetadataKeyword(const std::string &name, const std::string &keyword,
         const std::string value, const std::string &desc)
 {
 
-    casacore::PagedImage<float> img(name);
+    casacore::PagedImage<T> img(name);
     casacore::TableRecord miscinfo = img.miscInfo();
     miscinfo.define(keyword, value);
     miscinfo.setComment(keyword, desc);
@@ -306,10 +320,11 @@ void CasaImageAccess::setMetadataKeyword(const std::string &name, const std::str
 /// @details Adds a string detailing the history of the image
 /// @param[in] name Image name
 /// @param[in] history History comment to add
-void CasaImageAccess::addHistory(const std::string &name, const std::string &history)
+template <class T>
+void CasaImageAccess<T>::addHistory(const std::string &name, const std::string &history)
 {
 
-    casacore::PagedImage<float> img(name);
+    casacore::PagedImage<T> img(name);
     casacore::LogIO log = img.logSink();
     log << history << casacore::LogIO::POST;
 

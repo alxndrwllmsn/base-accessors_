@@ -1,8 +1,7 @@
 #
 # base/accessors/dataaccess
 #
-add_library(dataaccess OBJECT
-
+add_sources_to_accessors(
 BasicDataConverter.cc
 BestWPlaneDataAccessor.cc
 DataAccessError.cc
@@ -57,8 +56,6 @@ TimeDependentSubtable.cc
 UVWMachineCache.cc
 UVWRotationHandler.cc
 )
-
-set_property(TARGET dataaccess PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 install (FILES
 

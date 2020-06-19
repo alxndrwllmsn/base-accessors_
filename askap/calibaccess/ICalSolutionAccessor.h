@@ -77,6 +77,14 @@ struct ICalSolutionAccessor : virtual public ICalSolutionConstAccessor {
    /// gains set explicitly for each channel.
    virtual void setBandpass(const JonesIndex &index, const JonesJTerm &bp, const casacore::uInt chan) = 0;
 
+   /// @brief set leakages for a single bandpass channel
+   /// @details This method writes cross-pol leakages corresponding to a single
+   /// spectral channel.
+   /// @param[in] index ant/beam index
+   /// @param[in] bpleakages JonesDTerm object with leakages for the given channel and validity flags
+   /// @param[in] chan spectral channel
+   virtual void setBPLeakage(const JonesIndex &index, const JonesDTerm &bpleakages, const casacore::uInt chan) = 0;
+
    // additional (non-virtual) helper methods to simplify access (working via virtual methods)
 
    /// @brief set a single element of the Jones matrix (i.e gains or leakages)
@@ -107,7 +115,7 @@ struct ICalSolutionAccessor : virtual public ICalSolutionConstAccessor {
    /// is supported (although it may be changed in the future). Therefore, only XX and YY polarisation indices
    /// are allowed here.
    /// @param[in] index ant/beam index
-   /// @param[in] stokes what element to update (choose either XX or YY)
+   /// @param[in] stokes what element to update (choose from XX,XY,YX and YY)
    /// @param[in] chan spectral channel of interest
    /// @param[in] elem value to set
    void setBandpassElement(const JonesIndex &index, const casacore::Stokes::StokesTypes stokes, const casacore::uInt chan,
@@ -117,7 +125,7 @@ struct ICalSolutionAccessor : virtual public ICalSolutionConstAccessor {
    /// @details This version of the method uses explicitly defined antenna and beam indices.
    /// @param[in] ant ant index
    /// @param[in] beam beam index
-   /// @param[in] stokes what element to update (choose either XX or YY)
+   /// @param[in] stokes what element to update (choose from XX,XY,YX and YY)
    /// @param[in] chan spectral channel of interest
    /// @param[in] elem value to set
    void setBandpassElement(const casacore::uInt ant, const casacore::uInt beam, const casacore::Stokes::StokesTypes stokes,

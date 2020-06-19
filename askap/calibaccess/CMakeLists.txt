@@ -1,7 +1,5 @@
-add_library( calibaccess OBJECT
-
+add_sources_to_accessors(
 CachedCalSolutionAccessor.cc
-CalParamNameHelper.cc
 CalSolutionConstSourceStub.cc
 CalSolutionSourceStub.cc
 CalibAccessFactory.cc
@@ -10,7 +8,6 @@ ChanAdapterCalSolutionConstSource.cc
 ICalSolutionAccessor.cc
 ICalSolutionConstAccessor.cc
 ICalSolutionConstSource.cc
-JonesIndex.cc
 MemCalSolutionAccessor.cc
 ParsetCalSolutionAccessor.cc
 ParsetCalSolutionConstSource.cc
@@ -20,8 +17,6 @@ TableCalSolutionConstSource.cc
 TableCalSolutionFiller.cc
 TableCalSolutionSource.cc
 )
-
-set_property(TARGET calibaccess PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 install (
 FILES

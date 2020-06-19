@@ -38,7 +38,8 @@ namespace askap {
 namespace accessors {
 
 /// @brief void virtual desctructor, to keep the compiler happy
-IImageAccess::~IImageAccess() {}
+template <class T>
+IImageAccess<T>::~IImageAccess<T>() {}
 
 } // namespace accessors
 
