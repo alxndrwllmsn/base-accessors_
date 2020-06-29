@@ -273,12 +273,8 @@ void FitsImageAccess::writeMask(const std::string &name, const casacore::Array<b
     // ASKAPLOG_INFO_STR(logger, error);
 
     casacore::IPosition blc(where);
-<<<<<<< HEAD
-    casacore::IPosition trc = blc + mask.shape() - 1;
-=======
     casacore::IPosition trc = blc + mask.shape();
     trc -= 1;
->>>>>>> 957dc5071dd3e340a356d7fa95f88bc298fb6e5d
 
     casacore::Array<float> arr = read(name,blc,trc);
     for(size_t i=0;i<arr.size();i++){
