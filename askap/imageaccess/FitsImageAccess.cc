@@ -179,7 +179,7 @@ std::string FitsImageAccess::getMetadataKeyword(const std::string &name, const s
     if (fits_open_file(&fptr, fullname.c_str(), READONLY, &status))
         ASKAPCHECK(status == 0, "FITSImageAccess:: Cannot open FITS file");
     status=0;
-    
+
     if (fits_read_key(fptr, TSTRING, keyword.c_str(), value, comment,  &status))
         ASKAPLOG_WARN_STR(logger, "FITSImageAccess:: Cannot find keyword " << keyword << " - fits_read_key returned status " << status);
     status=0;
@@ -273,7 +273,12 @@ void FitsImageAccess::writeMask(const std::string &name, const casacore::Array<b
     // ASKAPLOG_INFO_STR(logger, error);
 
     casacore::IPosition blc(where);
+<<<<<<< HEAD
     casacore::IPosition trc = blc + mask.shape() - 1;
+=======
+    casacore::IPosition trc = blc + mask.shape();
+    trc -= 1;
+>>>>>>> 957dc5071dd3e340a356d7fa95f88bc298fb6e5d
 
     casacore::Array<float> arr = read(name,blc,trc);
     for(size_t i=0;i<arr.size();i++){
@@ -299,7 +304,7 @@ void FitsImageAccess::writeMask(const std::string &name, const casacore::Array<b
         }
     }
     write(name,arr);
-    
+
 }
 /// @brief set brightness units of the image
 /// @details
@@ -362,5 +367,5 @@ void FitsImageAccess::addHistory(const std::string &name, const std::string &his
 
     connect(name);
     itsFITSImage->addHistory(history);
-    
+
 }
