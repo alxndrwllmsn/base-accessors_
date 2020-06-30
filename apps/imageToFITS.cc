@@ -46,7 +46,7 @@
 
 using namespace askap;
 
-ASKAP_LOGGER(logger, "imageToFITS.log");
+ASKAP_LOGGER(logger, ".imageToFITS");
 
 class ConvertApp : public askap::Application {
     public:
