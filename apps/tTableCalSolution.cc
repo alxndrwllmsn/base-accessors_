@@ -29,7 +29,7 @@
 #include <calibaccess/TableCalSolutionConstSource.h>
 #include <askap_accessors.h>
 #include <askap/AskapLogging.h>
-ASKAP_LOGGER(logger, "");
+ASKAP_LOGGER(logger, ".tTableCalSelection");
 
 #include <askap/AskapError.h>
 
