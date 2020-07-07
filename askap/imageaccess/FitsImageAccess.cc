@@ -79,11 +79,7 @@ casacore::Array<float> FitsImageAccess::read(const std::string &name) const
 
     casacore::IPosition blc(shape.nelements(), 0);
     casacore::IPosition trc(shape);
-
-    trc[0] = trc[0] - 1;
-    trc[1] = trc[1] - 1;
-    trc[2] = trc[2] - 1;
-    trc[3] = trc[3] - 1;
+    trc -=1;
 
     return this->read(name, blc, trc);
 
@@ -99,12 +95,12 @@ casacore::Array<float> FitsImageAccess::read(const std::string &name, const casa
         const casacore::IPosition &trc) const
 {
     std::string fullname = name + ".fits";
-    ASKAPLOG_INFO_STR(logger, "Reading a slice of the FITS image " << name << " from " << blc << " to " << trc);
+    // ASKAPLOG_INFO_STR(logger, "Reading a slice of the FITS image " << name << " from " << blc << " to " << trc);
 
     casacore::FITSImage img(fullname);
     casacore::Array<float> buffer;
     casacore::Slicer slc(blc, trc, casacore::Slicer::endIsLast);
-    std::cout << "Reading a slice of the FITS image " << name << " slice " << slc << std::endl;
+    ASKAPLOG_INFO_STR(logger, "Reading a slice of the FITS image " << name << " slice " << slc);
     ASKAPCHECK(img.doGetSlice(buffer, slc) == casacore::False, "Cannot read image");
     return buffer;
 
@@ -179,7 +175,7 @@ std::string FitsImageAccess::getMetadataKeyword(const std::string &name, const s
     if (fits_open_file(&fptr, fullname.c_str(), READONLY, &status))
         ASKAPCHECK(status == 0, "FITSImageAccess:: Cannot open FITS file");
     status=0;
-    
+
     if (fits_read_key(fptr, TSTRING, keyword.c_str(), value, comment,  &status))
         ASKAPLOG_WARN_STR(logger, "FITSImageAccess:: Cannot find keyword " << keyword << " - fits_read_key returned status " << status);
     status=0;
@@ -220,7 +216,10 @@ void FitsImageAccess::create(const std::string &name, const casacore::IPosition 
         error = casacore::String("Failed to create FITSFile");
         ASKAPTHROW(AskapError, error);
     }
-    itsFITSImage->print_hdr();
+    // this is rather verbose
+    #ifdef ASKAP_DEBUG
+        itsFITSImage->print_hdr();
+    #endif
     // make an array
     // this requires that the whole array fits in memory
     // which may not in general be the case
@@ -262,6 +261,31 @@ void FitsImageAccess::write(const std::string &name, const casacore::Array<float
     }
 
 }
+/// @brief write a slice of an image and mask
+/// @param[in] name image name (not used)
+/// @param[in] arr array with pixels
+/// @param[in] mask array with mask
+/// @param[in] where bottom left corner where to put the slice to (trc is deduced from the array shape)
+void FitsImageAccess::write(const std::string &name, const casacore::Array<float> &arr,
+                            const casacore::Array<bool> &mask, const casacore::IPosition &where)
+{
+    ASKAPLOG_INFO_STR(logger, "Writing a slice with the shape " << arr.shape() << " into a FITS image " <<
+                      name << " at " << where);
+    casacore::String error;
+    connect(name);
+    casacore::Array<float> arrmasked;
+    arrmasked = arr;
+    for(size_t i=0;i<arr.size();i++){
+        if(!mask.data()[i]){
+            casacore::setNaN(arrmasked.data()[i]);
+        }
+    }
+    if (!itsFITSImage->write(arrmasked, where)) {
+        error = casacore::String("Failed to write slice");
+        ASKAPTHROW(AskapError, error);
+    }
+
+}
 /// @brief write a slice of an image mask
 /// @param[in] name image name
 /// @param[in] arr array with pixels
@@ -274,6 +298,7 @@ void FitsImageAccess::writeMask(const std::string &name, const casacore::Array<b
 
     casacore::IPosition blc(where);
     casacore::IPosition trc = blc + mask.shape();
+    trc -= 1;
 
     casacore::Array<float> arr = read(name,blc,trc);
     for(size_t i=0;i<arr.size();i++){
@@ -299,7 +324,7 @@ void FitsImageAccess::writeMask(const std::string &name, const casacore::Array<b
         }
     }
     write(name,arr);
-    
+
 }
 /// @brief set brightness units of the image
 /// @details
@@ -362,5 +387,5 @@ void FitsImageAccess::addHistory(const std::string &name, const std::string &his
 
     connect(name);
     itsFITSImage->addHistory(history);
-    
+
 }

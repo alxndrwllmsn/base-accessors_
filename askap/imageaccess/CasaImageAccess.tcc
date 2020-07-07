@@ -218,13 +218,31 @@ void CasaImageAccess<T>::write(const std::string &name, const casacore::Array<T>
 /// @param[in] where bottom left corner where to put the slice to (trc is deduced from the array shape)
 template <class T>
 void CasaImageAccess<T>::write(const std::string &name, const casacore::Array<T> &arr,
-                            const casacore::IPosition &where)
+                               const casacore::IPosition &where)
 {
     ASKAPLOG_INFO_STR(casaImAccessLogger, "Writing a slice with the shape " << arr.shape() << " into a CASA image " <<
                       name << " at " << where);
     casacore::PagedImage<T> img(name);
     img.putSlice(arr, where);
 }
+
+/// @brief write a slice of an image and mask
+/// @param[in] name image name
+/// @param[in] arr array with pixels
+/// @param[in] mask array with mask
+/// @param[in] where bottom left corner where to put the slice to (trc is deduced from the array shape)
+template <class T>
+void CasaImageAccess<T>::write(const std::string &name, const casacore::Array<T> &arr,
+                               const casacore::Array<bool> &mask, const casacore::IPosition &where)
+{
+    ASKAPLOG_INFO_STR(casaImAccessLogger, "Writing a slice with the shape " << arr.shape() << " into a CASA image " <<
+                      name << " at " << where);
+    casacore::PagedImage<T> img(name);
+    img.putSlice(arr, where);
+    img.pixelMask().putSlice(mask, where);
+}
+
+
 /// @brief write a slice of an image mask
 /// @param[in] name image name
 /// @param[in] arr array with pixels
@@ -329,4 +347,3 @@ void CasaImageAccess<T>::addHistory(const std::string &name, const std::string &
     log << history << casacore::LogIO::POST;
 
 }
-
