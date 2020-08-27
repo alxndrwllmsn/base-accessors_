@@ -36,6 +36,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include <askap/imageaccess/IImageAccess.h>
+#include <askap/askapparallel/AskapParallel.h>
 
 namespace askap {
 namespace accessors {
@@ -48,8 +49,17 @@ namespace accessors {
 /// @note CASA images are used by default
 boost::shared_ptr<IImageAccess< casacore::Float > > imageAccessFactory(const LOFAR::ParameterSet &parset);
 
+/// @brief Build an appropriate image access class
+/// @details This is a factory method generating a shared pointer to the image
+/// accessor from the parset file
+/// @param[in] parset parameters containing description of image accessor to be constructed
+/// @param[in] comms, MPI communicator, needed for parallel I/O
+/// @return shared pointer to the image access object
+/// @note CASA images are used by default
+boost::shared_ptr<IImageAccess< casacore::Float > > imageAccessFactory(const LOFAR::ParameterSet &parset,
+                                                                       askapparallel::AskapParallel &comms);
+
 } // namespace accessors
 } // namespace askap
 
 #endif
-

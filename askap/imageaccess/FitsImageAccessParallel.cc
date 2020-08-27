@@ -1,7 +1,9 @@
-/// @file FitsImageAccess.cc
-/// @brief Access FITS image
-/// @details This class implements IImageAccess interface for FITS image
-///
+/// @file FitsImageAccessParallel.cc
+/// @brief Access FITS image using parallel I/O
+/// @details This class implements the IImageAccess interface for FITS images.
+/// This class adds parallel I/O operations in cases where that is possible.
+/// At the moment it can deal with 3d images and 4d images with a degenerate
+/// 3rd or 4th axis.
 /// @copyright (c) 2016 CSIRO
 /// Australia Telescope National Facility (ATNF)
 /// Commonwealth Scientific and Industrial Research Organisation (CSIRO)
@@ -29,44 +31,83 @@
 
 #include <askap_accessors.h>
 
-
 #include <askap/askap/AskapLogging.h>
 #include <casacore/casa/OS/CanonicalConversion.h>
 
 #include <askap/imageaccess/FitsImageAccessParallel.h>
 
 #include <fitsio.h>
-
+#
 ASKAP_LOGGER(logger, ".fitsImageAccessParallel");
 
 using namespace askap;
 using namespace askap::accessors;
 
+/// @brief constructor
+/// @param[in] comms, MPI communicator
+/// @param[in] axis, image axis to distribute over (i.e., for cube: 0,1,2 gives yz,xz,xy planes)
+FitsImageAccessParallel::FitsImageAccessParallel(askapparallel::AskapParallel &comms, uint axis):
+    itsComms(comms), itsAxis(axis), itsParallel(-1)
+{
+    ASKAPLOG_INFO_STR(logger, "Creating parallel FITS accessor with data distributed over axis " << axis);
+}
+
 // reading methods
 
+/// @brief read full image distributed by rank
+/// @param[in] name image name
+/// @return array with pixels
+casacore::Array<float> FitsImageAccessParallel::read(const std::string &name) const
+{
+    if (canDoParallelIO(name)) return read_all(name, itsAxis);
+    else return FitsImageAccess::read(name);
+
+}
+
+/// @brief read part of the image
+/// @param[in] name image name
+/// @param[in] blc bottom left corner of the selection
+/// @param[in] trc top right corner of the selection
+/// @return array with pixels for the selection only
+/// @details The read operation will only be parallel when reading one entire
+/// plane along axes perpendicular to the distribution axis. The ranks should
+/// specify consecutive planes in rank order for this to work correctly.
+casacore::Array<float> FitsImageAccessParallel::read(const std::string &name, const casacore::IPosition &blc,
+                                                     const casacore::IPosition &trc) const
+{
+    bool parallel = canDoParallelIO(name);
+    int section = blctrcTosection(blc,trc);
+
+    if (section>=0 && parallel) {
+        int nsection = itsShape(itsAxis) / itsComms.nProcs();
+        return read_all(name, itsAxis, nsection, section);
+    } else {
+        return FitsImageAccess::read(name, blc, trc);
+    }
+}
+
 /// @brief read part of the image - collective MPI read
-/// @param[in] comms, MPI communicator
 /// @param[in] name image name
 /// @param[in] iax, axis to distribute over: use 1 for 2D images,  0, 1 or 2 for x, y, z, i.e., yz planes, xz planes, xy planes
 /// @return array with pixels for the section of the image read
-casacore::Array<float> FitsImageAccessParallel::read_all(askapparallel::AskapParallel& comms, const std::string &name,
-    int iax) const
+casacore::Array<float> FitsImageAccessParallel::read_all(const std::string &name,
+    int iax, int nsub, int sub) const
 {
     std::string fullname = name;
     if (name.rfind(".fits") == std::string::npos) {
         fullname = name + ".fits";
     }
-    ASKAPASSERT(iax>=0 && iax <=2);
+    ASKAPASSERT(iax>=0);
     ASKAPLOG_INFO_STR(logger, "Reading the FITS image " << name << " distributed over axis " << iax);
 
     MPI_Datatype filetype;
     MPI_Offset offset;
     casa::IPosition bufshape;
-    setFileAccess(comms, fullname, bufshape, offset, filetype, iax);
+    setFileAccess(fullname, bufshape, offset, filetype, iax, nsub, sub);
     MPI_File fh;
     MPI_File_open(MPI_COMM_WORLD, fullname.c_str(), MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);
     MPI_File_set_view(fh, offset, MPI_FLOAT, filetype, "native", MPI_INFO_NULL);
-    const MPI::Offset bufsize = bufshape.product();  // local number to read
+    const MPI_Offset bufsize = bufshape.product();  // local number to read
     casa::Float* buf = new casa::Float[bufsize];
     // Collective read of the whole cube
     MPI_Status status;
@@ -76,17 +117,76 @@ casacore::Array<float> FitsImageAccessParallel::read_all(askapparallel::AskapPar
     casa::Array<casa::Float> buffer(bufshape);
     casa::CanonicalConversion::toLocal(buffer.data(), buf, bufsize);
     delete [] buf;
+    if (nsub > 1) ASKAPLOG_INFO_STR(logger, " - returning section " << sub << ", an array with shape " << buffer.shape());
     return buffer;
+}
+
+/// @brief write full image - across ranks
+/// @param[in] name image name
+/// @return array with pixels
+void FitsImageAccessParallel::write(const std::string &name, const casacore::Array<float> &arr)
+{
+    if (canDoParallelIO(name)) write_all(name, arr, itsAxis);
+    else FitsImageAccess::write(name, arr);
+}
+
+/// @brief write a slice of an image
+/// @param[in] name image name
+/// @param[in] arr array with pixels
+/// @param[in] where bottom left corner where to put the slice to (trc is deduced from the array shape)
+/// @details The write operation will only be parallel when writing one entire
+/// plane along axes perpendicular to the distribution axis. The ranks should
+/// specify consecutive planes in rank order for this to work correctly.
+void FitsImageAccessParallel::write(const std::string &name, const casacore::Array<float> &arr,
+                   const casacore::IPosition &where)
+{
+    bool parallel = canDoParallelIO(name);
+    int section = blctrcTosection(where, where + arr.shape() - 1);
+
+    if (section>=0 && parallel) {
+        int nsection = itsShape(itsAxis) / itsComms.nProcs();
+        write_all(name, arr, itsAxis, nsection, section);
+    } else {
+        FitsImageAccess::write(name, arr, where);
+    }
+}
+
+/// @brief write a slice of an image and mask
+/// @param[in] name image name
+/// @param[in] arr array with pixels
+/// @param[in] mask array with mask
+/// @param[in] where bottom left corner where to put the slice to (trc is deduced from the array shape)
+/// @details The write operation will only be parallel when writing one entire
+/// plane along axes perpendicular to the distribution axis. The ranks should
+/// specify consecutive planes in rank order for this to work correctly.
+void FitsImageAccessParallel::write(const std::string &name, const casacore::Array<float> &arr,
+                   const casacore::Array<bool> &mask, const casacore::IPosition &where)
+{
+   bool parallel = canDoParallelIO(name);
+   int section = blctrcTosection(where, where + arr.shape() - 1);
+
+   if (section>=0 && parallel) {
+       int nsection = itsShape(itsAxis) / itsComms.nProcs();
+       casacore::Array<float> arrmasked;
+       arrmasked = arr;
+       for(size_t i=0;i<arr.size();i++){
+           if(!mask.data()[i]){
+               casacore::setNaN(arrmasked.data()[i]);
+           }
+       }
+       write_all(name, arrmasked, itsAxis, nsection, section);
+   } else {
+       FitsImageAccess::write(name, arr, mask, where);
+   }
 }
 
 /// @brief write an image - collective MPI write.
 /// @details Note that the fits header must be written to disk before calling this.
-/// @param[in] comms, MPI communicator
 /// @param[in] name image name
 /// @param[in] arr array with pixels. Array dimension iax * #ranks must match the corresponding image dimension
 /// @param[in] iax, axis to distribute over: 0, 1 or 2 for x, y, z, i.e., yz planes, xz planes, xy planes
-void FitsImageAccessParallel::write_all(askap::askapparallel::AskapParallel& comms, const std::string &name,
-    const casacore::Array<float> &arr, int iax) const
+void FitsImageAccessParallel::write_all(const std::string &name,
+    const casacore::Array<float> &arr, int iax, int nsub, int sub) const
 {
     ASKAPLOG_INFO_STR(logger, "Writing array with the shape " << arr.shape() << " into a FITS image " <<
                       name << " distributed over axis " << iax);
@@ -94,17 +194,17 @@ void FitsImageAccessParallel::write_all(askap::askapparallel::AskapParallel& com
     if (name.rfind(".fits") == std::string::npos) {
       fullname = name + ".fits";
     }
-    ASKAPASSERT(iax>=0 && iax<=2);
+    ASKAPASSERT(iax>=0);
 
     MPI_Datatype filetype;
     MPI_Offset offset;
     casa::IPosition bufshape;
-    setFileAccess(comms, fullname, bufshape, offset, filetype, iax);
+    setFileAccess(fullname, bufshape, offset, filetype, iax, nsub, sub);
 
     MPI_File fh;
     MPI_File_open(MPI_COMM_WORLD, fullname.c_str(), MPI_MODE_APPEND|MPI_MODE_WRONLY, MPI_INFO_NULL, &fh);
     MPI_File_set_view(fh, offset, MPI_FLOAT, filetype, "native", MPI_INFO_NULL);
-    const MPI::Offset bufsize = bufshape.product();
+    const MPI_Offset bufsize = bufshape.product();
     casa::Float* buf = new casa::Float[bufsize];
     if (arr.contiguousStorage()) {
         casa::CanonicalConversion::fromLocal(buf, arr.data(), bufsize);
@@ -120,13 +220,55 @@ void FitsImageAccessParallel::write_all(askap::askapparallel::AskapParallel& com
     delete [] buf;
 
     // Add fits padding to make file size multiple of 2880
-    if (comms.isMaster()) {
+    if (itsComms.isMaster() && sub == nsub-1) {
         fits_padding(fullname);
     }
 
     // All wait for padding to be written
-    comms.barrier();
+    itsComms.barrier();
 
+}
+
+bool FitsImageAccessParallel::canDoParallelIO(const std::string &name) const
+{
+    if (name != itsName) {
+        // we keep some values cached so cast away const
+        FitsImageAccessParallel *This = (FitsImageAccessParallel *) this;
+        This->itsName = name;
+        casa::IPosition imageShape;
+        casa::Long headersize;
+        std::string fullname = name;
+        if (name.rfind(".fits") == std::string::npos) {
+            fullname = name + ".fits";
+        }
+        decode_header(fullname, imageShape, headersize);
+        int ndim = imageShape.size();
+        This->itsShape.resize(ndim);
+        This->itsShape = imageShape;
+        ASKAPCHECK(itsAxis < ndim, "imageaccess.axis needs to be less than number of image axes");
+        This->itsParallel = ( itsShape(itsAxis) % itsComms.nProcs() == 0  );
+        if (ndim>3) This->itsParallel &= itsShape(2)==1 || itsShape(3)==1;
+    }
+    return itsParallel;
+}
+
+/// @brief turn blc/trc into a section of the cube to read
+/// @param[in] blc bottom left corner of the selection
+/// @param[in] trc top right corner of the selection
+/// @return section number, or -1 if input invalid
+int FitsImageAccessParallel::blctrcTosection(const casacore::IPosition & blc, const casacore::IPosition & trc) const
+{
+    // check we're reading a full plane
+    bool ok = true;
+    for (uint i=0; i<blc.size(); i++ ) {
+        if (i != itsAxis) {
+            ok = ok && blc(i) == 0 && trc(i) == (itsShape(i)-1);
+        } else {
+            ok = ok && blc(i) == trc(i);
+        }
+    }
+    if (ok) return blc(itsAxis) / itsComms.nProcs();
+    return -1;
 }
 
 
@@ -134,9 +276,9 @@ void FitsImageAccessParallel::copy_header(const casa::String &infile, const casa
 {
     using namespace std;
     // get header size
-    casa::Int nx,ny,nz;
+    casa::IPosition shape;
     casa::Long headersize;
-    decode_header(infile, nx, ny, nz, headersize);
+    decode_header(infile, shape, headersize);
     // create the new output file and copy header
     //streampos size;
     char * header;
@@ -155,44 +297,44 @@ void FitsImageAccessParallel::copy_header(const casa::String &infile, const casa
     }
 }
 
-void FitsImageAccessParallel::setFileAccess(askapparallel::AskapParallel& comms, const casa::String& name,
-    casa::IPosition& bufshape, MPI_Offset& offset, MPI_Datatype&  filetype, casacore::Int iax) const
+void FitsImageAccessParallel::setFileAccess(const casa::String& name,
+    casa::IPosition& bufshape, MPI_Offset& offset, MPI_Datatype&  filetype, int iax,
+    int nsub, int sub) const
 {
     // get header and data size, get image dimensions
-    casa::Int nx,ny,nz;
+    casa::IPosition imageShape;
     casa::Long headersize;
-    decode_header(name, nx, ny, nz, headersize);
-    casacore::IPosition cubeshape(3,nx,ny,nz);
-    if (nz == 1) ASKAPASSERT(iax < 2);
-
+    decode_header(name, imageShape, headersize);
+    int nz = imageShape(2);
+    if (imageShape.size()>3) nz *= imageShape(3);
     // Now work out the file access pattern and start offset
     MPI_Status status;
-    const int myrank = comms.rank();
-    const int numprocs = comms.nProcs();
-    int nplane = cubeshape(iax) / numprocs;
-    ASKAPASSERT(cubeshape(iax) == nplane * numprocs);
-    bufshape = cubeshape;
+    const int myrank = itsComms.rank();
+    const int numprocs = itsComms.nProcs();
+    int nplane = imageShape(iax) / numprocs / nsub;
+    ASKAPASSERT(imageShape(iax) == nsub * nplane * numprocs);
+    bufshape = imageShape;
     bufshape(iax) = nplane;
-    MPI::Offset blocksize = nplane;
+    MPI_Offset blocksize = nplane;
     for (int i=1; i<=iax; i++) blocksize *= bufshape(i-1);   // number of contiguous floats
 
     // # blocks, blocklength, stride (distance between blocks)
     if (iax == 0) {
-        MPI_Type_vector(ny*nz, blocksize, nx, MPI_FLOAT, &filetype);
+        MPI_Type_vector(imageShape(2)*nz, blocksize, imageShape(0), MPI_FLOAT, &filetype);
     } else if (iax == 1) {
-        MPI_Type_vector(nz, blocksize, nx*ny, MPI_FLOAT, &filetype);
+        MPI_Type_vector(nz, blocksize, imageShape(0)*imageShape(1), MPI_FLOAT, &filetype);
     } else {
         MPI_Type_vector(1, blocksize, blocksize, MPI_FLOAT, &filetype);
     }
     MPI_Type_commit(&filetype);
-    offset = headersize + myrank * blocksize * sizeof(float);
+    offset = headersize + (myrank + sub * numprocs) * blocksize * sizeof(float);
 }
 
 
-void FitsImageAccessParallel::decode_header(const casa::String& infile, casa::Int& nx, casa::Int& ny,
-                    casa::Int& nz, casa::Long& headersize) const
+void FitsImageAccessParallel::decode_header(const casa::String& infile, casa::IPosition& imageShape,
+                    casa::Long& headersize) const
 {
-    fitsfile *infptr, *outfptr;  // FITS file pointers
+    fitsfile *infptr;  // FITS file pointers
     int status = 0;  // CFITSIO status value MUST be initialized to zero!
 
     fits_open_file(&infptr, infile.c_str(), READONLY, &status); // open input image
@@ -209,12 +351,10 @@ void FitsImageAccessParallel::decode_header(const casa::String& infile, casa::In
     fits_get_img_dim(infptr, &naxis, &status);  // read dimensions
     //ASKAPLOG_INFO_STR(logger,"Input image #dimensions: " << naxis);
     fits_get_img_size(infptr, 4, naxes, &status);
-    nx = naxes[0];
-    ny = naxes[1];
-    nz = naxes[2];
-    if (naxis >3) {
-        if (nz==1) nz = naxes[3];
-    }
+    imageShape.resize(0);
+    ASKAPCHECK("naxis==3||naxis==4","FITS image must have 3 or 4 axes");
+    if (naxis==3) imageShape = casacore::IPosition(naxis,naxes[0],naxes[1],naxes[2]);
+    if (naxis==4) imageShape = casacore::IPosition(naxis,naxes[0],naxes[1],naxes[2],naxes[3]);
     fits_close_file(infptr, &status);
 }
 

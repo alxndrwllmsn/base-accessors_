@@ -32,6 +32,7 @@
 #include <askap/imageaccess/ImageAccessFactory.h>
 #include <askap/imageaccess/CasaImageAccess.h>
 #include <askap/imageaccess/FitsImageAccess.h>
+#include <askap/imageaccess/FitsImageAccessParallel.h>
 
 #include <askap/askap/AskapError.h>
 
@@ -49,6 +50,7 @@ using namespace askap::accessors;
 boost::shared_ptr<IImageAccess<casacore::Float> > askap::accessors::imageAccessFactory(const LOFAR::ParameterSet &parset)
 {
    const std::string imageType = parset.getString("imagetype","casa");
+
    boost::shared_ptr<IImageAccess<> > result;
    if (imageType == "casa") {
        boost::shared_ptr<CasaImageAccess<casacore::Float> > iaCASA(new CasaImageAccess<casacore::Float>());
@@ -57,6 +59,39 @@ boost::shared_ptr<IImageAccess<casacore::Float> > askap::accessors::imageAccessF
    } else if (imageType == "fits"){
        boost::shared_ptr<FitsImageAccess> iaFITS(new FitsImageAccess());
        result = iaFITS;
+  } else {
+      throw AskapError(std::string("Unsupported image type ")+imageType+" has been requested");
+   }
+   return result;
+
+}/// @brief Build an appropriate image access class
+/// @details This is a factory method generating a shared pointer to the image
+/// accessor from the parset file
+/// @param[in] parset parameters containing description of image accessor to be constructed
+/// @param[in] comms, MPI communicator
+/// @return shared pointer to the image access object
+/// @note CASA images are used by default
+boost::shared_ptr<IImageAccess<casacore::Float> > askap::accessors::imageAccessFactory(
+    const LOFAR::ParameterSet &parset, askapparallel::AskapParallel &comms)
+{
+   const std::string imageType = parset.getString("imagetype","casa");
+   const std::string imageAccessType = parset.getString("imageaccess","individual");
+   ASKAPCHECK(imageType!="casa" || imageAccessType=="individual","Collective I/O not supported for imagetype casa")
+
+   boost::shared_ptr<IImageAccess<> > result;
+   if (imageType == "casa") {
+       boost::shared_ptr<CasaImageAccess<casacore::Float> > iaCASA(new CasaImageAccess<casacore::Float>());
+       // optional parameter setting may come here
+       result = iaCASA;
+   } else if (imageType == "fits"){
+       if (imageAccessType == "collective") {
+           uint axis = parset.getUint("imageaccess.axis",0);
+           boost::shared_ptr<FitsImageAccessParallel> iaFITS(new FitsImageAccessParallel(comms,axis));
+           result = iaFITS;
+       } else {
+           boost::shared_ptr<FitsImageAccess> iaFITS(new FitsImageAccess());
+           result = iaFITS;
+       }
    }
    else {
       throw AskapError(std::string("Unsupported image type ")+imageType+" has been requested");

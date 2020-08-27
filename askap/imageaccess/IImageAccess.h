@@ -39,6 +39,7 @@
 #include <casacore/casa/Arrays/Array.h>
 #include <casacore/coordinates/Coordinates/CoordinateSystem.h>
 #include <casacore/casa/Quanta/Quantum.h>
+#include <askap/askapparallel/AskapParallel.h>
 
 
 namespace askap {
@@ -145,7 +146,7 @@ struct IImageAccess {
     virtual void writeMask(const std::string &name, const casacore::Array<bool> &mask,
                            const casacore::IPosition &where) = 0;
 
-    /// @brief write a slice of an image mask
+    /// @brief write an image mask
     /// @param[in] name image name
     /// @param[in] mask array with mask
     virtual void writeMask(const std::string &name, const casacore::Array<bool> &mask) = 0;
