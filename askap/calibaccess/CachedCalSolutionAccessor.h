@@ -36,7 +36,7 @@
 // own includes
 #include <askap/calibaccess/ICalSolutionAccessor.h>
 #include <askap/calibaccess/CalParamNameHelper.h>
-#include <fitting/Params.h>
+#include <askap/scimath/fitting/Params.h>
 
 // std includes
 #include <string>
