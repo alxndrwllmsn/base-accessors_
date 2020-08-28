@@ -28,10 +28,10 @@
 
 #include <calibaccess/TableCalSolutionConstSource.h>
 #include <askap_accessors.h>
-#include <askap/AskapLogging.h>
+#include <askap/askap/AskapLogging.h>
 ASKAP_LOGGER(logger, ".tTableCalSelection");
 
-#include <askap/AskapError.h>
+#include <askap/askap/AskapError.h>
 
 // casa
 #include <casacore/casa/OS/Timer.h>

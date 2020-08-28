@@ -37,7 +37,7 @@
 #define ASKAP_ACCESSORS_TIME_CHUNK_ITERATOR_ADAPTER_H
 
 #include <askap/dataaccess/DataIteratorAdapter.h>
-#include <utils/ChangeMonitor.h>
+#include <askap/scimath/utils/ChangeMonitor.h>
 
 namespace askap {
 

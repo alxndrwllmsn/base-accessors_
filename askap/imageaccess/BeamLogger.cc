@@ -35,7 +35,7 @@
 
 // ASKAPsoft includes
 #include <askap/askap/AskapLogging.h>
-#include <askapparallel/AskapParallel.h>
+#include <askap/askapparallel/AskapParallel.h>
 #include <casacore/casa/Arrays/Vector.h>
 #include <casacore/casa/Quanta/Quantum.h>
 #include <Common/ParameterSet.h>

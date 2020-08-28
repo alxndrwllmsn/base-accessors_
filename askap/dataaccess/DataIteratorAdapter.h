@@ -44,7 +44,7 @@
 #include <askap/dataaccess/IDataIterator.h>
 #include <askap/dataaccess/IDataAccessor.h>
 #include <askap/dataaccess/DataAccessorAdapter.h>
-#include <utils/ChangeMonitor.h>
+#include <askap/scimath/utils/ChangeMonitor.h>
 
 // boost includes
 #include <boost/shared_ptr.hpp>

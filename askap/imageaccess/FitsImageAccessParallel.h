@@ -33,9 +33,10 @@
 
 #include <boost/shared_ptr.hpp>
 
+#include <mpi.h>
+#include <askap/askapparallel/MPIComms.h>
 #include <askap/askapparallel/AskapParallel.h>
 #include <askap/imageaccess/FitsImageAccess.h>
-
 namespace askap {
 namespace accessors {
 
