@@ -230,6 +230,22 @@ void CasaImageAccess<T>::write(const std::string &name, const casacore::Array<T>
 /// @param[in] name image name
 /// @param[in] arr array with pixels
 /// @param[in] mask array with mask
+template <class T>
+void CasaImageAccess<T>::write(const std::string &name, const casacore::Array<T> &arr,
+                               const casacore::Array<bool> &mask)
+{
+    ASKAPLOG_INFO_STR(casaImAccessLogger, "Writing image & mask with the shape " << arr.shape() << " into a CASA image " <<
+                      name);
+    casacore::PagedImage<T> img(name);
+    img.put(arr);
+    img.pixelMask().put(mask);
+}
+
+
+/// @brief write a slice of an image and mask
+/// @param[in] name image name
+/// @param[in] arr array with pixels
+/// @param[in] mask array with mask
 /// @param[in] where bottom left corner where to put the slice to (trc is deduced from the array shape)
 template <class T>
 void CasaImageAccess<T>::write(const std::string &name, const casacore::Array<T> &arr,

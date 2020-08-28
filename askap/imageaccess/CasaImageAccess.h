@@ -117,6 +117,14 @@ struct CasaImageAccess : public IImageAccess<T> {
     virtual void write(const std::string &name, const casacore::Array<T> &arr,
                        const casacore::IPosition &where);
 
+    /// @brief write an image and mask
+    /// @param[in] name image name
+    /// @param[in] arr array with pixels
+    /// @param[in] mask array with mask
+    virtual void write(const std::string &name, const casacore::Array<T> &arr,
+                       const casacore::Array<bool> &mask);
+
+
     /// @brief write a slice of an image and mask
     /// @param[in] name image name
     /// @param[in] arr array with pixels

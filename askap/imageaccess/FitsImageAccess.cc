@@ -261,6 +261,29 @@ void FitsImageAccess::write(const std::string &name, const casacore::Array<float
     }
 
 }
+/// @brief write an image and mask
+/// @param[in] name image name (not used)
+/// @param[in] arr array with pixels
+/// @param[in] mask array with mask
+void FitsImageAccess::write(const std::string &name, const casacore::Array<float> &arr,
+                            const casacore::Array<bool> &mask)
+{
+    ASKAPLOG_INFO_STR(logger, "Writing array with the shape " << arr.shape() << " into a FITS image ");
+    casacore::String error;
+    connect(name);
+    casacore::Array<float> arrmasked;
+    arrmasked = arr;
+    for(size_t i=0;i<arr.size();i++){
+        if(!mask.data()[i]){
+            casacore::setNaN(arrmasked.data()[i]);
+        }
+    }
+    if (!itsFITSImage->write(arrmasked)) {
+        error = casacore::String("Failed to write slice");
+        ASKAPTHROW(AskapError, error);
+    }
+
+}
 /// @brief write a slice of an image and mask
 /// @param[in] name image name (not used)
 /// @param[in] arr array with pixels

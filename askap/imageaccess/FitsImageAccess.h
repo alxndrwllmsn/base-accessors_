@@ -132,6 +132,13 @@ struct FitsImageAccess : public IImageAccess<> {
         virtual void write(const std::string &name, const casacore::Array<float> &arr,
                            const casacore::IPosition &where);
 
+        /// @brief write full image and mask
+        /// @param[in] name image name
+        /// @param[in] mask array with mask
+        /// @param[in] arr array with pixels
+        virtual void write(const std::string &name, const casacore::Array<float> &arr,
+                           const casacore::Array<bool> &mask);
+
         /// @brief write a slice of an image and mask
         /// @param[in] name image name
         /// @param[in] arr array with pixels
