@@ -121,6 +121,8 @@ struct ICalSolutionAccessor : virtual public ICalSolutionConstAccessor {
    void setBandpassElement(const JonesIndex &index, const casacore::Stokes::StokesTypes stokes, const casacore::uInt chan,
                            const casacore::Complex &elem);
 
+   void setIonosphericElement(const casacore::uInt dir, const casacore::uInt param, const casacore::Complex &elem);
+
    /// @brief set a single element of bandpass
    /// @details This version of the method uses explicitly defined antenna and beam indices.
    /// @param[in] ant ant index
