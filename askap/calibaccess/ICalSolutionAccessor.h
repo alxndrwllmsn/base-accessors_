@@ -85,6 +85,12 @@ struct ICalSolutionAccessor : virtual public ICalSolutionConstAccessor {
    /// @param[in] chan spectral channel
    virtual void setBPLeakage(const JonesIndex &index, const JonesDTerm &bpleakages, const casacore::uInt chan) = 0;
 
+   /// @brief set ionospheric parameter
+   /// @details This method writes an ionospheric parameter
+   /// @param[in] index ant/beam index
+   /// @param[in] gains IonoTerm object with gains and validity flags
+   virtual void setIonosphere(const JonesIndex &index, const IonoTerm &param) = 0;
+
    // additional (non-virtual) helper methods to simplify access (working via virtual methods)
 
    /// @brief set a single element of the Jones matrix (i.e gains or leakages)
@@ -121,8 +127,6 @@ struct ICalSolutionAccessor : virtual public ICalSolutionConstAccessor {
    void setBandpassElement(const JonesIndex &index, const casacore::Stokes::StokesTypes stokes, const casacore::uInt chan,
                            const casacore::Complex &elem);
 
-   void setIonosphericElement(const casacore::uInt dir, const casacore::uInt param, const casacore::Complex &elem);
-
    /// @brief set a single element of bandpass
    /// @details This version of the method uses explicitly defined antenna and beam indices.
    /// @param[in] ant ant index
@@ -130,8 +134,23 @@ struct ICalSolutionAccessor : virtual public ICalSolutionConstAccessor {
    /// @param[in] stokes what element to update (choose from XX,XY,YX and YY)
    /// @param[in] chan spectral channel of interest
    /// @param[in] elem value to set
-   void setBandpassElement(const casacore::uInt ant, const casacore::uInt beam, const casacore::Stokes::StokesTypes stokes,
+   void setBandpassElement(const casacore::uInt ant, const casacore::uInt beam,
+                           const casacore::Stokes::StokesTypes stokes,
                            const casacore::uInt chan, const casacore::Complex &elem);
+
+   /// @brief set a single ionospheric parameter
+   /// @details This method simplifies the writing of ionospheric solutions. It reads the current
+   /// solution and then replaces one element with the given value setting the validity flag.
+   /// @param[in] index ant/beam index
+   /// @param[in] elem value to set
+   void setIonosphericElement(const JonesIndex &index, const casacore::Complex &elem);
+
+   /// @brief set a single ionospheric parameter
+   /// @details This version of the method uses explicitly defined antenna and beam indices.
+   /// @param[in] param parameter index
+   /// @param[in] dir direction index
+   /// @param[in] elem value to set
+   void setIonosphericElement(const casacore::uInt param, const casacore::uInt dir, const casacore::Complex &elem);
 
    /// @brief optional flush for the Filler associated with this accessor
 

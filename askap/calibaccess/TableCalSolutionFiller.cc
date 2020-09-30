@@ -48,7 +48,7 @@ namespace accessors {
 /// @param[in] row reference row
 TableCalSolutionFiller::TableCalSolutionFiller(const casa::Table& tab, const long row) : TableHolder(tab),
        TableBufferManager(tab), itsNAnt(0), itsNBeam(0), itsNChan(0), itsRefRow(row), itsGainsRow(-1),
-       itsLeakagesRow(-1), itsBandpassesRow(-1), itsBPLeakagesRow(-1)
+       itsLeakagesRow(-1), itsBandpassesRow(-1), itsBPLeakagesRow(-1), itsIonoParamsRow(-1)
 {
   ASKAPCHECK((itsRefRow >= 0) && (itsRefRow <= long(table().nrow())), "Requested calibration solution ID = "<<itsRefRow<<" is outside calibration table");
   // this is the reading case, we can use either of itsNAnt, itsNBeam or itsNChan to test this condition (they should be all 0). This is encapsulated in
@@ -68,7 +68,7 @@ TableCalSolutionFiller::TableCalSolutionFiller(const casa::Table& tab, const lon
 TableCalSolutionFiller::TableCalSolutionFiller(const casa::Table& tab, const long row, const casa::uInt nAnt,
           const casa::uInt nBeam, const casa::uInt nChan) : TableHolder(tab),
        TableBufferManager(tab), itsNAnt(nAnt), itsNBeam(nBeam), itsNChan(nChan), itsRefRow(row), itsGainsRow(-1),
-       itsLeakagesRow(-1), itsBandpassesRow(-1), itsBPLeakagesRow(-1)
+       itsLeakagesRow(-1), itsBandpassesRow(-1), itsBPLeakagesRow(-1), itsIonoParamsRow(-1)
 {
   ASKAPCHECK((itsRefRow >= 0) && (itsRefRow <= long(table().nrow())), "Requested calibration solution ID = "<<itsRefRow<<" is outside calibration table");
   // this is the writing case, so numbers of antennas, beams and channels should be positive
@@ -115,6 +115,13 @@ bool TableCalSolutionFiller::noBandpass() const
 bool TableCalSolutionFiller::noBPLeakage() const
 {
   return !columnExists("BPLEAKAGE");
+}
+
+/// @brief check for gain solution
+/// @return true, if there is no gain solution, false otherwise
+bool TableCalSolutionFiller::noIonosphere() const
+{
+  return !columnExists("IONOSPHERE");
 }
 
 /// @brief helper method to check that the given column exists
@@ -265,6 +272,41 @@ void TableCalSolutionFiller::fillBPLeakages(std::pair<casacore::Cube<casacore::C
   ASKAPCHECK(bpleakages.first.shape() == bpleakages.second.shape(), "BPLEAKAGE and BPLEAKAGE_VALID cubes are expected to have the same shape");
 }
 
+/// @brief ionospheric parameters filler
+/// @details
+/// @param[in] pair of cubes with ionospheric parameters and validity flags (to be resised to 1 x nAnt x nBeam)
+void TableCalSolutionFiller::fillIonoParams(std::pair<casacore::Cube<casacore::Complex>,
+                                                      casacore::Cube<casacore::Bool> > &params) const
+{
+  // cellDefined should not be called if noGain returns true according to C++ evaluation rules.
+  const bool needToCreateIono = noIonosphere() || !cellDefined<casa::Complex>("IONOSPHERE", casa::uInt(itsRefRow));
+  if (!isReadOnly() && needToCreateIono) {
+      ASKAPDEBUGASSERT(itsIonoParamsRow < 0);
+      params.first.resize(1, itsNAnt, itsNBeam);
+      params.first.set(0.);
+      params.second.resize(1, itsNAnt, itsNBeam);
+      params.second.set(false);
+      itsIonoParamsRow = itsRefRow;
+  } else {
+     // this is the case wwhere either the table is read-only or there is a need to read data first
+
+     if (itsIonoParamsRow < 0) {
+         itsIonoParamsRow = findDefinedCube("IONOSPHERE");
+     }
+     ASKAPASSERT(itsIonoParamsRow>=0);
+     if (itsIonoParamsRow != itsRefRow) {
+         // backwards search should only be possible in the read-only mode
+         ASKAPDEBUGASSERT(isReadOnly());
+         ASKAPDEBUGASSERT(needToCreateIono);
+     }
+     ASKAPCHECK(cellDefined<casa::Bool>("IONOSPHERE_VALID", casa::uInt(itsIonoParamsRow)),
+         "Wrong format of the calibration table: IONOSPHERE element should always be accompanied by IONOSPHERE_VALID");
+     readCube(params.first, "IONOSPHERE", casacore::uInt(itsIonoParamsRow));
+     readCube(params.second, "IONOSPHERE_VALID", casacore::uInt(itsIonoParamsRow));
+  }
+  ASKAPCHECK(params.first.shape() == params.second.shape(), "IONOSPHERE and IONOSPHERE_VALID cubes are expected to have the same shape");
+}
+
 /// @brief gains writer
 /// @details
 /// @param[in] gains pair of cubes with gains and validity flags (should be 2 x nAnt x nBeam)
@@ -307,6 +349,17 @@ void TableCalSolutionFiller::writeBPLeakages(const std::pair<casacore::Cube<casa
   ASKAPCHECK(bpleakages.first.shape() == bpleakages.second.shape(), "The cubes with bandpass leakage and validity flags are expected to have the same shape");
   writeCube(bpleakages.first, "BPLEAKAGE", casa::uInt(itsBPLeakagesRow));
   writeCube(bpleakages.second, "BPLEAKAGE_VALID", casa::uInt(itsBPLeakagesRow));
+}
+
+/// @brief gains writer
+/// @details
+/// @param[in] pair of cubes with ionospheric parameters and validity flags (should be 1 x nAnt x nBeam)
+void TableCalSolutionFiller::writeIonoParams(const std::pair<casacore::Cube<casacore::Complex>, casacore::Cube<casacore::Bool> > &params) const
+{
+  ASKAPASSERT(itsIonoParamsRow>=0);
+  ASKAPCHECK(params.first.shape() == params.second.shape(), "The cubes with ionospheric parameters and validity flags are expected to have the same shape");
+  writeCube(params.first, "GAIN", casa::uInt(itsIonoParamsRow));
+  writeCube(params.second, "GAIN_VALID", casa::uInt(itsIonoParamsRow));
 }
 
 /// @brief find first defined cube searching backwards

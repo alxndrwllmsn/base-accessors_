@@ -125,9 +125,26 @@ void ICalSolutionAccessor::setBandpassElement(casacore::uInt ant, casacore::uInt
   setBandpassElement(JonesIndex(ant, beam), stokes, chan, elem);
 }
 
-void ICalSolutionAccessor::setIonosphericElement(const casacore::uInt dir, const casacore::uInt param,
+/// @brief set a single ionospheric parameter
+/// @details This method simplifies the writing of ionospheric solutions. It reads the current
+/// solution and then replaces one element with the given value setting the validity flag.
+/// @param[in] index ant/beam index
+/// @param[in] elem value to set
+void ICalSolutionAccessor::setIonosphericElement(const JonesIndex &index, const casacore::Complex &elem)
+{
+  //const IonoTerm oldITerm = ionoparam(index);
+  setIonosphere(index, IonoTerm(elem, true));
+
+}
+/// @brief set a single ionospheric parameter
+/// @details This version of the method uses explicitly defined antenna and beam indices.
+/// @param[in] param parameter index
+/// @param[in] dir direction index
+/// @param[in] elem value to set
+void ICalSolutionAccessor::setIonosphericElement(const casacore::uInt param, const casacore::uInt dir,
                                                  const casacore::Complex &elem)
 {
+  setIonosphericElement(JonesIndex(param, dir), elem);
 }
 
 } // namespace accessors

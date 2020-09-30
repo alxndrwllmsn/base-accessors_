@@ -103,10 +103,12 @@ public:
       itsGainsWritten  = false;
       itsLeakagesWritten  = false;
       itsBandpassesWritten  = false;
+      itsIonoParamsWritten  = false;
       // flags showing that read operation has taken place
       itsGainsRead  = false;
       itsLeakagesRead  = false;
       itsBandpassesRead  = false;
+      itsIonoParamsRead  = false;
    }
 
   // methods of the solution filler
@@ -154,6 +156,18 @@ public:
      itsBPLeakagesRead = true;
   }
 
+  // methods of the solution filler
+  /// @brief ionospheric parameters filler
+  /// @details
+  /// @param[in] pair of cubes with ionospheric parameters and validity flags (to be resised to 1 x nAnt x nBeam)
+  virtual void fillIonoParams(std::pair<casacore::Cube<casacore::Complex>, casacore::Cube<casacore::Bool> > &params) const {
+     params.first.resize(1, itsNAnt, itsNBeam);
+     params.second.resize(1, itsNAnt, itsNBeam);
+     params.second.set(true);
+     fillCube(params.first);
+     itsIonoParamsRead = true;
+  }
+
   /// @brief gains writer
   /// @details
   /// @param[in] gains pair of cubes with gains and validity flags (should be 2 x nAnt x nBeam)
@@ -198,6 +212,17 @@ public:
      itsBPLeakagesWritten = true;
   }
 
+  /// @brief gains writer
+  /// @details
+  /// @param[in] gains pair of cubes with gains and validity flags (should be 2 x nAnt x nBeam)
+  virtual void writeIonoParams(const std::pair<casacore::Cube<casacore::Complex>, casacore::Cube<casacore::Bool> > &params) const  {
+     CPPUNIT_ASSERT(params.first.shape() == params.second.shape());
+     CPPUNIT_ASSERT_EQUAL(size_t(1u),params.first.nrow());
+     CPPUNIT_ASSERT_EQUAL(size_t(itsNAnt),params.first.ncolumn());
+     CPPUNIT_ASSERT_EQUAL(size_t(itsNBeam),params.first.nplane());
+     itsIonoParamsWritten = true;
+  }
+
   // test methods
   void testRead() {
      boost::shared_ptr<ICalSolutionAccessor> acc = initAccessor(true);
@@ -205,6 +230,7 @@ public:
      CPPUNIT_ASSERT(!itsLeakagesRead);
      CPPUNIT_ASSERT(!itsBandpassesRead);
      CPPUNIT_ASSERT(!itsBPLeakagesRead);
+     CPPUNIT_ASSERT(!itsIonoParamsRead);
      CPPUNIT_ASSERT(!itsGainsWritten);
      CPPUNIT_ASSERT(!itsLeakagesWritten);
      CPPUNIT_ASSERT(!itsBandpassesWritten);
@@ -317,6 +343,7 @@ public:
      itsLeakagesRead = false;
      itsBandpassesRead = false;
      itsBPLeakagesRead = false;
+     itsIonoParamsRead = false;
      // now read operation shouldn't happen because it has been done already
      acc->jones(0,0,0);
      CPPUNIT_ASSERT(!itsGainsRead);
@@ -587,10 +614,12 @@ private:
   mutable bool itsLeakagesWritten;
   mutable bool itsBandpassesWritten;
   mutable bool itsBPLeakagesWritten;
+  mutable bool itsIonoParamsWritten;
   mutable bool itsGainsRead;
   mutable bool itsLeakagesRead;
   mutable bool itsBandpassesRead;
   mutable bool itsBPLeakagesRead;
+  mutable bool itsIonoParamsRead;
 };
 
 } // namespace accessors

@@ -149,6 +149,26 @@ JonesDTerm MemCalSolutionAccessor::bpleakage(const JonesIndex &index, const casa
   const std::pair<casacore::Complex, casacore::Bool> d21 = extract(bpleakages, 2 * chan + 1, index);
   return JonesDTerm(d12.first, d12.second, d21.first, d21.second);
 }
+
+/// @brief obtain ionospheric parameter
+/// @details This method retrieves a single ionospheric parameter.
+/// If no gains are defined for a particular index, zero is returned
+/// with an invalid flag.
+/// @param[in] index ant/beam index
+/// @return ionoparam object with a param and validity flag
+IonoTerm MemCalSolutionAccessor::ionoparam(const JonesIndex &index) const
+{
+  ASKAPASSERT(itsSolutionFiller);
+  if (itsSolutionFiller->noIonosphere() && !itsIonoParams.flushNeeded()) {
+      // return default gains
+      return IonoTerm(0., false);
+  }
+  const std::pair<casacore::Cube<casacore::Complex>, casacore::Cube<casacore::Bool> >& params =
+        itsIonoParams.value(*itsSolutionFiller, &ICalSolutionFiller::fillIonoParams);
+  const std::pair<casacore::Complex, casacore::Bool> param = extract(params, 0, index);
+  return IonoTerm(param.first, param.second);
+}
+
 /// @brief set gains (J-Jones)
 /// @details This method writes parallel-hand gains for both
 /// polarisations (corresponding to XX and YY)
@@ -213,6 +233,19 @@ void MemCalSolutionAccessor::setBPLeakage(const JonesIndex &index, const JonesDT
   store(bplpair, bpleakages.d21(),bpleakages.d21IsValid(), chan * 2 + 1, index);
 }
 
+/// @brief set ionospheric parameters
+/// @details set ionospheric parameters 
+/// @param[in] index ant/beam index
+/// @param[in] ionoparams IonoTerm object with parameters and validity flags
+void MemCalSolutionAccessor::setIonosphere(const JonesIndex &index, const IonoTerm &param)
+{
+  ASKAPCHECK(itsSettersAllowed, "Setters methods are now allowed - roCheck=true in the constructor");
+  ASKAPASSERT(itsSolutionFiller);
+  std::pair<casacore::Cube<casacore::Complex>, casacore::Cube<casacore::Bool> >& buf =
+       itsIonoParams.rwValue(*itsSolutionFiller, &ICalSolutionFiller::fillIonoParams);
+  store(buf, param.param(),param.paramIsValid(), 0, index);
+}
+
 /// @details helper method to extract value and validity flag for a given ant/beam pair
 /// @param[in] cubes const reference to a cube pair
 /// @param[in] row polarisation/channel index (row of the cube)
@@ -273,6 +306,10 @@ void MemCalSolutionAccessor::syncCache() const
       if (itsBPLeakages.flushNeeded()) {
           itsSolutionFiller->writeBPLeakages(itsBPLeakages.value());
           itsBPLeakages.flushed();
+      }
+      if (itsIonoParams.flushNeeded()) {
+          itsSolutionFiller->writeIonoParams(itsIonoParams.value());
+          itsIonoParams.flushed();
       }
   }
 }

@@ -168,6 +168,24 @@ JonesDTerm CachedCalSolutionAccessor::bpleakage(const JonesIndex &index, const c
     return JonesDTerm(d12, d12Valid, d21, d21Valid);
 }
 
+/// @brief obtain ionospheric parameter
+/// @details This method retrieves a single ionospheric parameter.
+/// If no gains are defined for a particular index, zero is returned
+/// with an invalid flag.
+/// @param[in] index ant/beam index
+/// @return ionoparam object with a param and validity flag
+IonoTerm CachedCalSolutionAccessor::ionoparam(const JonesIndex &index) const
+{
+  casacore::Complex param(0.,0.);
+  bool paramValid = false;
+  const std::string paramStr = ionoParamName(index);
+
+  if (cache().has(paramStr)) {
+      paramValid = true;
+      param = cache().complexValue(paramStr);
+  }
+  return IonoTerm(param,paramValid);
+}
 
 
 /// @brief helper method to update given parameter in the cache
@@ -236,6 +254,15 @@ void CachedCalSolutionAccessor::setBPLeakage(const JonesIndex &index, const Jone
 {
   updateParamInCache(addChannelInfo(paramName(index, casacore::Stokes::XY), chan), bpleakages.d12(), bpleakages.d12IsValid());
   updateParamInCache(addChannelInfo(paramName(index, casacore::Stokes::YX), chan), bpleakages.d21(), bpleakages.d21IsValid());
+}
+
+/// @brief set ionospheric parameters
+/// @details 
+/// @param[in] index ant/beam index
+/// @param[in] gains JonesJTerm object with gains and validity flags
+void CachedCalSolutionAccessor::setIonosphere(const JonesIndex &index, const IonoTerm &param)
+{
+  updateParamInCache(ionoParamName(index), param.param(), param.paramIsValid());
 }
 
 /// @brief direct access to the cache

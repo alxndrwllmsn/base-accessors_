@@ -72,6 +72,11 @@ struct ICalSolutionFiller {
   /// @param[in] bp pair of cubes with bandpasses and validity flags (to be resized to (2*nChan) x nAnt x nBeam)
   virtual void fillBPLeakages(std::pair<casacore::Cube<casacore::Complex>, casacore::Cube<casacore::Bool> > &bpleakages) const = 0;
 
+  /// @brief ionosphere filler
+  /// @details
+  /// @param[in] pair of cubes with ionospheric parameters and validity flags (to be resized to 1 x nParam x nDir)
+  virtual void fillIonoParams(std::pair<casacore::Cube<casacore::Complex>, casacore::Cube<casacore::Bool> > &params) const = 0;
+
   /// @brief gains writer
   /// @details
   /// @param[in] gains pair of cubes with gains and validity flags (should be 2 x nAnt x nBeam)
@@ -91,6 +96,11 @@ struct ICalSolutionFiller {
   /// @details
   /// @param[in] bpleakages pair of cubes with bpleakages and validity flags (should be (2*nChan) x nAnt x nBeam)
   virtual void writeBPLeakages(const std::pair<casacore::Cube<casacore::Complex>, casacore::Cube<casacore::Bool> > &bpleakages) const = 0;
+
+  /// @brief ionospheric parameters writer
+  /// @details
+  /// @param[in] pair of cubes with ionospheric parameters and validity flags (should be 1 x nParam x nDir)
+  virtual void writeIonoParams(const std::pair<casacore::Cube<casacore::Complex>, casacore::Cube<casacore::Bool> > &params) const = 0;
 
   // the following methods can be overriden to provide information that a particular solution doesn't exist at all
   // (and therefore reading should always return a default value). This allows to use read-only fillers without
@@ -112,6 +122,10 @@ struct ICalSolutionFiller {
   /// @brief check for bpleakage solution
   /// @return true, if there is no bandpass leakage solution, false otherwise
   virtual bool noBPLeakage() const { return false; }
+
+  /// @brief check for ionospheric solution
+  /// @return true, if there is no ionospheric solution, false otherwise
+  virtual bool noIonosphere() const { return false; }
 
   /// @brief flush the underlying data
   virtual bool flush() {return false;}

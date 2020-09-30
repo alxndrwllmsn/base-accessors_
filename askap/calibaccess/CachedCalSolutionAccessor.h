@@ -118,6 +118,14 @@ public:
   /// @return JonesDTerm object with leakages and validity flags
   virtual JonesDTerm bpleakage(const JonesIndex &index, const casacore::uInt chan) const;
 
+  /// @brief obtain ionospheric parameter
+  /// @details This method retrieves a single ionospheric parameter.
+  /// If no gains are defined for a particular index, zero is returned
+  /// with an invalid flag.
+  /// @param[in] index ant/beam index
+  /// @return ionoparam object with a param and validity flag
+  virtual IonoTerm ionoparam(const JonesIndex &index) const;
+
   /// @brief set gains (J-Jones)
   /// @details This method writes parallel-hand gains for both
   /// polarisations (corresponding to XX and YY)
@@ -150,6 +158,13 @@ public:
   /// @param[in] bpleakages JonesDTerm object with leakages for the given channel and validity flags
   /// @param[in] chan spectral channel
   virtual void setBPLeakage(const JonesIndex &index, const JonesDTerm &bpleakages, const casacore::uInt chan);
+
+  /// @brief set gains (J-Jones)
+  /// @details This method writes parallel-hand gains for both
+  /// polarisations (corresponding to XX and YY)
+  /// @param[in] index ant/beam index
+  /// @param[in] gains JonesJTerm object with gains and validity flags
+  virtual void setIonosphere(const JonesIndex &index, const IonoTerm &param);
 
   /// @brief direct access to the cache
   /// @return a reference to the cache
