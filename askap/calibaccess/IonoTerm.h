@@ -35,7 +35,7 @@ namespace askap {
 namespace accessors {
 
 /// @brief IonoTerm (low-order aperture phases screen parameters)
-/// @details Currently only a linear phase gradient per direction is supported
+/// @details Currently only a linear DTEC gradient per direction is supported
 /// @ingroup calibaccess
 class IonoTerm {
 
@@ -51,16 +51,13 @@ class IonoTerm {
 
         /// @brief Constructor.
         /// @param[in] param parameter
-        /// @param[in] paramValid  flag indicating the validity of the data param.
-        ///                     Set this to true to indicate param contains a
-        ///                     valid parameter, otherwise false.
-        IonoTerm(const casa::Complex& param,
-                   const casa::Bool paramValid)
-           : itsParam(param), itsParamValid(paramValid)
-        {}
+        /// @param[in] paramValid flag indicating the validity of the data param.
+        /// Set to true to indicate param contains a valid parameter, otherwise false.
+        IonoTerm(const casa::Complex& param, const casa::Bool paramValid) :
+            itsParam(param), itsParamValid(paramValid) {}
 
-        /// Returns the gain for polarisation 1.
-        /// @return the gain for polarisation 1.
+        /// Returns the parameter
+        /// @return param
         casa::Complex param(void) const { return itsParam; }
 
         /// Returns a flag indicating the validity of param;
