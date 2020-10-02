@@ -176,7 +176,7 @@ public:
    /// polarisations (corresponding to XX and YY)
    /// @param[in] index ant/beam index
    /// @param[in] gains JonesJTerm object with gains and validity flags
-   virtual void setIonosphere(const JonesIndex &index, const IonoTerm &ionoparams);
+   virtual void setIonosphere(const JonesIndex &index, const IonoTerm &param);
 
    /// @brief write back cache, if necessary
    /// @details This method checks whether caches need flush and calls appropriate methods of the filler

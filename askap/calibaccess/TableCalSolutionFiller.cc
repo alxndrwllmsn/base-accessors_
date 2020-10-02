@@ -117,8 +117,8 @@ bool TableCalSolutionFiller::noBPLeakage() const
   return !columnExists("BPLEAKAGE");
 }
 
-/// @brief check for gain solution
-/// @return true, if there is no gain solution, false otherwise
+/// @brief check for ionospheric solution
+/// @return true, if there is no ionospheric solution, false otherwise
 bool TableCalSolutionFiller::noIonosphere() const
 {
   return !columnExists("IONOSPHERE");
@@ -178,7 +178,7 @@ void TableCalSolutionFiller::fillGains(std::pair<casacore::Cube<casacore::Comple
 /// @param[in] leakages pair of cubes with leakages and validity flags (to be resised to 2 x nAnt x nBeam)
 void TableCalSolutionFiller::fillLeakages(std::pair<casacore::Cube<casacore::Complex>, casacore::Cube<casacore::Bool> > &leakages) const
 {
-  // cellDefined should not be called if noGain returns true according to C++ evaluation rules.
+  // cellDefined should not be called if noLeakage returns true according to C++ evaluation rules.
   const bool needToCreateLeakage = noLeakage() || !cellDefined<casa::Complex>("LEAKAGE", casa::uInt(itsRefRow));
   if (!isReadOnly() && needToCreateLeakage) {
       ASKAPDEBUGASSERT(itsLeakagesRow < 0);
@@ -211,7 +211,7 @@ void TableCalSolutionFiller::fillLeakages(std::pair<casacore::Cube<casacore::Com
 /// @param[in] bp pair of cubes with bandpasses and validity flags (to be resised to (2*nChan) x nAnt x nBeam)
 void TableCalSolutionFiller::fillBandpasses(std::pair<casacore::Cube<casacore::Complex>, casacore::Cube<casacore::Bool> > &bp) const
 {
-  // cellDefined should not be called if noGain returns true according to C++ evaluation rules.
+  // cellDefined should not be called if noBandpass returns true according to C++ evaluation rules.
   const bool needToCreateBandpass = noBandpass() || !cellDefined<casa::Complex>("BANDPASS", casa::uInt(itsRefRow));
   if (!isReadOnly() && needToCreateBandpass) {
       ASKAPDEBUGASSERT(itsBandpassesRow < 0);
@@ -244,7 +244,7 @@ void TableCalSolutionFiller::fillBandpasses(std::pair<casacore::Cube<casacore::C
 /// @param[in] bp pair of cubes with bandpasses and validity flags (to be resized to (2*nChan) x nAnt x nBeam)
 void TableCalSolutionFiller::fillBPLeakages(std::pair<casacore::Cube<casacore::Complex>, casacore::Cube<casacore::Bool> > &bpleakages) const
 {
-  // cellDefined should not be called if noGain returns true according to C++ evaluation rules.
+  // cellDefined should not be called if noBPLeakage returns true according to C++ evaluation rules.
   const bool needToCreateBPLeakage = noBPLeakage() || !cellDefined<casa::Complex>("BPLEAKAGE", casa::uInt(itsRefRow));
   if (!isReadOnly() && needToCreateBPLeakage) {
       ASKAPDEBUGASSERT(itsBPLeakagesRow < 0);
@@ -278,7 +278,7 @@ void TableCalSolutionFiller::fillBPLeakages(std::pair<casacore::Cube<casacore::C
 void TableCalSolutionFiller::fillIonoParams(std::pair<casacore::Cube<casacore::Complex>,
                                                       casacore::Cube<casacore::Bool> > &params) const
 {
-  // cellDefined should not be called if noGain returns true according to C++ evaluation rules.
+  // cellDefined should not be called if noIonosphere returns true according to C++ evaluation rules.
   const bool needToCreateIono = noIonosphere() || !cellDefined<casa::Complex>("IONOSPHERE", casa::uInt(itsRefRow));
   if (!isReadOnly() && needToCreateIono) {
       ASKAPDEBUGASSERT(itsIonoParamsRow < 0);
@@ -351,15 +351,15 @@ void TableCalSolutionFiller::writeBPLeakages(const std::pair<casacore::Cube<casa
   writeCube(bpleakages.second, "BPLEAKAGE_VALID", casa::uInt(itsBPLeakagesRow));
 }
 
-/// @brief gains writer
+/// @brief ionospheric parameters writer
 /// @details
 /// @param[in] pair of cubes with ionospheric parameters and validity flags (should be 1 x nAnt x nBeam)
 void TableCalSolutionFiller::writeIonoParams(const std::pair<casacore::Cube<casacore::Complex>, casacore::Cube<casacore::Bool> > &params) const
 {
   ASKAPASSERT(itsIonoParamsRow>=0);
   ASKAPCHECK(params.first.shape() == params.second.shape(), "The cubes with ionospheric parameters and validity flags are expected to have the same shape");
-  writeCube(params.first, "GAIN", casa::uInt(itsIonoParamsRow));
-  writeCube(params.second, "GAIN_VALID", casa::uInt(itsIonoParamsRow));
+  writeCube(params.first, "IONOSPHERE", casa::uInt(itsIonoParamsRow));
+  writeCube(params.second, "IONOSPHERE_VALID", casa::uInt(itsIonoParamsRow));
 }
 
 /// @brief find first defined cube searching backwards

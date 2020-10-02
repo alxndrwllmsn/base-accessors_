@@ -259,7 +259,7 @@ void CachedCalSolutionAccessor::setBPLeakage(const JonesIndex &index, const Jone
 /// @brief set ionospheric parameters
 /// @details 
 /// @param[in] index ant/beam index
-/// @param[in] gains JonesJTerm object with gains and validity flags
+/// @param[in] param IonoTerm object with gains and validity flags
 void CachedCalSolutionAccessor::setIonosphere(const JonesIndex &index, const IonoTerm &param)
 {
   updateParamInCache(ionoParamName(index), param.param(), param.paramIsValid());

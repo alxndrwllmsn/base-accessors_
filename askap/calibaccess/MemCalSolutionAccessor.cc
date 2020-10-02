@@ -236,7 +236,7 @@ void MemCalSolutionAccessor::setBPLeakage(const JonesIndex &index, const JonesDT
 /// @brief set ionospheric parameters
 /// @details set ionospheric parameters 
 /// @param[in] index ant/beam index
-/// @param[in] ionoparams IonoTerm object with parameters and validity flags
+/// @param[in] param IonoTerm object with parameters and validity flags
 void MemCalSolutionAccessor::setIonosphere(const JonesIndex &index, const IonoTerm &param)
 {
   ASKAPCHECK(itsSettersAllowed, "Setters methods are now allowed - roCheck=true in the constructor");
