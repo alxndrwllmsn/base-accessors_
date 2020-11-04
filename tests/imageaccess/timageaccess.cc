@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
     }
 
     askapdev::testutils::AskapTestRunner runner(argv[0]);
-    //runner.addTest( askap::accessors::CasaImageAccessTest::suite());
+    runner.addTest( askap::accessors::CasaImageAccessTest::suite());
     runner.addTest( askap::accessors::FitsImageAccessTest::suite());
     bool wasSucessful = runner.run();
 
