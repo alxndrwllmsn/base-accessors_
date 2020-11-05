@@ -2,6 +2,7 @@ set (_progs
 imageToFITS
 tDataAccess
 tTableCalSolution
+tImageWrite
 )
 
 
