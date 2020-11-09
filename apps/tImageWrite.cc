@@ -36,6 +36,19 @@
 #include "askap/StatReporter.h"
 #include "askapparallel/AskapParallel.h"
 #include "askap/imageaccess/ImageAccessFactory.h"
+#include <askap/scimath/utils/ComplexGaussianNoise.h>
+#include <casacore/casa/Arrays/Vector.h>
+#include <casacore/casa/Arrays/IPosition.h>
+#include <casacore/casa/Arrays/Matrix.h>
+#include <askap/scimath/utils/MultiDimPosIter.h>
+#include <casacore/coordinates/Coordinates/LinearCoordinate.h>
+#include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
+#include <casacore/coordinates/Coordinates/SpectralCoordinate.h>
+#include <casacore/coordinates/Coordinates/Projection.h>
+
+#include <casacore/coordinates/Coordinates/CoordinateSystem.h>
+
+
 
 
 ASKAP_LOGGER(logger, ".tImageWrite");
@@ -53,21 +66,118 @@ ASKAP_LOGGER(logger, ".tImageWrite");
 #include <Common/ParameterSet.h>
 
 
-
 namespace askap {
 
 namespace accessors {
 
 class TestImageWriteApp : public askap::Application {
 public:
+   /// @brief fill the buffer with fake data
+   /// @param[in] seed seed for the random number generator
+   void setupData(casa::Int seed = 0) {
+     const casa::uInt size = config().getUint32("size", 1024u);
+     itsPixels.resize(size,size);
+     const double variance = config().getDouble("variance", 1.);
+     // it's handy to reuse existing code, performance aspects are not an issue as this is done at initialisation time
+     scimath::ComplexGaussianNoise cgn(variance, seed);
+     for (casacore::Array<casacore::Float>::contiter it = itsPixels.cbegin(); it != itsPixels.cend(); ++it) {
+          const casacore::Complex val = cgn();
+          *it = casacore::real(val);
+          if (++it != itsPixels.cend()) {
+              *it = casacore::imag(val);
+          }
+     }
+   }
+
+   void writeData(casa::uInt nChunks, casa::uInt chunk) {
+      ASKAPDEBUGASSERT(itsShape.nelements() > 2u);
+      const casacore::IPosition addPlanesShape(itsShape.getLast(itsShape.nelements() - 2u));
+      scimath::MultiDimPosIter it;
+      for (it.init(addPlanesShape, nChunks, chunk); it.hasMore(); it.next()) {
+           // it.cursor() corresponds to all other dimensions of the cube except the first two
+           // prepending [0,0] gets the 'where' IPosition we want to pass to the interface
+           // chunk/nChunks allow to iterate over subsection in the parallel case
+           // in principle, it could be extended to spatial pixels too, the iterator doesn't care - 
+           // it guaranteed to iterate over the whole shape passed to init (or the constructor) splitting
+           // iteration over the given number of chunks deterministically, which we setup to be one per rank
+           casacore::IPosition where(2,0,0);
+           where.append(it.cursor());
+           ASKAPLOG_INFO_STR(logger, "Writing the plane data to: "<<where);
+           itsImageAccessor->write(itsName, itsPixels, where);
+      }
+   }
+
+   /// @brief create the cube via the interface
+   void createCube() {
+      itsName = config().getString("name","fakecube");
+      ASKAPDEBUGASSERT(itsName != "");
+      ASKAPDEBUGASSERT(itsPixels);
+      itsShape = casacore::IPosition(3,itsPixels.nrow(),itsPixels.ncolumn(),itsNChan);
+      // Build a coordinate system for the image
+      casacore::Matrix<double> xform(2,2); 
+      xform = 0.0; xform.diagonal() = 1.0; 
+      casacore::DirectionCoordinate radec(casacore::MDirection::J2000, 
+          casacore::Projection(casacore::Projection::SIN),  
+          294*casacore::C::pi/180.0, -60*casacore::C::pi/180.0, 
+          -0.01*casacore::C::pi/180.0, 0.01*casacore::C::pi/180, 
+          xform, itsPixels.nrow()/2., itsPixels.ncolumn()/2.); 
+
+      casacore::Vector<casacore::String> units(2); units = "deg"; 
+      radec.setWorldAxisUnits(units);
+
+      // Build a coordinate system for the spectral axis
+      // SpectralCoordinate
+      casacore::SpectralCoordinate spectral(casacore::MFrequency::TOPO, 
+                              1400E+6, 20E+3, 0, 1420.40575E+6);
+      units.resize(1);
+      units = "MHz";
+      spectral.setWorldAxisUnits(units);
+
+      casacore::CoordinateSystem coordsys;
+      coordsys.addCoordinate(radec);
+      coordsys.addCoordinate(spectral);
+
+      itsImageAccessor->create(itsName, itsShape, coordsys);
+
+      itsImageAccessor->setUnits(itsName,"Jy/pixel");
+      itsImageAccessor->setBeamInfo(itsName,0.02,0.01,1.0);
+   }
+
    virtual int run(int argc, char* argv[])
    {
      // This class must have scope outside the main try/catch block
      askap::askapparallel::AskapParallel comms(argc, const_cast<const char**>(argv));
      try {
         StatReporter stats;
-        //itsImageAccessor = accessors::imageAccessFactory(config());
-        itsImageAccessor = accessors::imageAccessFactory(config(), comms);
+        casacore::Timer timer;
+        timer.mark();
+        itsNChan = config().getUint32("nchan", comms.isParallel() ? comms.nProcs() : 10u);
+        ASKAPCHECK(itsNChan > 0, "The number of channels is supposed to be positive");
+        itsName = config().getString("name","fakecube");
+        ASKAPCHECK(itsName != "", "Cube name is not supposed to be empty");
+        const std::string mode = config().getString("mode",comms.isParallel() ? "parallel" : "serial");
+        ASKAPCHECK(mode == "parallel" || mode == "serial", "Unsupported mode '"<<mode<<"', it should be either parallel or serial");
+        if (mode == "serial") {
+            ASKAPLOG_INFO_STR(logger, "Using image accessor factory in the serial mode");
+            itsImageAccessor = accessors::imageAccessFactory(config());
+        } else {
+          itsImageAccessor = accessors::imageAccessFactory(config(), comms);
+          ASKAPLOG_INFO_STR(logger, "Using image accessor factory in the parallel mode");
+        }
+        ASKAPLOG_INFO_STR(logger, "Setting up array with fake data");
+        setupData(comms.rank() + 1); 
+        ASKAPASSERT(itsPixels.nrow() > 0 && itsPixels.ncolumn() > 0);
+        ASKAPLOG_INFO_STR(logger, "Filled "<<itsPixels.nrow()<<" x "<<itsPixels.ncolumn()<<" array with random numbers, simulation time "<<timer.real()<<" seconds");
+
+        timer.mark();
+        createCube();
+        ASKAPLOG_INFO_STR(logger, "Successfully created '"<<itsName<<"' cube with "<<itsNChan<<" planes, time "<<timer.real()<<" seconds");
+
+        timer.mark();
+        // the following will work for the serial code too and will just cause a single iteration over planes
+        writeData(comms.nProcs(), comms.rank());
+        ASKAPLOG_INFO_STR(logger, "Completed writing data, time "<<timer.real()<<" seconds");
+
         stats.logSummary();
         return 0;
      }
@@ -85,6 +195,18 @@ public:
 private:
    /// @brief image accessor
    boost::shared_ptr<accessors::IImageAccess<casacore::Float> > itsImageAccessor;
+
+   /// @brief buffer with fake data   
+   casacore::Matrix<casacore::Float> itsPixels;
+
+   /// @brief number of planes in the output cube
+   casa::uInt itsNChan;
+
+   /// @brief name of the image cube to write
+   std::string itsName;
+
+   /// @brief shape of the resulting cube
+   casacore::IPosition itsShape;
 };
 
 
