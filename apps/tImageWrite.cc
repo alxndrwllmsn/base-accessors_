@@ -26,6 +26,9 @@
 ///
 /// @author Max Voronkov <maxim.voronkov@csiro.au>
 
+// std includes
+#include <string>
+#include <vector>
 
 
 // ASKAPSoft includes
@@ -41,11 +44,11 @@
 #include <casacore/casa/Arrays/IPosition.h>
 #include <casacore/casa/Arrays/Matrix.h>
 #include <askap/scimath/utils/MultiDimPosIter.h>
-#include <casacore/coordinates/Coordinates/LinearCoordinate.h>
 #include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
 #include <casacore/coordinates/Coordinates/SpectralCoordinate.h>
+#include <casacore/coordinates/Coordinates/StokesCoordinate.h>
 #include <casacore/coordinates/Coordinates/Projection.h>
-
+#include <askap/scimath/utils/PolConverter.h>
 #include <casacore/coordinates/Coordinates/CoordinateSystem.h>
 
 
@@ -87,6 +90,19 @@ public:
               *it = casacore::imag(val);
           }
      }
+     if (config().getBool("mask",false)) {
+         const float threshold = config().getFloat("mask.threshold", 3.);
+         ASKAPLOG_INFO_STR(logger, "Image pixel masking is enabled, pixels greater than "<<threshold<<" by absolute value will be masked");
+         itsMask.resize(size,size);
+         itsMask.set(false);
+         casacore::Array<casacore::Float>::contiter it1 = itsPixels.cbegin();
+         casacore::Array<casacore::Bool>::contiter it2 = itsMask.cbegin();
+         for (; it1 != itsPixels.cend() && it2 != itsMask.cend(); ++it1,++it2) {
+              if (casacore::abs(*it1) > threshold) {
+                  *it2 = true;
+              }
+         }
+     }
    }
 
    void writeData(casa::uInt nChunks, casa::uInt chunk) {
@@ -102,8 +118,13 @@ public:
            // iteration over the given number of chunks deterministically, which we setup to be one per rank
            casacore::IPosition where(2,0,0);
            where.append(it.cursor());
-           ASKAPLOG_INFO_STR(logger, "Writing the plane data to: "<<where);
-           itsImageAccessor->write(itsName, itsPixels, where);
+           if (itsMask.nelements() == 0u) {
+               ASKAPLOG_INFO_STR(logger, "Writing the plane data to: "<<where);
+               itsImageAccessor->write(itsName, itsPixels, where);
+           } else {
+               ASKAPLOG_INFO_STR(logger, "Writing the plane data and mask to: "<<where);
+               itsImageAccessor->write(itsName, itsPixels, itsMask, where);
+           }
       }
    }
 
@@ -111,8 +132,7 @@ public:
    void createCube() {
       itsName = config().getString("name","fakecube");
       ASKAPDEBUGASSERT(itsName != "");
-      ASKAPDEBUGASSERT(itsPixels);
-      itsShape = casacore::IPosition(3,itsPixels.nrow(),itsPixels.ncolumn(),itsNChan);
+      ASKAPDEBUGASSERT(itsPixels.nelements() > 0u);
       // Build a coordinate system for the image
       casacore::Matrix<double> xform(2,2); 
       xform = 0.0; xform.diagonal() = 1.0; 
@@ -133,14 +153,49 @@ public:
       units = "MHz";
       spectral.setWorldAxisUnits(units);
 
+      itsShape = casacore::IPosition(2,itsPixels.nrow(),itsPixels.ncolumn());
+
+      // Build polarisation axis, default is single plane with stokes I
+      // empty vector means do not create Stokes axis
+      const std::vector<std::string> stokes(config().getStringVector("stokes",std::vector<std::string>(1, "I")));
+      // just to allow some flexibility in defining stokes parameters we concatenate all elements first and then let
+      // the standard code to parse it
+      std::string stokesStr;
+      for (size_t i=0; i<stokes.size(); ++i) {
+           stokesStr += stokes[i];
+      }
+      const casacore::Vector<casacore::Stokes::StokesTypes> stokesVec = scimath::PolConverter::fromString(stokesStr);
+
+
       casacore::CoordinateSystem coordsys;
       coordsys.addCoordinate(radec);
-      coordsys.addCoordinate(spectral);
+      const bool spectralFirst = config().getBool("spectral_first",true);
+      for (int order = 0; order < 2; ++order) {
+           if ((order == 0) == spectralFirst) {
+               coordsys.addCoordinate(spectral);
+               itsShape.append(casacore::IPosition(1,itsNChan));
+           } else {
+               if (stokesVec.nelements() > 0) {
+                   // do an explicit cast of StokesTypes to int, the array is small + this is a setup code anyway
+                   casacore::Vector<int> stokesInt(stokesVec.nelements());
+                   for (casa::uInt i = 0; i < stokesInt.nelements(); ++i) {
+                        stokesInt[i] = static_cast<int>(stokesVec[i]);
+                   }
+                   casacore::StokesCoordinate stokes(stokesInt);
+                   coordsys.addCoordinate(stokes);
+                   itsShape.append(casacore::IPosition(1,stokesVec.nelements()));
+               }
+           }
+      }
 
       itsImageAccessor->create(itsName, itsShape, coordsys);
 
       itsImageAccessor->setUnits(itsName,"Jy/pixel");
       itsImageAccessor->setBeamInfo(itsName,0.02,0.01,1.0);
+  
+      if (itsMask.nelements() > 0) {
+          itsImageAccessor->makeDefaultMask(itsName);
+      }
    }
 
    virtual int run(int argc, char* argv[])
@@ -174,8 +229,12 @@ public:
         ASKAPLOG_INFO_STR(logger, "Successfully created '"<<itsName<<"' cube with "<<itsNChan<<" planes, time "<<timer.real()<<" seconds");
 
         timer.mark();
-        // the following will work for the serial code too and will just cause a single iteration over planes
-        writeData(comms.nProcs(), comms.rank());
+        if (mode == "serial") {
+            writeData(1, 0);
+        } {
+           // the following will work for the serial case too if done under MPI and will just cause a single iteration over planes
+           writeData(comms.nProcs(), comms.rank());
+        }
         ASKAPLOG_INFO_STR(logger, "Completed writing data, time "<<timer.real()<<" seconds");
 
         stats.logSummary();
@@ -198,6 +257,9 @@ private:
 
    /// @brief buffer with fake data   
    casacore::Matrix<casacore::Float> itsPixels;
+
+   /// @brief optional mask, used if array is not empty
+   casacore::Matrix<casacore::Bool> itsMask;
 
    /// @brief number of planes in the output cube
    casa::uInt itsNChan;
