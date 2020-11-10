@@ -129,7 +129,8 @@ public:
    }
 
    /// @brief create the cube via the interface
-   void createCube() {
+   /// @param[in] isMaster true if executed on the master rank in the parallel mode (does the actual creation of the cube)
+   void createCube(bool isMaster) {
       itsName = config().getString("name","fakecube");
       ASKAPDEBUGASSERT(itsName != "");
       ASKAPDEBUGASSERT(itsPixels.nelements() > 0u);
@@ -188,13 +189,15 @@ public:
            }
       }
 
-      itsImageAccessor->create(itsName, itsShape, coordsys);
+      if (isMaster) {
+          itsImageAccessor->create(itsName, itsShape, coordsys);
 
-      itsImageAccessor->setUnits(itsName,"Jy/pixel");
-      itsImageAccessor->setBeamInfo(itsName,0.02,0.01,1.0);
+          itsImageAccessor->setUnits(itsName,"Jy/pixel");
+          itsImageAccessor->setBeamInfo(itsName,0.02,0.01,1.0);
   
-      if (itsMask.nelements() > 0) {
-          itsImageAccessor->makeDefaultMask(itsName);
+          if (itsMask.nelements() > 0) {
+              itsImageAccessor->makeDefaultMask(itsName);
+          }
       }
    }
 
@@ -225,8 +228,17 @@ public:
         ASKAPLOG_INFO_STR(logger, "Filled "<<itsPixels.nrow()<<" x "<<itsPixels.ncolumn()<<" array with random numbers, simulation time "<<timer.real()<<" seconds");
 
         timer.mark();
-        createCube();
-        ASKAPLOG_INFO_STR(logger, "Successfully created '"<<itsName<<"' cube with "<<itsNChan<<" planes, time "<<timer.real()<<" seconds");
+        // this should work in serial too. For simplicity, just redo everything except the actual cube creation on the slave ranks
+        createCube(comms.isMaster());
+        if (comms.isMaster()) {
+            ASKAPLOG_INFO_STR(logger, "Successfully created '"<<itsName<<"' cube with shape "<<itsShape<<", time "<<timer.real()<<" seconds");
+        }
+        // for simplicity, just wait until the cube is created in the parallel mode. We could've distributed itsName and itsShape instead
+        timer.mark();
+        comms.barrier();
+        if (comms.isWorker()) {
+            ASKAPLOG_INFO_STR(logger, "Ready to write data, cube should be created by now on the master rank, time "<<timer.real()<<" seconds");
+        }
 
         timer.mark();
         if (mode == "serial") {
