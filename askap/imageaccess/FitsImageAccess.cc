@@ -143,19 +143,19 @@ std::string FitsImageAccess::getUnits(const std::string &name) const
     fitsfile *fptr;       /* pointer to the FITS file, defined in fitsio.h */
     std::string fullname = name + ".fits";
     int status = 0;
-    std::string units("");
-    const std::string key("Brightness (pixel) unit");
+    char value[1024];
     char comment[1024];
     if (fits_open_file(&fptr, fullname.c_str(), READONLY, &status))
         ASKAPCHECK(status == 0, "FITSImageAccess:: Cannot open FITS file");
+    status = 0;
 
-    if (fits_read_key(fptr, TSTRING, "BUNIT", (void *)(units.c_str()), comment,  &status))
+    if (fits_read_key(fptr, TSTRING, "BUNIT", value, comment,  &status))
         ASKAPLOG_WARN_STR(logger, "FITSImageAccess:: Cannot find BUNIT keyword - fits_read_key returned status " << status);
-
     status=0;
     if (fits_close_file(fptr, &status))
         ASKAPCHECK(status == 0, "FITSImageAccess:: Error on closing file");
 
+    std::string units(value);
     return units;
 
 }
