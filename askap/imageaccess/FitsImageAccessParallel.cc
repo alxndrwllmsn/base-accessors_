@@ -278,17 +278,26 @@ void FitsImageAccessParallel::copy_header(const casa::String &infile, const casa
     // get header size
     casa::IPosition shape;
     casa::Long headersize;
-    decode_header(infile, shape, headersize);
+    std::string fullinfile = infile;
+    if (fullinfile.rfind(".fits") == std::string::npos) {
+        fullinfile += ".fits";
+    }
+    std::string fulloutfile = outfile;
+    if (fulloutfile.rfind(".fits") == std::string::npos) {
+        fulloutfile += ".fits";
+    }
+    ASKAPLOG_INFO_STR(logger,"copy_header: "<<fullinfile<<", "<<fulloutfile);
+    decode_header(fullinfile, shape, headersize);
     // create the new output file and copy header
     //streampos size;
     char * header;
-    ifstream file (infile, ios::in|ios::binary);
+    ifstream file (fullinfile, ios::in|ios::binary);
     if (file.is_open())
     {
         header = new char [headersize];
         file.read (header, headersize);
         file.close();
-        ofstream ofile (outfile, ios::out|ios::binary|ios::trunc);
+        ofstream ofile (fulloutfile, ios::out|ios::binary|ios::trunc);
         if (ofile.is_open()) {
             ofile.write(header,headersize);
             ofile.close();
