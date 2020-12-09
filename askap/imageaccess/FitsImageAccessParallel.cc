@@ -141,7 +141,10 @@ void FitsImageAccessParallel::write(const std::string &name, const casacore::Arr
                    const casacore::IPosition &where)
 {
     bool parallel = canDoParallelIO(name);
-    int section = blctrcTosection(where, where + arr.shape() - 1);
+    casacore::IPosition tlc = where;
+    // Deal with 2d input array, but will only work correctly if axis>1
+    for (uint i=0; i<arr.shape().nelements(); i++) tlc(i) += arr.shape()(i) - 1;
+    int section = blctrcTosection(where, tlc);
 
     if (section>=0 && parallel) {
         int nsection = itsShape(itsAxis) / itsComms.nProcs();
@@ -163,7 +166,10 @@ void FitsImageAccessParallel::write(const std::string &name, const casacore::Arr
                    const casacore::Array<bool> &mask, const casacore::IPosition &where)
 {
    bool parallel = canDoParallelIO(name);
-   int section = blctrcTosection(where, where + arr.shape() - 1);
+   casacore::IPosition tlc = where;
+   // Deal with 2d input array, but will only work correctly if axis>1
+   for (uint i=0; i<arr.shape().nelements(); i++) tlc(i) += arr.shape()(i) - 1;
+   int section = blctrcTosection(where, tlc);
 
    if (section>=0 && parallel) {
        int nsection = itsShape(itsAxis) / itsComms.nProcs();
