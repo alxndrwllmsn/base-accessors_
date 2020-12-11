@@ -407,36 +407,34 @@ bool FITSImageRW::write(const casacore::Array<float> &arr, const casacore::IPosi
     lpixel[1] = where[1] + arr.shape()[1];
     ASKAPLOG_DEBUG_STR(FITSlogger, "fpixel[1] = " << fpixel[1] << ", lpixel[1] = " << lpixel[1]);
 
-    if (array_dim == 2 && location_dim == 3) {
+    if (array_dim == 2 && location_dim >= 3) {
         ASKAPLOG_DEBUG_STR(FITSlogger,"Writing a single slice into an array");
         fpixel[2] = where[2] + 1;
         lpixel[2] = where[2] + 1;
-//        lpixel[2] = where[2] + arr.shape()[2];
         ASKAPLOG_DEBUG_STR(FITSlogger, "fpixel[2] = " << fpixel[2] << ", lpixel[2] = " << lpixel[2]);
+        if (location_dim == 4) {
+            fpixel[3] = where[3] + 1;
+            lpixel[3] = where[3] + 1;
+            ASKAPLOG_DEBUG_STR(FITSlogger, "fpixel[3] = " << fpixel[3] << ", lpixel[3] = " << lpixel[3]);
+        }
     }
-    else if (array_dim == 3 && location_dim == 3) {
+    else if (array_dim == 3 && location_dim >= 3) {
         ASKAPLOG_DEBUG_STR(FITSlogger,"Writing more than 1 slice into the array");
         fpixel[2] = where[2] + 1;
         lpixel[2] = where[2] + arr.shape()[2];
         ASKAPLOG_DEBUG_STR(FITSlogger, "fpixel[2] = " << fpixel[2] << ", lpixel[2] = " << lpixel[2]);
-    }
-    else if (array_dim == 3 && location_dim == 4) {
-        fpixel[2] = where[2] + 1;
-        lpixel[2] = where[2] + arr.shape()[2];
-        fpixel[3] = where[3] + 1;
-        // lpixel[3] = where[3] + arr.shape()[3];
-        lpixel[3] = where[3] + 1;
-        ASKAPLOG_DEBUG_STR(FITSlogger, "fpixel[2] = " << fpixel[2] << ", lpixel[2] = " << lpixel[2]);
-        ASKAPLOG_DEBUG_STR(FITSlogger, "fpixel[3] = " << fpixel[3] << ", lpixel[3] = " << lpixel[3]);
+        if (location_dim == 4) {
+            fpixel[3] = where[3] + 1;
+            lpixel[3] = where[3] + 1;
+            ASKAPLOG_DEBUG_STR(FITSlogger, "fpixel[3] = " << fpixel[3] << ", lpixel[3] = " << lpixel[3]);
+        }
     }
     else if (array_dim == 4 && location_dim == 4) {
-
         fpixel[2] = where[2] + 1;
         lpixel[2] = where[2] + arr.shape()[2];
+        ASKAPLOG_DEBUG_STR(FITSlogger, "fpixel[2] = " << fpixel[2] << ", lpixel[2] = " << lpixel[2]);
         fpixel[3] = where[3] + 1;
         lpixel[3] = where[3] + arr.shape()[3];
-
-        ASKAPLOG_DEBUG_STR(FITSlogger, "fpixel[2] = " << fpixel[2] << ", lpixel[2] = " << lpixel[2]);
         ASKAPLOG_DEBUG_STR(FITSlogger, "fpixel[3] = " << fpixel[3] << ", lpixel[3] = " << lpixel[3]);
     }
 
