@@ -1,6 +1,6 @@
 //
-// @file tImageWrite.cc : functional test to exercise image accessor and   
-//                        write image cube with fake data 
+// @file tImageWrite.cc : functional test to exercise image accessor and
+//                        write image cube with fake data
 //
 /// @copyright (c) 2020 CSIRO
 /// Australia Telescope National Facility (ATNF)
@@ -105,7 +105,7 @@ public:
      }
    }
 
-   void writeData(casa::uInt nChunks, casa::uInt chunk) {
+   void writeData(casa::uInt nChunks, casa::uInt chunk, bool contiguous = false) {
       ASKAPDEBUGASSERT(itsShape.nelements() > 2u);
       const casacore::IPosition addPlanesShape(itsShape.getLast(itsShape.nelements() - 2u));
       scimath::MultiDimPosIter it;
@@ -113,11 +113,29 @@ public:
            // it.cursor() corresponds to all other dimensions of the cube except the first two
            // prepending [0,0] gets the 'where' IPosition we want to pass to the interface
            // chunk/nChunks allow to iterate over subsection in the parallel case
-           // in principle, it could be extended to spatial pixels too, the iterator doesn't care - 
+           // in principle, it could be extended to spatial pixels too, the iterator doesn't care -
            // it guaranteed to iterate over the whole shape passed to init (or the constructor) splitting
            // iteration over the given number of chunks deterministically, which we setup to be one per rank
            casacore::IPosition where(2,0,0);
-           where.append(it.cursor());
+           casacore::IPosition cursor = it.cursor();
+           if (contiguous) {
+               // turn distributed planes into contiguous ones
+               uint nPlanes = addPlanesShape.product();
+               size_t iterPlane = cursor(0);
+               size_t factor = 1;
+               for (uint i=1 ; i<cursor.nelements(); i++) {
+                   factor *= addPlanesShape(i-1);
+                   iterPlane += factor*cursor(i);
+               }
+               uint newPlane = nChunks * (iterPlane % (nPlanes/nChunks)) + chunk;
+               cursor(0) = newPlane % addPlanesShape(0);
+               factor = 1;
+               for (uint i=1 ; i<cursor.nelements(); i++) {
+                   factor *= addPlanesShape(i-1);
+                   cursor(i) = newPlane / factor;
+               }
+           }
+           where.append(cursor);
            if (itsMask.nelements() == 0u) {
                ASKAPLOG_INFO_STR(logger, "Writing the plane data to: "<<where);
                itsImageAccessor->write(itsName, itsPixels, where);
@@ -128,27 +146,33 @@ public:
       }
    }
 
+   /// @brief update the header
+   void updateHeader() {
+       itsImageAccessor->setUnits(itsName,"Jy/pixel");
+       itsImageAccessor->setBeamInfo(itsName,2.e-4,1.e-4,1.0e-1);
+   }
+
    /// @brief create the cube via the interface
    /// @param[in] isMaster true if executed on the master rank in the parallel mode (does the actual creation of the cube)
-   void createCube(bool isMaster) {
+   void createCube(bool isMaster, bool collective = false) {
       itsName = config().getString("name","fakecube");
       ASKAPDEBUGASSERT(itsName != "");
       ASKAPDEBUGASSERT(itsPixels.nelements() > 0u);
       // Build a coordinate system for the image
-      casacore::Matrix<double> xform(2,2); 
-      xform = 0.0; xform.diagonal() = 1.0; 
-      casacore::DirectionCoordinate radec(casacore::MDirection::J2000, 
-          casacore::Projection(casacore::Projection::SIN),  
-          294*casacore::C::pi/180.0, -60*casacore::C::pi/180.0, 
-          -0.01*casacore::C::pi/180.0, 0.01*casacore::C::pi/180, 
-          xform, itsPixels.nrow()/2., itsPixels.ncolumn()/2.); 
+      casacore::Matrix<double> xform(2,2);
+      xform = 0.0; xform.diagonal() = 1.0;
+      casacore::DirectionCoordinate radec(casacore::MDirection::J2000,
+          casacore::Projection(casacore::Projection::SIN),
+          294*casacore::C::pi/180.0, -60*casacore::C::pi/180.0,
+          -0.001*casacore::C::pi/180.0, 0.001*casacore::C::pi/180,
+          xform, itsPixels.nrow()/2., itsPixels.ncolumn()/2.);
 
-      casacore::Vector<casacore::String> units(2); units = "deg"; 
+      casacore::Vector<casacore::String> units(2); units = "deg";
       radec.setWorldAxisUnits(units);
 
       // Build a coordinate system for the spectral axis
       // SpectralCoordinate
-      casacore::SpectralCoordinate spectral(casacore::MFrequency::TOPO, 
+      casacore::SpectralCoordinate spectral(casacore::MFrequency::TOPO,
                               1400E+6, 20E+3, 0, 1420.40575E+6);
       units.resize(1);
       units = "MHz";
@@ -192,9 +216,12 @@ public:
       if (isMaster) {
           itsImageAccessor->create(itsName, itsShape, coordsys);
 
-          itsImageAccessor->setUnits(itsName,"Jy/pixel");
-          itsImageAccessor->setBeamInfo(itsName,0.02,0.01,1.0);
-  
+          // The following call causes the entire file to be allocated by the master,
+          // move this to the end for the collective case since it takes a while.
+          // The individual case needs this initialisation otherwise some planes can be partially zeroed
+          if (!collective) {
+              updateHeader();
+          }
           if (itsMask.nelements() > 0) {
               itsImageAccessor->makeDefaultMask(itsName);
           }
@@ -214,6 +241,10 @@ public:
         itsName = config().getString("name","fakecube");
         ASKAPCHECK(itsName != "", "Cube name is not supposed to be empty");
         const std::string mode = config().getString("mode",comms.isParallel() ? "parallel" : "serial");
+        bool collective = config().getString("imageaccess","individual") == "collective";
+        bool contiguous = config().getString("imageaccess.order","distributed") == "contiguous";
+        // enforce contiguous access for collective IO
+        contiguous |= collective;
         ASKAPCHECK(mode == "parallel" || mode == "serial", "Unsupported mode '"<<mode<<"', it should be either parallel or serial");
         if (mode == "serial") {
             ASKAPLOG_INFO_STR(logger, "Using image accessor factory in the serial mode");
@@ -223,13 +254,13 @@ public:
           ASKAPLOG_INFO_STR(logger, "Using image accessor factory in the parallel mode");
         }
         ASKAPLOG_INFO_STR(logger, "Setting up array with fake data");
-        setupData(comms.rank() + 1); 
+        setupData(comms.rank() + 1);
         ASKAPASSERT(itsPixels.nrow() > 0 && itsPixels.ncolumn() > 0);
         ASKAPLOG_INFO_STR(logger, "Filled "<<itsPixels.nrow()<<" x "<<itsPixels.ncolumn()<<" array with random numbers, simulation time "<<timer.real()<<" seconds");
 
         timer.mark();
         // this should work in serial too. For simplicity, just redo everything except the actual cube creation on the slave ranks
-        createCube(comms.isMaster());
+        createCube(comms.isMaster(), collective);
         if (comms.isMaster()) {
             ASKAPLOG_INFO_STR(logger, "Successfully created '"<<itsName<<"' cube with shape "<<itsShape<<", time "<<timer.real()<<" seconds");
         }
@@ -243,12 +274,19 @@ public:
         timer.mark();
         if (mode == "serial") {
             writeData(1, 0);
-        } {
+        } else {
            // the following will work for the serial case too if done under MPI and will just cause a single iteration over planes
-           writeData(comms.nProcs(), comms.rank());
+           // for collective IO we need to write the data in contiguous order
+           writeData(comms.nProcs(), comms.rank(), contiguous);
         }
         ASKAPLOG_INFO_STR(logger, "Completed writing data, time "<<timer.real()<<" seconds");
-
+        comms.barrier();
+        if (comms.isMaster()) {
+            // Moved out of cube creation for collective case
+            if (collective) {
+                updateHeader();
+            }
+        }
         stats.logSummary();
         return 0;
      }
@@ -267,7 +305,7 @@ private:
    /// @brief image accessor
    boost::shared_ptr<accessors::IImageAccess<casacore::Float> > itsImageAccessor;
 
-   /// @brief buffer with fake data   
+   /// @brief buffer with fake data
    casacore::Matrix<casacore::Float> itsPixels;
 
    /// @brief optional mask, used if array is not empty
@@ -293,4 +331,3 @@ int main(int argc, char *argv[])
     askap::accessors::TestImageWriteApp app;
     return app.main(argc, argv);
 }
-
