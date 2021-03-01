@@ -60,7 +60,7 @@ namespace accessors {
 struct ITableHolder : virtual public IHolder {
 
   /// @return a non-const reference to Table held by this object
-  virtual casacore::Table& table() const throw() = 0;
+  virtual casacore::Table& table() const = 0;
 
 };
 

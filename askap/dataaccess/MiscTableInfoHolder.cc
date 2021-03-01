@@ -38,6 +38,7 @@
 
 // own includes
 #include <askap/dataaccess/MiscTableInfoHolder.h>
+#include <askap/askap/AskapError.h>
 
 using namespace askap;
 using namespace askap::accessors;
@@ -47,7 +48,10 @@ using namespace askap::accessors;
 /// this method.
 /// @param[in] dataColumn the name of the data column used by default
 MiscTableInfoHolder::MiscTableInfoHolder(const std::string &dataColumn) :
-       itsDefaultDataColumnName(dataColumn) {}
+       itsDefaultDataColumnName(dataColumn) 
+{
+   ASKAPCHECK(dataColumn != "", "Attempted to set an empty string to the default data column");
+}
 
 /// @brief obtain the name of the data column to use by default
 /// @details The code allows to read/write data not only from DATA
@@ -59,7 +63,7 @@ MiscTableInfoHolder::MiscTableInfoHolder(const std::string &dataColumn) :
 /// constructor (it will be carried accross all required classes by 
 /// TableManager).
 /// @return a const reference to the default name of the data column 
-const std::string & MiscTableInfoHolder::defaultDataColumnName() const throw()
+const std::string & MiscTableInfoHolder::defaultDataColumnName() const
 {
   return itsDefaultDataColumnName;
 }

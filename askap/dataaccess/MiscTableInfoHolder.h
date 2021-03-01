@@ -77,7 +77,7 @@ struct MiscTableInfoHolder : virtual public IMiscTableInfoHolder
   /// constructor (it will be carried accross all required classes by 
   /// TableManager).
   /// @return a const reference to the default name of the data column 
-  virtual const std::string& defaultDataColumnName() const throw();
+  virtual const std::string& defaultDataColumnName() const;
 private:
   /// @brief name of the data column used by default
   std::string itsDefaultDataColumnName;
