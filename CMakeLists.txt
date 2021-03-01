@@ -52,6 +52,7 @@ find_package(log4cxx REQUIRED)
 find_package(Casacore REQUIRED COMPONENTS  ms images mirlib coordinates fits lattices measures scimath scimath_f tables casa)
 find_package(XercesC REQUIRED)
 find_package(CPPUnit)
+find_package(MPI)
 
 # uninstall target
 if(NOT TARGET uninstall)

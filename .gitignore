@@ -4,3 +4,5 @@ tests/imageaccess-cppunit-results.xml
 tmp.testparset
 tmpemptyfitsimage.fits
 tmpfitsimage.fits
+build
+askap-cmake

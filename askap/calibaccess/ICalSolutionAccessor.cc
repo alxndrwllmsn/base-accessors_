@@ -117,11 +117,17 @@ void ICalSolutionAccessor::setBandpassElement(const JonesIndex &index, const cas
 /// @param[in] stokes what element to update (choose either XX or YY)
 /// @param[in] chan spectral channel of interest
 /// @param[in] elem value to set
-void ICalSolutionAccessor::setBandpassElement(casacore::uInt ant, casacore::uInt beam, const casacore::Stokes::StokesTypes stokes, casacore::uInt chan,
+void ICalSolutionAccessor::setBandpassElement(casacore::uInt ant, casacore::uInt beam,
+                                              const casacore::Stokes::StokesTypes stokes, casacore::uInt chan,
                                               const casacore::Complex &elem)
 {
   ASKAPCHECK(chan < 16416, "Channel number is supposed to be less than 16416");
   setBandpassElement(JonesIndex(ant, beam), stokes, chan, elem);
+}
+
+void ICalSolutionAccessor::setIonosphericElement(const casacore::uInt dir, const casacore::uInt param,
+                                                 const casacore::Complex &elem)
+{
 }
 
 } // namespace accessors

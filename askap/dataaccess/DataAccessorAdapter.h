@@ -41,7 +41,7 @@
 
 // own includes
 #include <askap/dataaccess/IDataAccessor.h>
-#include <utils/ChangeMonitor.h>
+#include <askap/scimath/utils/ChangeMonitor.h>
 
 namespace askap {
 	
