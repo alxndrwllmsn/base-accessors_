@@ -74,14 +74,14 @@ MemAntennaSubtableHandler::MemAntennaSubtableHandler(const casacore::Table &ms) 
   }  
 }
 
-/// @brief get the number of antennae
+/// @brief get the number of antennas
 /// @details
-/// This method returns the number of antennae (i.e. all antID indices
+/// This method returns the number of antennas (i.e. all antID indices
 /// are expected to be less than this number). Following the general
 /// assumptions about ANTENNA subtable, this number is assumed to be
 /// fixed.
-/// @return total number of antennae 
-casacore::uInt MemAntennaSubtableHandler::getNumberOfAntennae() const
+/// @return total number of antennas 
+casacore::uInt MemAntennaSubtableHandler::getNumberOfAntennas() const
 {
   return itsMounts.nelements();
 }
@@ -108,12 +108,12 @@ const casacore::String& MemAntennaSubtableHandler::getMount(casacore::uInt antID
   return itsMounts[antID];
 }
 
-/// @brief check whether all antennae are equatorialy mounted
+/// @brief check whether all antennas are equatorialy mounted
 /// @details
 /// This method checks the mount type for all antennas to be 
 /// either EQUATORIAL or equatorial. This mount type doesn't require
 /// parallactic angle rotation and can be trated separately.
-/// @return true, if all antennae are equatorially mounted
+/// @return true, if all antennas are equatorially mounted
 bool MemAntennaSubtableHandler::allEquatorial() const throw()
 {  
   return itsAllEquatorial;
