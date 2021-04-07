@@ -55,6 +55,24 @@ TableConstDataSource::TableConstDataSource(const std::string &fname,
          itsUVWCacheSize(1), itsUVWCacheTolerance(1e-6),
          itsMaxChunkSize(INT_MAX) {}
 
+/// @brief obtain the position of the given antenna
+/// @details
+/// @param[in] antID antenna index to use, matches indices in the data table
+/// @return const reference to MPosition measure for the chosen antenna
+/// @note This method is deliberately not exposed via the IConstDataSource interface because
+/// it is table-specific and cannot be implemented in general in the streaming model where such metadata
+/// should be provided some other way (i.e. not in the stream). However, in the table-based case it can
+/// be used directly as the type is created explicitly at some point (or one could dynamic cast and
+/// test whether this operation is supported). Same information can be extracted manually via the 
+/// getTableManager() method of table-based iterators, essentially the same code used in this
+/// shortcut, but this method is public for iterators.
+const casacore::MPosition& TableConstDataSource::getAntennaPosition(casacore::uInt antID) const
+{
+  // the validity of indicies and initialisation of caches is checked inside these methods, 
+  // but only in debug mode
+  return subtableInfo().getAntenna().getPosition(antID);
+}
+
 /// @brief configure restriction on the chunk size
 /// @param[in] maxNumRows maximum number of rows wanted
 /// @note The new restriction will apply to any iterator created in the future, but will not
