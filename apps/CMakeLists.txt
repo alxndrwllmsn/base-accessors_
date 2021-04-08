@@ -1,6 +1,7 @@
 set (_progs
 imageToFITS
 tDataAccess
+tVerifyUVW
 tTableCalSolution
 tImageWrite
 )
