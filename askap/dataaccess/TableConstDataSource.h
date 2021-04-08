@@ -156,6 +156,18 @@ public:
   /// getTableManager() method of table-based iterators, essentially the same code used in this
   /// shortcut, but this method is public for iterators.
   const casacore::MPosition& getAntennaPosition(casacore::uInt antID) const;
+
+  /// @brief obtain the number of antennas
+  /// @details This is another method specific to the table-based implementation (in the streaming approach
+  /// this has to be provided some other way, through configuration). Therefore, similarly to getAntennaPosition,
+  /// it is not exposed via the IConstDataSource interface making its use more explicit in the code. In principle,
+  /// the number of antennas should rarely be needed in the user code as only valid indices are returned by the 
+  /// the accessor. 
+  /// @note Strictly speaking, this is not the number of antennas, in general, but the number of entries in the 
+  /// ANTENNA table of the measurement set which may not match (and the actual data may only use a subset of indices -
+  /// this is yet another indication that ideally the user-level code should avoid this implementation-specific information).
+  /// @return number of antennas in the measurement set (all antenna indices are less than this number)
+  casacore::uInt getNumberOfAntennas() const;
   
 protected:
   /// construct a part of the read only object for use in the

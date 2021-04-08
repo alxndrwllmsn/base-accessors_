@@ -574,6 +574,7 @@ void TableDataAccessTest::antennaPositionShortcutTest() {
   CPPUNIT_ASSERT(mgr);
   const casacore::uInt nAnt = mgr->getAntenna().getNumberOfAntennas();
   CPPUNIT_ASSERT_EQUAL(static_cast<casacore::uInt>(expectation.size()), nAnt);
+  CPPUNIT_ASSERT_EQUAL(nAnt, ds.getNumberOfAntennas());
   //
 
   for (casacore::uInt ant=0;ant<expectation.size();++ant) {
