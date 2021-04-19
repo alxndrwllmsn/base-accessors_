@@ -47,6 +47,7 @@ ASKAP_LOGGER(logger, ".tVerifyUVW");
 #include <casacore/casa/Arrays/Vector.h>
 #include <casacore/casa/Arrays/Matrix.h>
 #include <casacore/casa/Arrays/ArrayMath.h>
+#include <casacore/casa/Arrays/ArrayLogical.h>
 #include <casacore/measures/Measures/UVWMachine.h>
 
 
@@ -74,7 +75,6 @@ public:
     /// @return a vector with simulated UVWs, one item per row
     casacore::Vector<casacore::RigidVector<casacore::Double, 3> > simulateUVW(const IConstDataAccessor &acc) const;
 
-    
 private:
     /// @brief const reference data source - it is set in the constructor only
     const IConstDataSource& itsDataSource;
@@ -111,27 +111,28 @@ void UVWChecker::run() {
   sel->chooseCrossCorrelations();
     
   for (IConstDataSharedIter it=itsDataSource.createConstIterator(sel,conv);it!=it.end();++it) {  
-       const casacore::Vector<casacore::RigidVector<casacore::Double, 3> > testUVW = simulateUVW(*it);
-       const casacore::Vector<casacore::RigidVector<casacore::Double, 3> > measUVW = it->uvw();
-       //cout<<"this is a test "<<it->visibility().nrow()<<" "<<it->frequency()<<endl;
-       //cout<<"flags: "<<it->flag()<<endl;
-       //cout<<"feed1 pa: "<<it->feed1PA()<<endl;
-       std::cout<<"w: [";
-       for (casacore::uInt row = 0; row<it->nRow(); ++row) {
-            std::cout<<it->uvw()[row](2);
-	    if (row + 1 != it->nRow()) {
-	        std::cout<<", ";
-	    }
-       }
-       std::cout<<"]"<<std::endl;
-       //cout<<"noise: "<<it->noise().shape()<<endl;
-       //cout<<"direction: "<<it->pointingDir2()<<endl;
-       //cout<<"direction: "<<it->dishPointing2()<<endl;
-       //cout<<"ant1: "<<it->antenna1()<<endl;
-       //cout<<"ant2: "<<it->antenna2()<<endl;
+       const casacore::Vector<casacore::RigidVector<casacore::Double, 3> > testUVWs = simulateUVW(*it);
+       const casacore::Vector<casacore::RigidVector<casacore::Double, 3> > measUVWs = it->uvw();
+       ASKAPDEBUGASSERT(testUVW.nelements() == measUVW.nelements());
+
        const casacore::MEpoch epoch(casacore::Quantity(it->time()/86400. + itsRefMJD,"d"), casacore::MEpoch::Ref(casacore::MEpoch::UTC));
-  
-       std::cout<<"time: "<<it->time()<<" "<<epoch<<std::endl;
+
+       const casacore::Cube<casacore::Bool>& flags = it->flag();
+       for (casacore::uInt row = 0; row < it->nRow(); ++row) {
+            if (!casacore::allTrue(flags.yzPlane(row))) {
+                // this row has unflagged data, UVWs should be good
+                const casacore::RigidVector<casacore::Double, 3> testUVW = testUVWs[row];
+                const casacore::RigidVector<casacore::Double, 3> measUVW = measUVWs[row];
+                const double simBslnLength = casacore::sqrt(testUVW * testUVW);
+                const double measBslnLength = casacore::sqrt(measUVW * measUVW);
+                const double cosAngle = simBslnLength > 0. && measBslnLength > 0. ? testUVW * measUVW / (simBslnLength * measBslnLength): 0.;
+                ASKAPASSERT(cosAngle <= 1. && cosAngle >= -1.);
+                const casacore::RigidVector<casacore::Double, 3> diffUVW = measUVW - testUVW;
+                const double diffLength = casacore::sqrt(diffUVW * diffUVW);
+
+                std::cout<<epoch<<" "<<it->antenna1()[row]<<" "<<it->antenna2()[row]<<" "<<it->feed1()[row]<<" "<<measUVW<<" "<<testUVW<<" "<<diffLength<<" "<<casacore::acos(cosAngle) / casacore::C::pi * 180.<<std::endl;
+            }
+       }
   }
 }
 
