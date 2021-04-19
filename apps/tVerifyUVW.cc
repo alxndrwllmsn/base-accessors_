@@ -81,11 +81,14 @@ private:
 
     /// @brief buffer with antenna positions
     std::vector<casacore::MPosition> itsLayout;
+
+    /// @brief reference MJD for time in the accessor
+    const double itsRefMJD;
 };
 
 /// @brief constructor
 /// @param[in] ds table data source to work with
-UVWChecker::UVWChecker(const TableConstDataSource &ds) : itsDataSource(ds) 
+UVWChecker::UVWChecker(const TableConstDataSource &ds) : itsDataSource(ds), itsRefMJD(59000.)
 {
    // all operations specific to the table-based accessor are confined to this constructor
    // the rest of the work can proceed through the general interface (hence the type of 
@@ -101,12 +104,15 @@ void UVWChecker::run() {
   IDataSelectorPtr sel=itsDataSource.createSelector();
   IDataConverterPtr conv=itsDataSource.createConverter();  
   conv->setFrequencyFrame(casacore::MFrequency::Ref(casacore::MFrequency::TOPO),"MHz");
-  conv->setEpochFrame(casacore::MEpoch(casacore::Quantity(59000.,"d"),
+  conv->setEpochFrame(casacore::MEpoch(casacore::Quantity(itsRefMJD,"d"),
                       casacore::MEpoch::Ref(casacore::MEpoch::UTC)),"s");
   conv->setDirectionFrame(casacore::MDirection::Ref(casacore::MDirection::J2000)); 
+
   sel->chooseCrossCorrelations();
     
   for (IConstDataSharedIter it=itsDataSource.createConstIterator(sel,conv);it!=it.end();++it) {  
+       const casacore::Vector<casacore::RigidVector<casacore::Double, 3> > testUVW = simulateUVW(*it);
+       const casacore::Vector<casacore::RigidVector<casacore::Double, 3> > measUVW = it->uvw();
        //cout<<"this is a test "<<it->visibility().nrow()<<" "<<it->frequency()<<endl;
        //cout<<"flags: "<<it->flag()<<endl;
        //cout<<"feed1 pa: "<<it->feed1PA()<<endl;
@@ -123,7 +129,9 @@ void UVWChecker::run() {
        //cout<<"direction: "<<it->dishPointing2()<<endl;
        //cout<<"ant1: "<<it->antenna1()<<endl;
        //cout<<"ant2: "<<it->antenna2()<<endl;
-       std::cout<<"time: "<<it->time()<<std::endl;
+       const casacore::MEpoch epoch(casacore::Quantity(it->time()/86400. + itsRefMJD,"d"), casacore::MEpoch::Ref(casacore::MEpoch::UTC));
+  
+       std::cout<<"time: "<<it->time()<<" "<<epoch<<std::endl;
   }
 }
 
@@ -144,19 +152,25 @@ casacore::Vector<casacore::RigidVector<casacore::Double, 3> > UVWChecker::simula
         const casa::uInt beam = acc.feed1()[row];
         ASKAPCHECK(beam == acc.feed2()[row], "Cross-beam products are not supported!");
         const casacore::MVDirection phc = acc.pointingDir1()[row];
-        ASKAPCHECK(phc.separation(acc.pointingDir2()[row]) < 1e-6, "Phase centres are different for antenna 1 and 2 of the baseline - this is not supported");
+        ASKAPCHECK(phc.separation(acc.pointingDir2()[row]) < 2e-5, "Phase centres are different for antenna 1 and 2 of the baseline - this is not supported: "<<
+                   phc.separation(acc.pointingDir2()[row])<<" "<<printDirection(phc)<<" "<<printDirection(acc.pointingDir2()[row]));
         const std::map<casacore::uInt, size_t>::const_iterator ci = beamIndices.find(beam);
         if (ci != beamIndices.end()) {
             // check that the phase centre is the same as before
             ASKAPDEBUGASSERT(ci->second < phaseCentres.size());
-            ASKAPCHECK(phaseCentres[ci->second].separation(phc) < 1e-6, "Phase centres for beam "<<beam + 1<<" (1-based) have changed within one accessor - this is not supported");
+            ASKAPCHECK(phaseCentres[ci->second].separation(phc) < 2e-5, "Phase centres for beam "<<beam + 1<<" (1-based) have changed within one accessor - this is not supported: "<<
+                       phaseCentres[ci->second].separation(phc)<<" "<<printDirection(phc)<<" "<<printDirection(phaseCentres[ci->second]));
         } else {
             // this is the new beam
             const size_t newIndex = phaseCentres.size();
             phaseCentres.push_back(phc);
+            ASKAPASSERT(phaseCentres.back().separation(phc) < 3e-6);
             beamIndices[beam] = newIndex;
         }
    }
+
+   // now we're ready to compute per-antenna per-beam UVWs
+   const casacore::MEpoch epoch(casacore::Quantity(acc.time()/86400. + itsRefMJD,"d"), casacore::MEpoch::Ref(casacore::MEpoch::UTC));
 
    const casacore::uInt nBeams = static_cast<casacore::uInt>(phaseCentres.size());
    // geocentric U and V per antenna/beam
@@ -164,9 +178,70 @@ casacore::Vector<casacore::RigidVector<casacore::Double, 3> > UVWChecker::simula
    casa::Matrix<double> antVs(itsLayout.size(), nBeams, 0.);
    casa::Matrix<double> antWs(itsLayout.size(), nBeams, 0.);
    std::vector<boost::shared_ptr<casacore::UVWMachine> > uvwMachines(nBeams);
+   for (size_t ant = 0; ant < itsLayout.size(); ++ant) {
+        const casacore::MPosition antPos = itsLayout[ant];
+        const casa::MeasFrame frame(epoch, antPos);
+        // antenna position in metres
+        const casacore::Vector<casacore::Double> xyz = antPos.getValue().getValue();
+        for (casa::uInt beam =0; beam < nBeams; ++beam) {
+             // Current APP phase center
+             const casa::MDirection fpc = casa::MDirection::Convert(phaseCentres[beam],
+                                   casa::MDirection::Ref(casa::MDirection::TOPO, frame))();
+             const casa::MDirection hadec = casa::MDirection::Convert(phaseCentres[beam],
+                                   casa::MDirection::Ref(casa::MDirection::HADEC, frame))();
+             if (ant == 0) {
+                 // for uvw rotation
+                 // HADEC frame doesn't seem to work correctly with UVW machine, even apart from inversion of the first coordinate
+                 // However, it is required for phasing model/UVW itself 
+                 // For details see ADESCOM-342.
+                 uvwMachines[beam].reset(new casa::UVWMachine(casa::MDirection::Ref(casa::MDirection::J2000), fpc, frame));
+             }
+             const double dec = hadec.getValue().getLat(); //fpc.getAngle().getValue()(1);
+             // hour angle at latitude zero
+             const double H0 = hadec.getValue().getLong() - antPos.getValue().getLong();
 
+             // Transformation from antenna position to the geocentric delay
+             const double sH0 = sin(H0);
+             const double cH0 = cos(H0);
+             const double cd = cos(dec);
+             const double sd = sin(dec);
+             antUs(ant, beam) = -sH0 * xyz(0) - cH0 * xyz(1);
+             antVs(ant, beam) = sd * cH0 * xyz(0) - sd * sH0 * xyz(1) - cd * xyz(2);
+             antWs(ant, beam) = -cd * cH0 * xyz(0) + cd * sH0 * xyz(1) - sd * xyz(2);
+        }
+   }
+ 
+   // now everything is ready to compute the result for each baseline
+   // note, in principle, the code above can be moved to a separate method or methods
+   // something can be cached too, although when time changes recalculation will still need to happen, so probably
+   // not a huge overhead to do it the current way
+   casacore::Vector<casacore::RigidVector<casacore::Double, 3> > result(acc.nRow());
+   casacore::Vector<double> uvwvec(3);
+   for (casa::uInt row = 0; row < acc.nRow(); ++row) {
+        const casa::uInt ant1 = acc.antenna1()[row];
+        const casa::uInt ant2 = acc.antenna2()[row];
+        const casa::uInt beamIndex = acc.feed1()[row];
+        std::map<casacore::uInt, size_t>::const_iterator ci = beamIndices.find(beamIndex);
+        ASKAPDEBUGASSERT(ci != beamIndices.end());
+        const casa::uInt beam = static_cast<casa::uInt>(ci->second);
+        
+        ASKAPASSERT(ant1 < itsLayout.size());
+        ASKAPASSERT(ant2 < itsLayout.size());
+        ASKAPDEBUGASSERT(beam < nBeams);
 
-   return casacore::Vector<casacore::RigidVector<casacore::Double, 3> >();
+        uvwvec(0) = antUs(ant2, beam) - antUs(ant1, beam);
+        uvwvec(1) = antVs(ant2, beam) - antVs(ant1, beam);
+        uvwvec(2) = antWs(ant2, beam) - antWs(ant1, beam);
+
+        ASKAPDEBUGASSERT(beam < uvwMachines.size());
+        ASKAPDEBUGASSERT(uvwMachines[beam]);
+        // uvw rotation into J2000
+        uvwMachines[beam]->convertUVW(uvwvec);
+        ASKAPDEBUGASSERT(uvwvec.nelements() == 3);
+        result[row] = uvwvec;
+ 
+   }
+   return result;
 }
 
 // don't use the whole application harness for now, we don't need any parallelism or passing a parset
