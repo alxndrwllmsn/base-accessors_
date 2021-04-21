@@ -35,3 +35,9 @@ foreach(prog ${_progs})
 	install (TARGETS ${prog} DESTINATION bin)
 
 endforeach(prog ${_progs})
+
+install (FILES
+tVerifyUVW.log_cfg
+DESTINATION etc
+)
+

@@ -129,8 +129,9 @@ void UVWChecker::run() {
                 ASKAPASSERT(cosAngle <= 1. && cosAngle >= -1.);
                 const casacore::RigidVector<casacore::Double, 3> diffUVW = measUVW - testUVW;
                 const double diffLength = casacore::sqrt(diffUVW * diffUVW);
+                const double stretch = simBslnLength > 0. ? measBslnLength / simBslnLength - 1. : 0.;
 
-                std::cout<<epoch<<" "<<it->antenna1()[row]<<" "<<it->antenna2()[row]<<" "<<it->feed1()[row]<<" "<<measUVW<<" "<<testUVW<<" "<<diffLength<<" "<<casacore::acos(cosAngle) / casacore::C::pi * 180.<<std::endl;
+                std::cout<<epoch<<" "<<it->antenna1()[row]<<" "<<it->antenna2()[row]<<" "<<it->feed1()[row]<<" "<<measUVW<<" "<<testUVW<<" "<<diffUVW<<" "<<diffLength<<" "<<stretch<<" "<<casacore::acos(cosAngle) / casacore::C::pi * 180.<<std::endl;
             }
        }
   }
@@ -249,6 +250,23 @@ casacore::Vector<casacore::RigidVector<casacore::Double, 3> > UVWChecker::simula
 // like it is for the standard application
 int main(int argc, char **argv) {
   try {
+     // borrowed this code from the parallel application class. Perhaps, needs to be abstracted to avoid
+     // duplication
+     if (!ASKAPLOG_ISCONFIGURED) {
+        // Now we have to initialize the logger before we use it
+        // If a log configuration exists in the current directory then
+        // use it, otherwise try to use the programs default one
+        const std::ifstream config("askap.log_cfg", std::ifstream::in);
+
+        if (config) {
+            ASKAPLOG_INIT("askap.log_cfg");
+        } else {
+            std::ostringstream ss;
+            ss << argv[0] << ".log_cfg";
+            ASKAPLOG_INIT(ss.str().c_str());
+            std::cerr<<"initialised for "<<ss.str().c_str()<<std::endl;
+        }
+     }
      if (argc!=2) {
          std::cerr<<"Usage "<<argv[0]<<" measurement_set"<<std::endl;
 	 return -2;
@@ -259,10 +277,10 @@ int main(int argc, char **argv) {
      timer.mark();
      TableDataSource ds(argv[1],TableDataSource::MEMORY_BUFFERS); 
      UVWChecker checker(ds);
-     std::cerr<<"Initialization: "<<timer.real()<<std::endl;
+     ASKAPLOG_DEBUG_STR(logger, "Initialization: "<<timer.real());
      timer.mark();
      checker.run();
-     std::cerr<<"Job: "<<timer.real()<<std::endl;
+     ASKAPLOG_DEBUG_STR(logger,"Job: "<<timer.real());
   }
   catch(const AskapError &ce) {
      std::cerr<<"AskapError has been caught. "<<ce.what()<<std::endl;
