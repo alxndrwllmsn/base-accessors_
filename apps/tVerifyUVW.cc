@@ -50,7 +50,12 @@ ASKAP_LOGGER(logger, ".tVerifyUVW");
 #include <casacore/casa/Arrays/ArrayLogical.h>
 #include <casacore/measures/Measures/UVWMachine.h>
 
-
+// boost
+#include <boost/noncopyable.hpp>
+#include <boost/accumulators/accumulators.hpp>
+#include <boost/accumulators/statistics/stats.hpp>
+#include <boost/accumulators/statistics/min.hpp>
+#include <boost/accumulators/statistics/max.hpp>
 
 // std
 #include <stdexcept>
@@ -58,13 +63,15 @@ ASKAP_LOGGER(logger, ".tVerifyUVW");
 
 using namespace askap;
 using namespace accessors;
+using namespace boost::accumulators;
 
-class UVWChecker {
+class UVWChecker : public boost::noncopyable {
 public:
     /// @brief constructor
     /// @param[in] ds table data source to work with
+    /// @param[in] verbose if true, more details are printed in the log
     /// @note other constructors can be written later (i.e. for some streaming applications which cannot access table-specific info)
-    explicit UVWChecker(const TableConstDataSource &ds);
+    explicit UVWChecker(const TableConstDataSource &ds, bool verbose = false);
 
     /// @brief iterate over the data - main entry point
     void run();
@@ -84,11 +91,15 @@ private:
 
     /// @brief reference MJD for time in the accessor
     const double itsRefMJD;
+
+    /// @brief if true, more details are printed
+    const bool itsVerbose;
 };
 
 /// @brief constructor
 /// @param[in] ds table data source to work with
-UVWChecker::UVWChecker(const TableConstDataSource &ds) : itsDataSource(ds), itsRefMJD(59000.)
+/// @param[in] verbose if true, more details are printed in the log
+UVWChecker::UVWChecker(const TableConstDataSource &ds, bool verbose) : itsDataSource(ds), itsRefMJD(59000.), itsVerbose(verbose)
 {
    // all operations specific to the table-based accessor are confined to this constructor
    // the rest of the work can proceed through the general interface (hence the type of 
@@ -117,6 +128,10 @@ void UVWChecker::run() {
 
        const casacore::MEpoch epoch(casacore::Quantity(it->time()/86400. + itsRefMJD,"d"), casacore::MEpoch::Ref(casacore::MEpoch::UTC));
 
+       bool epochPrinted = false;
+       accumulator_set<double, features<tag::min, tag::max> > angleStats;
+       accumulator_set<double, features<tag::min, tag::max> > stretchStats;
+
        const casacore::Cube<casacore::Bool>& flags = it->flag();
        for (casacore::uInt row = 0; row < it->nRow(); ++row) {
             if (!casacore::allTrue(flags.yzPlane(row))) {
@@ -129,11 +144,23 @@ void UVWChecker::run() {
                 ASKAPASSERT(cosAngle <= 1. && cosAngle >= -1.);
                 const casacore::RigidVector<casacore::Double, 3> diffUVW = measUVW - testUVW;
                 const double diffLength = casacore::sqrt(diffUVW * diffUVW);
+                // relative stretch minus 1. (i.e. 0 is the perfect match)
                 const double stretch = simBslnLength > 0. ? measBslnLength / simBslnLength - 1. : 0.;
-
-                std::cout<<epoch<<" "<<it->antenna1()[row]<<" "<<it->antenna2()[row]<<" "<<it->feed1()[row]<<" "<<measUVW<<" "<<testUVW<<" "<<diffUVW<<" "<<diffLength<<" "<<stretch<<" "<<casacore::acos(cosAngle) / casacore::C::pi * 180.<<std::endl;
+                // angle between two UVW vectors in degrees
+                const double angle = casacore::acos(cosAngle) / casacore::C::pi * 180.;
+                if (itsVerbose) {
+                    if (!epochPrinted) {
+                        ASKAPLOG_INFO_STR(logger, "UVW comparison for "<<epoch);
+                        epochPrinted = true;
+                    }
+                    ASKAPLOG_INFO_STR(logger, " "<<it->antenna1()[row]<<" "<<it->antenna2()[row]<<" "<<it->feed1()[row]<<" "<<measUVW<<" "<<testUVW<<" "<<diffUVW<<" "<<diffLength<<" "<<stretch<<" "<<angle);
+                }
+                angleStats(angle);
+                stretchStats(stretch);
             }
        }
+       ASKAPLOG_INFO_STR(logger, "For "<<epoch<<" UVW min/max stretch values are "<<min(stretchStats)<<" "<<max(stretchStats)<<" min/max angles (deg) are "<<
+min(angleStats)<<" "<<max(angleStats));
   }
 }
 
@@ -267,16 +294,20 @@ int main(int argc, char **argv) {
             std::cerr<<"initialised for "<<ss.str().c_str()<<std::endl;
         }
      }
-     if (argc!=2) {
-         std::cerr<<"Usage "<<argv[0]<<" measurement_set"<<std::endl;
+     if (argc != 2 && argc !=3) {
+         std::cerr<<"Usage "<<argv[0]<<" [-v] measurement_set"<<std::endl;
 	 return -2;
+     }
+     const bool verbose = (argc == 3);
+     if (verbose) {
+         ASKAPCHECK(std::string("-v") == argv[1], "Incorrect first parameter, only -v is allowed");
      }
 
      casacore::Timer timer;
 
      timer.mark();
-     TableDataSource ds(argv[1],TableDataSource::MEMORY_BUFFERS); 
-     UVWChecker checker(ds);
+     TableDataSource ds(verbose ? argv[2] : argv[1],TableDataSource::MEMORY_BUFFERS); 
+     UVWChecker checker(ds, verbose);
      ASKAPLOG_DEBUG_STR(logger, "Initialization: "<<timer.real());
      timer.mark();
      checker.run();
