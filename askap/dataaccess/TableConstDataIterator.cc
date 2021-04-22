@@ -818,13 +818,13 @@ casacore::MEpoch TableConstDataIterator::currentEpoch() const
 }
 
 /// @brief Fill internal buffer with parallactic angles
-/// @details This buffer holds parallactic angles for all antennae. The buffer
+/// @details This buffer holds parallactic angles for all antennas. The buffer
 /// is invalidated when the time changes for an alt-az array, for an equatorial
 /// array it happens only if the pointing changes.
 /// @param[in] angles a reference to a vector to be filled
 void TableConstDataIterator::fillParallacticAngleCache(casacore::Vector<casacore::Double> &angles) const
 {
-  angles.resize(subtableInfo().getAntenna().getNumberOfAntennae());
+  angles.resize(subtableInfo().getAntenna().getNumberOfAntennas());
   ASKAPDEBUGASSERT(angles.size());
   if (subtableInfo().getAntenna().allEquatorial()) {
       angles.set(0.);
@@ -1026,11 +1026,11 @@ void TableConstDataIterator::fillDishPointing2(casacore::Vector<casacore::MVDire
 /// @details The difference from fillDirectionCache is that
 /// this method computes the pointing directions for the dish centre, not for
 /// individual feeds (or synthetic beams, strictly speaking). The number of elements
-/// in the buffer equals to the number of antennae. This is also different from
+/// in the buffer equals to the number of antennas. This is also different from
 /// fillDirectionCache, which projects feeds to the same 1D array as well.
 /// @note At this stage we use FIELD subtable to get the pointing directions.
 /// Therefore, these directions do not depend on antenna/feed. This method writes
-/// the same value for all elements of the array. It will be used for both antennae
+/// the same value for all elements of the array. It will be used for both antennas
 /// in the pair.
 /// @param[in] dirs a reference to a vector to fill
 void TableConstDataIterator::fillDishPointingCache(casacore::Vector<casacore::MVDirection> &dirs) const
@@ -1038,7 +1038,7 @@ void TableConstDataIterator::fillDishPointingCache(casacore::Vector<casacore::MV
   ASKAPDEBUGASSERT(itsConverter);
   const casacore::MEpoch epoch = currentEpoch();
 
-  dirs.resize(subtableInfo().getAntenna().getNumberOfAntennae());
+  dirs.resize(subtableInfo().getAntenna().getNumberOfAntennas());
 
   // we currently use FIELD table to get the pointing direction. This table
   // does not depend on the antenna. However, the reference frame can introduce such
