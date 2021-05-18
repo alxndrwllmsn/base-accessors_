@@ -133,12 +133,19 @@ void UVWChecker::run() {
        accumulator_set<double, features<tag::min, tag::max> > stretchStats;
 
        const casacore::Cube<casacore::Bool>& flags = it->flag();
+       bool hasUnflaggedData = false;
        for (casacore::uInt row = 0; row < it->nRow(); ++row) {
             if (!casacore::allTrue(flags.yzPlane(row))) {
                 // this row has unflagged data, UVWs should be good
+                hasUnflaggedData = true;
                 const casacore::RigidVector<casacore::Double, 3> testUVW = testUVWs[row];
                 const casacore::RigidVector<casacore::Double, 3> measUVW = measUVWs[row];
                 const double simBslnLength = casacore::sqrt(testUVW * testUVW);
+                if (simBslnLength < 1e-6) {
+                    ASKAPLOG_WARN_STR(logger, "Encountered zero baseline length for a cross-correlation with unflagged data, antenna ids: "<<
+                                      it->antenna1()[row]<<" "<<it->antenna2()[row]<<" beam: "<<it->feed1()[row]<<" epoch: "<<epoch);
+                    continue;
+                }
                 const double measBslnLength = casacore::sqrt(measUVW * measUVW);
                 const double cosAngle = simBslnLength > 0. && measBslnLength > 0. ? testUVW * measUVW / (simBslnLength * measBslnLength): 0.;
                 ASKAPASSERT(cosAngle <= 1. && cosAngle >= -1.);
@@ -159,8 +166,10 @@ void UVWChecker::run() {
                 stretchStats(stretch);
             }
        }
-       ASKAPLOG_INFO_STR(logger, "For "<<epoch<<" UVW min/max stretch values are "<<min(stretchStats)<<" "<<max(stretchStats)<<" min/max angles (deg) are "<<
-min(angleStats)<<" "<<max(angleStats));
+       if (hasUnflaggedData) {
+           ASKAPLOG_INFO_STR(logger, "For "<<epoch<<" UVW min/max stretch values are "<<min(stretchStats)<<" "<<max(stretchStats)<<
+                " min/max angles (deg) are "<<min(angleStats)<<" "<<max(angleStats));
+       }
   }
 }
 
@@ -224,6 +233,11 @@ casacore::Vector<casacore::RigidVector<casacore::Double, 3> > UVWChecker::simula
                  // However, it is required for phasing model/UVW itself 
                  // For details see ADESCOM-342.
                  uvwMachines[beam].reset(new casa::UVWMachine(casa::MDirection::Ref(casa::MDirection::J2000), fpc, frame));
+                 /*
+                 if (beam == 0) {
+                     std::cout<<ant<<" "<<epoch<<" "<<antPos<<" "<<printDirection(fpc.getValue())<<" "<<printDirection(hadec.getValue())<<std::endl;
+                 }
+                 */
              }
              const double dec = hadec.getValue().getLat(); //fpc.getAngle().getValue()(1);
              // hour angle at latitude zero
