@@ -112,6 +112,7 @@ ITableSpWindowHolder.h
 ITimeDependentSubtable.h
 MemAntennaSubtableHandler.h
 MemBufferDataAccessor.h
+MemBufferDataAccessorStack.h
 MemTableDataDescHolder.h
 MemTablePolarisationHolder.h
 MemTableSpWindowHolder.h
