@@ -48,32 +48,40 @@ namespace accessors {
 /// @brief an adapter to most methods of IConstDataAccessor
 ///
 /// @details 
-class MemBufferDataAccessorStack : virtual public MemBufferDataAccessor
+class MemBufferDataAccessorStackAble : virtual public MemBufferDataAccessor
 {
 public:
   
   /// construct an object linked with the given const accessor
   /// @param[in] acc a reference to the associated accessor
-  explicit MemBufferDataAccessorStack(const IConstDataAccessor &acc);
+  explicit MemBufferDataAccessorStackAble(const IConstDataAccessor &acc);
    
   /// copy contructor
-  MemBufferDataAccessorStack(const MemBufferDataAccessorStack &other);
+  MemBufferDataAccessorStackAble(const MemBufferDataAccessorStackAble &other);
   
   /// copy/assignment operator
   
-  MemBufferDataAccessorStack & operator=(const MemBufferDataAccessorStack &other);
+  MemBufferDataAccessorStackAble & operator=(const MemBufferDataAccessorStackAble &other);
   
   /// append operator
-  MemBufferDataAccessorStack * append(const MemBufferDataAccessorStack &other);
+  MemBufferDataAccessorStackAble * append(MemBufferDataAccessorStackAble &other);
+  
+  const casacore::Cube<casacore::Complex>& visibility() const;
   
   casacore::Cube<casacore::Complex>& rwVisibility();
+  
 
 private:
   
   #ifdef _OPENMP
   /// @brief synchronisation lock for resizing of the buffer
   mutable boost::mutex itsMutex;
+  
   #endif
+  void resizeBufferIfNeeded();
+  
+  mutable casacore::Cube<casacore::Complex> itsBuffer;
+  
 };
 
 } // namespace accessors
