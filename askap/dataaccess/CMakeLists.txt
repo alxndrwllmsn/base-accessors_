@@ -27,6 +27,7 @@ IHolder.cc
 ITableMeasureFieldSelector.cc
 MemAntennaSubtableHandler.cc
 MemBufferDataAccessor.cc
+MemBufferDataAccessorStack.cc
 MemTableDataDescHolder.cc
 MemTablePolarisationHolder.cc
 MemTableSpWindowHolder.cc
