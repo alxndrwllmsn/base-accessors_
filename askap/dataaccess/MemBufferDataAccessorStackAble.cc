@@ -35,7 +35,12 @@
 ///
 
 // own includes
-#include <askap/dataaccess/MemBufferDataAccessorStack.h>
+#include <askap/dataaccess/MemBufferDataAccessorStackAble.h>
+#include <askap/dataaccess/MemBufferDataAccessor.h>
+
+
+#include <askap/askap/AskapLogging.h>
+#include <askap/askap/AskapError.h>
 
 using namespace askap;
 using namespace askap::accessors;
@@ -43,8 +48,8 @@ using namespace askap::accessors;
 
 /// construct an object linked with the given const accessor
 /// @param[in] acc a reference to the associated accessor
-MemBufferDataAccessorStack::MemBufferDataAccessorStack(const IConstDataAccessor &acc) :
-      MetaDataAccessor(acc) {}
+MemBufferDataAccessorStackAble::MemBufferDataAccessorStackAble(const IConstDataAccessor &acc) :
+      MemBufferDataAccessor(acc), MetaDataAccessor(acc) {}
   
 /// Read-only visibilities (a cube is nRow x nChannel x nPol; 
 /// each element is a complex visibility)
@@ -52,9 +57,8 @@ MemBufferDataAccessorStack::MemBufferDataAccessorStack(const IConstDataAccessor 
 /// @return a reference to nRow x nChannel x nPol cube, containing
 /// all visibility data
 ///
-const casacore::Cube<casacore::Complex>& MemBufferDataAccessorStack::visibility() const
-{
-  resizeBufferIfNeeded();
+const casacore::Cube<casacore::Complex>& MemBufferDataAccessorStackAble::visibility() const
+{  
   return itsBuffer;
 }
 	
@@ -64,14 +68,21 @@ const casacore::Cube<casacore::Complex>& MemBufferDataAccessorStack::visibility(
 /// @return a reference to nRow x nChannel x nPol cube, containing
 /// all visibility data
 ///
-casacore::Cube<casacore::Complex>& MemBufferDataAccessorStack::rwVisibility()
+casacore::Cube<casacore::Complex>& MemBufferDataAccessorStackAble::rwVisibility()
 {
   resizeBufferIfNeeded();
   return itsBuffer;
 }
 
+MemBufferDataAccessorStackAble * MemBufferDataAccessorStackAble::append( MemBufferDataAccessorStackAble& acc) {
+  ASKAPTHROW(AskapError,"MemBufferDataAccessor::append not yet implemented");
+}
+
+MemBufferDataAccessorStackAble & MemBufferDataAccessorStackAble::operator=(const MemBufferDataAccessorStackAble &other) {
+  ASKAPTHROW(AskapError,"MemBufferDataAccessor::operator= not yet implemented");
+}
 /// @brief a helper method to ensure the buffer has appropriate shape
-void MemBufferDataAccessorStack::resizeBufferIfNeeded() const
+void MemBufferDataAccessorStackAble::resizeBufferIfNeeded() 
 {
   #ifdef _OPENMP
   boost::lock_guard<boost::mutex> lock(itsMutex);
