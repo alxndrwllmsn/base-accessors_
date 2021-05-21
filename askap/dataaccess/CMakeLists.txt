@@ -27,7 +27,7 @@ IHolder.cc
 ITableMeasureFieldSelector.cc
 MemAntennaSubtableHandler.cc
 MemBufferDataAccessor.cc
-MemBufferDataAccessorStackAble.cc
+MemBufferDataAccessorStackable.cc
 MemTableDataDescHolder.cc
 MemTablePolarisationHolder.cc
 MemTableSpWindowHolder.cc
@@ -113,7 +113,7 @@ ITableSpWindowHolder.h
 ITimeDependentSubtable.h
 MemAntennaSubtableHandler.h
 MemBufferDataAccessor.h
-MemBufferDataAccessorStackAble.h
+MemBufferDataAccessorStackable.h
 MemTableDataDescHolder.h
 MemTablePolarisationHolder.h
 MemTableSpWindowHolder.h
