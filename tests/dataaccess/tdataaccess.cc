@@ -37,11 +37,13 @@
 #include "DataAccessorAdapterTest.h"
 #include "CachedAccessorFieldTest.h"
 #include "TimeChunkIteratorAdapterTest.h"
+#include "StackableAdapterTest.h"
 
 #include "TableTestRunner.h"
 
 int main(int argc, char *argv[])
 {
+  
  try {
    //CppUnit::TextUi::TestRunner runner;
    askap::accessors::TableTestRunner runner(argv[0]);
@@ -52,6 +54,7 @@ int main(int argc, char *argv[])
    runner.addTest(askap::accessors::DataAccessorAdapterTest::suite());
    runner.addTest(askap::accessors::CachedAccessorFieldTest::suite());
    runner.addTest(askap::accessors::TimeChunkIteratorAdapterTest::suite());
+   runner.addTest(askap::accessors::StackableAdapterTest::suite());
    runner.run();
    return 0;
  }
