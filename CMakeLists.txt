@@ -179,11 +179,14 @@ if (BUILD_TESTING)
   if (NOT CPPUNIT_FOUND)
     message(FATAL_ERROR "CPPUnit is needed for building and running unit tests")
   endif()
+  execute_process(COMMAND tar -xvf ${CMAKE_CURRENT_SOURCE_DIR}/testdataset.tar.bz2 WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
   enable_testing()
   add_subdirectory(tests/calibaccess)
   add_subdirectory(tests/dataaccess)
   add_subdirectory(tests/votable)
   add_subdirectory(tests/imageaccess)
+  file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/testdataset.ms
+     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/tests/dataaccess)
 endif ()
 
 

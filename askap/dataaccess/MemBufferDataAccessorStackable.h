@@ -4,6 +4,7 @@
 /// @details There is a use case for buffering the data from the accessors. 
 /// This is a container for multiple MemBufferDataAccessor.
 ///
+///
 /// @copyright (c) 2021 CSIRO
 /// Australia Telescope National Facility (ATNF)
 /// Commonwealth Scientific and Industrial Research Organisation (CSIRO)
@@ -34,6 +35,8 @@
 
 // own includes
 #include <askap/dataaccess/MemBufferDataAccessor.h>
+#include <askap/dataaccess/SharedIter.h>
+#include <askap/dataaccess/IDataIterator.h>
 
 #ifdef _OPENMP
 //boost include
@@ -48,39 +51,93 @@ namespace accessors {
 /// @brief an adapter to most methods of IConstDataAccessor
 ///
 /// @details 
-class MemBufferDataAccessorStackAble : virtual public MemBufferDataAccessor
+class MemBufferDataAccessorStackable : virtual public MemBufferDataAccessor
 {
 public:
   
-  /// construct an object linked with the given const accessor
+  /// @brief construct an object linked with the given const accessor
   /// @param[in] acc a reference to the associated accessor
-  explicit MemBufferDataAccessorStackAble(const IConstDataAccessor &acc);
-   
-  /// copy contructor
-  MemBufferDataAccessorStackAble(const MemBufferDataAccessorStackAble &other);
+  explicit MemBufferDataAccessorStackable(const IConstDataAccessor &acc);
   
-  /// copy/assignment operator
+  /// @brief construct an object linked with the given Const iterator
+  /// @param[in] iter the associated iterator
+  /// @details These constructors iterate through the data themselves and stack the
+  /// the accessors. Some elements of the accessors are stored by reference so need to
+  /// be instantiated with new copies.
   
-  MemBufferDataAccessorStackAble & operator=(const MemBufferDataAccessorStackAble &other);
+  explicit MemBufferDataAccessorStackable(const IConstDataSharedIter iter);
   
-  /// append operator
-  MemBufferDataAccessorStackAble * append(MemBufferDataAccessorStackAble &other);
+  /// @brief construct an object linked with the given iterator
+   /// @param[in] iter the associated iterator
+   /// @details Should be identical to the const version.
+  ///  These constructors iterate through the data themselves and stack the
+   /// the accessors. Some elements of the accessors are stored by reference so need to
+   /// be instantiated with new copies.
   
+  explicit MemBufferDataAccessorStackable(const IDataSharedIter iter);
+  
+  /// @brief copy contructor
+  /// @details only real issue is to run through the stack and copy the contents.
+  MemBufferDataAccessorStackable(const MemBufferDataAccessorStackable &other);
+  
+  /// @brief copy/assignment operator
+  
+  MemBufferDataAccessorStackable & operator=(const MemBufferDataAccessorStackable &other);
+  
+  /// @brief append operator
+  /// @details Simply adds the accessor to an internal stack. At the same time it should copy any elements that may be lost
+  /// due to reference storage into local copies.
+  void append(MemBufferDataAccessor other);
+  
+  /// @brief get an accessor from the stack
+  /// @param[in] index the index into the stack.
+  
+  const MemBufferDataAccessor& getConstAccessor(int index) const;
+  /// @brief get an accessor from the stack
+  const MemBufferDataAccessor& getConstAccessor() const;
+  /// @brief get an accessor from the stack
+  /// @param[in] index the index into the stack.
+
+  MemBufferDataAccessor& getAccessor(int index);
+  /// @brief get an accessor from the stack
+  MemBufferDataAccessor& getAccessor();
+  
+  /// @brief howmany accessors do we have
+  
+  size_t numAcc() const {
+    return itsAccessorStack.size();
+  }
+  
+  void setAccessorIndex(int index) {
+    if (index < 0 || index > numAcc()) {
+      ASKAPTHROW(AskapError,"Requested index out of range");
+    }
+    itsAccessorIndex = index;
+  }
+  
+  /// @brief This is to provide a common interface to other adapters.
   const casacore::Cube<casacore::Complex>& visibility() const;
   
+  /// THis is to provide a common interface to other adapters
   casacore::Cube<casacore::Complex>& rwVisibility();
   
+  /// This is essentially overriding the MetaDataAccessor method of the same name
+  
+  casacore::Vector<casacore::RigidVector<casacore::Double, 3> > uvw();
+  /// @brief How many accessors in the stack
+  /// @param
 
 private:
-  
-  #ifdef _OPENMP
-  /// @brief synchronisation lock for resizing of the buffer
-  mutable boost::mutex itsMutex;
-  
-  #endif
-  void resizeBufferIfNeeded();
+ 
+  int itsAccessorIndex;
   
   mutable casacore::Cube<casacore::Complex> itsBuffer;
+  
+  std::vector<MemBufferDataAccessor> itsAccessorStack;
+  
+  std::vector<casacore::Vector<casacore::RigidVector<casacore::Double, 3>> > itsUVWStack;
+  
+  
   
 };
 
