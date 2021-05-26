@@ -52,7 +52,7 @@ using namespace askap::accessors;
 /// access the table and derived information (i.e. reference semantics)
 TableInfoAccessor::TableInfoAccessor(const
           boost::shared_ptr<ITableManager const> &tabManager)
-	  throw() : itsTableManager(tabManager) {}
+	  : itsTableManager(tabManager) {}
 
 /// @brief construct from a table object
 /// @details This version of the constructor creates a TableManager
@@ -68,7 +68,7 @@ TableInfoAccessor::TableInfoAccessor(const casacore::Table &tab,
 
 
 /// @return a non-const reference to Table held by this object
-casacore::Table& TableInfoAccessor::table() const throw()
+casacore::Table& TableInfoAccessor::table() const
 {
   ASKAPDEBUGASSERT(itsTableManager);
   return itsTableManager->table();
