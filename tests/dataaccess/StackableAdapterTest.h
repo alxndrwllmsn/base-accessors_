@@ -61,6 +61,7 @@ class StackableAdapterTest : public CppUnit::TestFixture {
   CPPUNIT_TEST(testConstInstantiate);
   CPPUNIT_TEST(testStack);
   CPPUNIT_TEST(testCompare);
+  CPPUNIT_TEST(testChannelSelection);
   CPPUNIT_TEST_SUITE_END();
 protected:
   static size_t countSteps(const IConstDataSharedIter &it) {
@@ -134,9 +135,26 @@ public:
       
     testAcc(*adapter);
   }
+  void testChannelSelection() {
+    // This tests whether we only pickup the channels we want.
+    // It would be bad if all the channels were picked up each time ...
+    TableConstDataSource ds(TableTestRunner::msName());
+    IDataSelectorPtr sel = ds.createSelector();
+    // select a single channel.
+    // Generate an iterator based on this channel selection
+    sel->chooseChannels(1,0);
+    IConstDataSharedIter it=ds.createConstIterator(sel);
+    // instantiate the stack based on the iterator
+    MemBufferDataAccessorStackable adapter(it);
+    CPPUNIT_ASSERT_EQUAL(size_t(adapter.nChannel()),size_t(1));
+    
+    CPPUNIT_ASSERT_EQUAL(size_t(adapter.rwVisibility().shape().asVector()[1]),size_t(1));
+  
+  }
   void testCompare() {
     TableConstDataSource ds(TableTestRunner::msName());
     IConstDataSharedIter it = ds.createConstIterator();
+    // All the work is done in the constructor
     MemBufferDataAccessorStackable adapter(it);
     // compare the contents.
     int index = 0;
@@ -161,8 +179,16 @@ public:
         const casacore::Vector<casacore::RigidVector<casacore::Double, 3> >& adapterRuvw = adapter.rotatedUVW(fakeTangent);
         CPPUNIT_ASSERT_DOUBLES_EQUAL(double(Ruvw(row)(0)), double(adapterRuvw(row)(0)), 1e-9);
         
-        
-        
+        // lets test the visibilities.
+        // in the adapter case we load the visibilities into the rwVisibility() cube.
+        for (int nchan = 0; nchan < it->nChannel(); nchan++)
+        {
+          for (int npol = 0; npol < it-> nPol(); npol++)
+          {
+            CPPUNIT_ASSERT_DOUBLES_EQUAL(adapter.rwVisibility().at(row,nchan,npol).real(), it->visibility().at(row,nchan,npol).real(),1e-9);
+            CPPUNIT_ASSERT_DOUBLES_EQUAL(adapter.rwVisibility().at(row,nchan,npol).imag(), it->visibility().at(row,nchan,npol).imag(),1e-9);
+          }
+        }
       }
     }
   }
