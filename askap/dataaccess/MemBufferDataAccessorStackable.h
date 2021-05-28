@@ -114,7 +114,9 @@ public:
     }
     itsAccessorIndex = index;
   }
-  
+  int getAccessorIndex() {
+    return itsAccessorIndex;
+  }
   /// @brief This is to provide a common interface to other adapters.
   const casacore::Cube<casacore::Complex>& visibility() const;
   
@@ -124,8 +126,9 @@ public:
   /// This is essentially overriding the MetaDataAccessor method of the same name
   
   casacore::Vector<casacore::RigidVector<casacore::Double, 3> > uvw();
-  /// @brief How many accessors in the stack
-  /// @param
+ 
+  
+  void orderBy();
 
 private:
  

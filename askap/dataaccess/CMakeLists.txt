@@ -28,6 +28,8 @@ ITableMeasureFieldSelector.cc
 MemAntennaSubtableHandler.cc
 MemBufferDataAccessor.cc
 MemBufferDataAccessorStackable.cc
+StackedDataSource.cc
+StackedDataIterator.cc
 MemTableDataDescHolder.cc
 MemTablePolarisationHolder.cc
 MemTableSpWindowHolder.cc
@@ -117,6 +119,8 @@ MemBufferDataAccessorStackable.h
 MemTableDataDescHolder.h
 MemTablePolarisationHolder.h
 MemTableSpWindowHolder.h
+StackedDataSource.h
+StackedDataIterator.h
 MetaDataAccessor.h
 MiscTableInfoHolder.h
 OnDemandBufferDataAccessor.h

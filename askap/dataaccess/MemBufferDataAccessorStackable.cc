@@ -59,7 +59,8 @@ MemBufferDataAccessorStackable::MemBufferDataAccessorStackable(const IConstDataS
     accessors::MemBufferDataAccessor accBuffer(*iter);
     // putting the input visibilities into a cube
     // Normally this array is filled with a model ... but in this context we need the visibilities.
-    // Perhaps we should store them separately. 
+    // Perhaps we should store them separately.
+    // @note this does not seem to be required ....
     accBuffer.rwVisibility() = iter->visibility().copy();
     append(accBuffer);
   }
@@ -150,3 +151,23 @@ casacore::Vector<casacore::RigidVector<casacore::Double, 3> > MemBufferDataAcces
 {
   return itsUVWStack[itsAccessorIndex];
 }
+void MemBufferDataAccessorStackable::orderBy() {
+  
+  std::vector<casacore::Vector<casacore::RigidVector<casacore::Double, 3>> > newUVWStack;
+  std::vector<MemBufferDataAccessor> newAccessorStack;
+  
+  // first just test by reversing the order
+  std::vector<casacore::Vector<casacore::RigidVector<casacore::Double, 3>> >::reverse_iterator uvw;
+  std::vector<MemBufferDataAccessor>::reverse_iterator acc;
+  
+  for (uvw = itsUVWStack.rbegin(),acc=itsAccessorStack.rbegin() ; uvw < itsUVWStack.rend(); uvw++,acc++) {
+    newUVWStack.push_back(*uvw);
+    newAccessorStack.push_back(*acc);
+  }
+  itsAccessorStack.swap(newAccessorStack);
+  itsUVWStack.swap(newUVWStack);
+}
+    
+  
+  
+

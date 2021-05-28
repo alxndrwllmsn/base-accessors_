@@ -40,6 +40,7 @@
 #include <askap/dataaccess/IConstDataSource.h>
 #include <askap/dataaccess/TimeChunkIteratorAdapter.h>
 #include <askap/dataaccess/MemBufferDataAccessorStackable.h>
+#include <askap/dataaccess/StackedDataSource.h>
 #include <askap/askap/AskapError.h>
 #include "TableTestRunner.h"
 #include <askap/askap/AskapUtil.h>
@@ -62,6 +63,10 @@ class StackableAdapterTest : public CppUnit::TestFixture {
   CPPUNIT_TEST(testStack);
   CPPUNIT_TEST(testCompare);
   CPPUNIT_TEST(testChannelSelection);
+  CPPUNIT_TEST(testDataSource);
+  CPPUNIT_TEST(testIterator);
+  CPPUNIT_TEST(testOrderBy);
+  
   CPPUNIT_TEST_SUITE_END();
 protected:
   static size_t countSteps(const IConstDataSharedIter &it) {
@@ -83,6 +88,7 @@ protected:
     // Data value test
     CPPUNIT_ASSERT_DOUBLES_EQUAL(double(0.351497501134872),double(test.rwVisibility().at(2,2,0).real()),1e-9);
     CPPUNIT_ASSERT_DOUBLES_EQUAL(double(0.0155263254418969),double(test.rwVisibility().at(2,2,0).imag()),1e-9);
+    return true;
   }
   
   
@@ -192,6 +198,51 @@ public:
       }
     }
   }
+  
+  void testOrderBy() {
+    TableConstDataSource ds(TableTestRunner::msName());
+    IConstDataSharedIter it = ds.createConstIterator();
+    // All the work is done in the constructor
+    MemBufferDataAccessorStackable adapter(it);
+    
+    adapter.orderBy(); // this by default inverts the order for testing.
+    
+    // compare the contents // starting at the end this time
+    int index = adapter.numAcc()-1;
+    for (it.init() ;it != it.end(); it.next(),index--) {
+      adapter.setAccessorIndex(index);
+      
+      for (casacore::uInt row=0;row<it->nRow();++row) {
+        
+        const casacore::RigidVector<casacore::Double, 3> &uvw = it->uvw()(row);
+        const casacore::Double uvDist = sqrt(casacore::square(uvw(0))+
+                                       casacore::square(uvw(1)));
+        
+        const casacore::RigidVector<casacore::Double, 3> &adapteruvw = adapter.uvw()(row);
+        const casacore::Double adapteruvDist = sqrt(casacore::square(adapteruvw(0))+
+        casacore::square(adapteruvw(1)));
+        CPPUNIT_ASSERT_DOUBLES_EQUAL(double(adapteruvDist),double(uvDist),1e-7);
+        CPPUNIT_ASSERT_DOUBLES_EQUAL(double(it->time()),double(adapter.time()),1e-1);
+        
+        // lets just test if the rotatedUVW are in the correct spot.
+        const casacore::MDirection fakeTangent(it->dishPointing1()[0], casacore::MDirection::J2000);
+        const casacore::Vector<casacore::RigidVector<casacore::Double, 3> >& Ruvw = it->rotatedUVW(fakeTangent);
+        const casacore::Vector<casacore::RigidVector<casacore::Double, 3> >& adapterRuvw = adapter.rotatedUVW(fakeTangent);
+        CPPUNIT_ASSERT_DOUBLES_EQUAL(double(Ruvw(row)(0)), double(adapterRuvw(row)(0)), 1e-9);
+        
+        // lets test the visibilities.
+        // in the adapter case we load the visibilities into the rwVisibility() cube.
+        for (int nchan = 0; nchan < it->nChannel(); nchan++)
+        {
+          for (int npol = 0; npol < it-> nPol(); npol++)
+          {
+            CPPUNIT_ASSERT_DOUBLES_EQUAL(adapter.rwVisibility().at(row,nchan,npol).real(), it->visibility().at(row,nchan,npol).real(),1e-9);
+            CPPUNIT_ASSERT_DOUBLES_EQUAL(adapter.rwVisibility().at(row,nchan,npol).imag(), it->visibility().at(row,nchan,npol).imag(),1e-9);
+          }
+        }
+      }
+    }
+  }
   void testInput() {
      TableConstDataSource ds(TableTestRunner::msName());
      IDataConverterPtr conv=ds.createConverter();
@@ -219,6 +270,41 @@ public:
      CPPUNIT_ASSERT_EQUAL(size_t(42), counter);     
      
   }
+  void testDataSource() {
+    TableConstDataSource ds(TableTestRunner::msName());
+    IConstDataSharedIter it = ds.createConstIterator();
+    MemBufferDataAccessorStackable adapter(it);
+    
+    StackedDataSource ds2(adapter);
+    
+    
+  }
+   void testIterator() {
+     TableConstDataSource ds(TableTestRunner::msName());
+     IConstDataSharedIter it = ds.createConstIterator();
+     MemBufferDataAccessorStackable adapter(it);
+     
+     StackedDataSource ds2(adapter);
+     IConstDataSharedIter it2 = ds2.createConstIterator();
+     for (it2.init(),it.init() ;it2 != it2.end(); it2.next(),it.next())
+     {
+       MemBufferDataAccessor accBuffer(*it2);
+       accBuffer.rwVisibility().set(0.0); // this happens in the vis processing loop and I'm worried that I clobber the vis.
+       for (casacore::uInt row=0;row<it2->nRow();++row)
+       {
+         for (int nchan = 0; nchan < it2->nChannel(); nchan++)
+           {
+             for (int npol = 0; npol < it2->nPol(); npol++)
+             {
+      
+               CPPUNIT_ASSERT_DOUBLES_EQUAL(it->visibility().at(row,nchan,npol).real(),it2->visibility().at(row,nchan,npol).real(),1e-9);
+               CPPUNIT_ASSERT_DOUBLES_EQUAL(it->visibility().at(row,nchan,npol).imag(),it2->visibility().at(row,nchan,npol).imag(),1e-9);
+      
+             }
+           }
+        }
+     }
+   }
 /*
   void testReadOnlyBuffer() {
      TableConstDataSource ds(TableTestRunner::msName());
