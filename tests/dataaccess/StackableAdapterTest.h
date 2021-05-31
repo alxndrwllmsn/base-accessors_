@@ -65,7 +65,8 @@ class StackableAdapterTest : public CppUnit::TestFixture {
   CPPUNIT_TEST(testChannelSelection);
   CPPUNIT_TEST(testDataSource);
   CPPUNIT_TEST(testIterator);
-  CPPUNIT_TEST(testOrderBy);
+  CPPUNIT_TEST(testOrderByReverse);
+  CPPUNIT_TEST(testOrderByW);
   
   CPPUNIT_TEST_SUITE_END();
 protected:
@@ -198,14 +199,23 @@ public:
       }
     }
   }
-  
-  void testOrderBy() {
+  void testOrderByW() {
     TableConstDataSource ds(TableTestRunner::msName());
     IConstDataSharedIter it = ds.createConstIterator();
     // All the work is done in the constructor
     MemBufferDataAccessorStackable adapter(it);
     
-    adapter.orderBy(); // this by default inverts the order for testing.
+    adapter.orderBy( MemBufferDataAccessorStackable::OrderByOptions::W_ORDER );
+    
+    
+  }
+  void testOrderByReverse() {
+    TableConstDataSource ds(TableTestRunner::msName());
+    IConstDataSharedIter it = ds.createConstIterator();
+    // All the work is done in the constructor
+    MemBufferDataAccessorStackable adapter(it);
+    
+    adapter.orderBy( MemBufferDataAccessorStackable::OrderByOptions::REVERSE ); // this by default inverts the order for testing.
     
     // compare the contents // starting at the end this time
     int index = adapter.numAcc()-1;
