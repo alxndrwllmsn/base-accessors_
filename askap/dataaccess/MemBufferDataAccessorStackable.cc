@@ -151,21 +151,23 @@ casacore::Vector<casacore::RigidVector<casacore::Double, 3> > MemBufferDataAcces
 {
   return itsUVWStack[itsAccessorIndex];
 }
-void MemBufferDataAccessorStackable::orderBy() {
-  
-  std::vector<casacore::Vector<casacore::RigidVector<casacore::Double, 3>> > newUVWStack;
-  std::vector<MemBufferDataAccessor> newAccessorStack;
+void MemBufferDataAccessorStackable::orderBy( OrderByOptions opt = OrderByOptions::DEFAULT) {
+
+  if (opt == OrderByOptions::REVERSE ) {
+    std::vector<casacore::Vector<casacore::RigidVector<casacore::Double, 3>> > newUVWStack;
+    std::vector<MemBufferDataAccessor> newAccessorStack;
   
   // first just test by reversing the order
-  std::vector<casacore::Vector<casacore::RigidVector<casacore::Double, 3>> >::reverse_iterator uvw;
-  std::vector<MemBufferDataAccessor>::reverse_iterator acc;
+    std::vector<casacore::Vector<casacore::RigidVector<casacore::Double, 3>> >::reverse_iterator uvw;
+    std::vector<MemBufferDataAccessor>::reverse_iterator acc;
   
-  for (uvw = itsUVWStack.rbegin(),acc=itsAccessorStack.rbegin() ; uvw < itsUVWStack.rend(); uvw++,acc++) {
-    newUVWStack.push_back(*uvw);
-    newAccessorStack.push_back(*acc);
+    for (uvw = itsUVWStack.rbegin(),acc=itsAccessorStack.rbegin() ; uvw < itsUVWStack.rend(); uvw++,acc++) {
+      newUVWStack.push_back(*uvw);
+      newAccessorStack.push_back(*acc);
+    }
+    itsAccessorStack.swap(newAccessorStack);
+    itsUVWStack.swap(newUVWStack);
   }
-  itsAccessorStack.swap(newAccessorStack);
-  itsUVWStack.swap(newUVWStack);
 }
     
   

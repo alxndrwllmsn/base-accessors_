@@ -54,6 +54,17 @@ namespace accessors {
 class MemBufferDataAccessorStackable : virtual public MemBufferDataAccessor
 {
 public:
+  enum class OrderByOptions {
+     /// Default order - Cubes ordered by TIME - Internal Cube ordering default VIS ordering
+     /// buffers if available
+     DEFAULT = 0,
+     /// REVERSE - just reverse the order of the Cubes in TIME. Generally used for testing
+     REVERSE = 1,
+     /// Order is by increasing W. (UVW rotated to tangent point) The dimensionality of the cubes is
+     /// maintained. But the order is strictly increasing W
+     W_ORDER = 2
+     
+  };
   
   /// @brief construct an object linked with the given const accessor
   /// @param[in] acc a reference to the associated accessor
@@ -128,7 +139,7 @@ public:
   casacore::Vector<casacore::RigidVector<casacore::Double, 3> > uvw();
  
   
-  void orderBy();
+  void orderBy( OrderByOptions );
 
 private:
  
