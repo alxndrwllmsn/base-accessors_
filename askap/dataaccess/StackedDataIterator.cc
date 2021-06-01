@@ -56,7 +56,7 @@ using namespace askap::accessors;
 ///
 IDataAccessor& StackedDataIterator::operator*() const
 {
-  return itsStack.getAccessor();
+  return itsStack;
 }
 /// @brief Switch the output of operator* and operator-> to one of
 /// the buffers.
@@ -110,9 +110,9 @@ void StackedDataIterator::init()
     ///         while(it.next()) {} are possible)
 casacore::Bool StackedDataIterator::next()
 {
+  
   if (this->hasMore()) {
     itsStack.setAccessorIndex(itsStack.getAccessorIndex()+1);
-    
   }
   return this->hasMore();
   

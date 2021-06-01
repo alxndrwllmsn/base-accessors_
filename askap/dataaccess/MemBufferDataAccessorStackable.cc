@@ -48,7 +48,7 @@
 using namespace askap;
 using namespace askap::accessors;
 
-MemBufferDataAccessorStackable::MemBufferDataAccessorStackable(const IConstDataSharedIter iter) : MemBufferDataAccessor(*iter), MetaDataAccessor(*iter), itsAccessorIndex(0)
+MemBufferDataAccessorStackable::MemBufferDataAccessorStackable(const IConstDataSharedIter iter) : MemBufferDataAccessor(*iter), MetaDataAccessor(*iter), itsAccessorIndex(0), canReOrder(true)
 {
   // When instantiated from an iterator - we can do a lot in the constructor
   for (iter.init();iter.hasMore();iter.next())
@@ -61,12 +61,13 @@ MemBufferDataAccessorStackable::MemBufferDataAccessorStackable(const IConstDataS
     // Normally this array is filled with a model ... but in this context we need the visibilities.
     // Perhaps we should store them separately.
     // @note this does not seem to be required ....
-    accBuffer.rwVisibility() = iter->visibility().copy();
+    
+    itsVisBuffer.push_back(iter->visibility().copy());
     append(accBuffer);
   }
 }
 
-MemBufferDataAccessorStackable::MemBufferDataAccessorStackable(const IDataSharedIter iter) : MemBufferDataAccessor(*iter), MetaDataAccessor(*iter), itsAccessorIndex(0)
+MemBufferDataAccessorStackable::MemBufferDataAccessorStackable(const IDataSharedIter iter) : MemBufferDataAccessor(*iter), MetaDataAccessor(*iter), itsAccessorIndex(0), canReOrder(true)
 {
   // When instantiated from an iterator - we can do a lot in the constructor
   for (iter.init();iter.hasMore();iter.next())
@@ -76,7 +77,8 @@ MemBufferDataAccessorStackable::MemBufferDataAccessorStackable(const IDataShared
     // effectively, an array with the same shape as the visibility cube is held by this class
     accessors::MemBufferDataAccessor accBuffer(*iter);
     // putting the input visibilities into a cube
-    accBuffer.rwVisibility() = iter->visibility().copy();
+    
+    itsVisBuffer.push_back(iter->visibility().copy());
     append(accBuffer);
   }
 }
@@ -87,10 +89,12 @@ MemBufferDataAccessorStackable::MemBufferDataAccessorStackable(const IDataShared
 /// This allows appending in any order.
 
 MemBufferDataAccessorStackable::MemBufferDataAccessorStackable(const IConstDataAccessor &acc) :
-MemBufferDataAccessor(acc), MetaDataAccessor(acc), itsAccessorIndex(0) {}
+MemBufferDataAccessor(acc), MetaDataAccessor(acc), itsAccessorIndex(0), canReOrder(false) {}
 
 
-MemBufferDataAccessorStackable::MemBufferDataAccessorStackable(const MemBufferDataAccessorStackable &other) : MemBufferDataAccessor(other), MetaDataAccessor(other), itsAccessorIndex(0) {
+MemBufferDataAccessorStackable::MemBufferDataAccessorStackable(const MemBufferDataAccessorStackable &other) : MemBufferDataAccessor(other), MetaDataAccessor(other), itsAccessorIndex(0), canReOrder(false) {
+  // Constructing this way makes it difficult to reorder and keep the original visibilities
+  
   for (int i=0; i < other.numAcc(); i++) {
     MemBufferDataAccessor accBuffer(other.getConstAccessor(i));
     append(accBuffer);
@@ -113,23 +117,49 @@ MemBufferDataAccessor& MemBufferDataAccessorStackable::getAccessor()
 /// Read-only visibilities (a cube is nStacks x nRow x nChannel x nPol;
 /// each element is a complex visibility)
 ///
+///
 /// @return a reference to nRow x nChannel x nPol cube, containing
-/// all visibility data
+/// all visibility data. In the case where reordering is possible return the cube
+/// as stored by the Stack. THis allows semantics like iter->visibility() to return a vis-cube
+///  in the same way as for the other iterators.
+///
+///  If you need access to the buffer for this particular instance of the memBuffer then use
+///  the rw interface as this provides access to that buffer. This permits semantics like
+///       accessor->rwVisibility() - iter->visibility() to produce non-trivial output. Say in the case
+///       where the buffer is filled with model visibilities.
 ///
 const casacore::Cube<casacore::Complex>& MemBufferDataAccessorStackable::visibility() const
 {
-  return getConstAccessor(itsAccessorIndex).visibility();
+ 
+  if (canReOrder) // use the internal buffer as we may have re-ordered
+  {
+    return itsVisBuffer[itsAccessorIndex];
+  }
+  else // just use the accessor
+  {
+    return getConstAccessor(itsAccessorIndex).visibility();
+  }
+  
 }
 
   /// @brief Read-write access to visibilities (a cube is nRow x nChannel x nPol;
   /// each element is a complex visibility)
+///
+/// @details This method provides direct access to the internal buffer of the viscube for this accessor
+/// The const method above is actually interfacing with a backing store for the stack.
+///
   ///
   /// @return a reference to nRow x nChannel x nPol cube, containing
   /// all visibility data
   ///
 casacore::Cube<casacore::Complex>& MemBufferDataAccessorStackable::rwVisibility()
-{
+{  
   return getAccessor(itsAccessorIndex).rwVisibility();
+}
+/// @brief synchronise the backing vis store held by the stack. With the internal buffer held by the accessor.
+
+void MemBufferDataAccessorStackable::sync( ) {
+  getAccessor(itsAccessorIndex).rwVisibility() = itsVisBuffer[itsAccessorIndex];
 }
 
 /// @brief Append MemBufferAccessor to the stack
@@ -153,23 +183,101 @@ casacore::Vector<casacore::RigidVector<casacore::Double, 3> > MemBufferDataAcces
 }
 void MemBufferDataAccessorStackable::orderBy( OrderByOptions opt = OrderByOptions::DEFAULT) {
 
+  if (canReOrder == false) {
+    ASKAPTHROW(AskapError, "Attempting to reorder a Stack that cannot do that");
+  }
+  
   if (opt == OrderByOptions::REVERSE ) {
     std::vector<casacore::Vector<casacore::RigidVector<casacore::Double, 3>> > newUVWStack;
+    std::vector< casacore::Cube<casacore::Complex> > newVisBuffer;
     std::vector<MemBufferDataAccessor> newAccessorStack;
   
   // first just test by reversing the order
     std::vector<casacore::Vector<casacore::RigidVector<casacore::Double, 3>> >::reverse_iterator uvw;
     std::vector<MemBufferDataAccessor>::reverse_iterator acc;
-  
-    for (uvw = itsUVWStack.rbegin(),acc=itsAccessorStack.rbegin() ; uvw < itsUVWStack.rend(); uvw++,acc++) {
+    std::vector< casacore::Cube<casacore::Complex> >::reverse_iterator vis;
+    
+    for (uvw = itsUVWStack.rbegin(),acc=itsAccessorStack.rbegin(),vis=itsVisBuffer.rbegin() ; uvw < itsUVWStack.rend(); uvw++,acc++,vis++) {
       newUVWStack.push_back(*uvw);
       newAccessorStack.push_back(*acc);
+      newVisBuffer.push_back(*vis);
     }
     itsAccessorStack.swap(newAccessorStack);
     itsUVWStack.swap(newUVWStack);
+    itsVisBuffer.swap(newVisBuffer);
+  }
+  else if (opt==OrderByOptions::W_ORDER) {
+    
+    std::vector<casacore::Vector<casacore::RigidVector<casacore::Double, 3>> > newUVWStack;
+    std::vector<casacore::Vector<casacore::RigidVector<casacore::Double, 3>> >::iterator uvw;
+    
+    std::vector< casacore::Cube<casacore::Complex> > newVisBuffer;
+    std::vector< casacore::Cube<casacore::Complex> >::iterator vis;
+    
+    std::vector<MemBufferDataAccessor>::iterator acc;
+    
+    casacore::RigidVector<casacore::Double, 3>  uvw_vector;
+    
+    
+    // we need to sort through the UVW vectors to get. Now the question is
+    // are they already rotated the phase centre
+    // lets assume they are ...
+    
+    // logic will be extract the
+   
+    for (uvw = itsUVWStack.begin(),acc=itsAccessorStack.begin(),vis=itsVisBuffer.begin() ; uvw < itsUVWStack.end(); uvw++,acc++,vis++) {
+  
+      // ok simple insertion sort goes here ....
+
+      casacore::Vector<casacore::RigidVector<casacore::Double, 3>> currentUVW = *uvw;
+      casacore::Vector<casacore::RigidVector<casacore::Double, 3>> sortedUVW;
+      
+      // could probably do this in place
+
+      sortedUVW = (*uvw).copy();
+
+      MemBufferDataAccessor currentACC = *acc;
+     
+      // visibility stack
+      
+      for (int start_index = 0; start_index < currentUVW.size(); start_index++) {
+        casacore::RigidVector<casacore::Double, 3> min_uvw = sortedUVW(start_index);
+
+        for (int current_index = start_index; current_index<currentUVW.size(); current_index++) {
+          uvw_vector = sortedUVW(current_index);
+
+          if (uvw_vector(2) < min_uvw(2)) {
+
+            sortedUVW(current_index) = min_uvw;
+            sortedUVW(start_index) = uvw_vector;
+            // Swap the local copy of the vis ....
+            for (int channel=0;channel < currentACC.nChannel();channel++) {
+              for (int pol=0;pol< currentACC.nPol();pol++) {
+                  casacore::Complex current = currentACC.rwVisibility().at(current_index,channel,pol);
+                  casacore::Complex start = currentACC.rwVisibility().at(start_index,channel,pol);
+                  currentACC.rwVisibility().at(current_index,channel,pol) = start;
+                  currentACC.rwVisibility().at(start_index,channel,pol) = current;
+                
+                  current = (*vis).at(current_index,channel,pol);
+                  start = (*vis).at(start_index,channel,pol);
+                  (*vis).at(current_index,channel,pol) = start;
+                  (*vis).at(start_index,channel,pol) = current;
+                
+               }
+            }
+ 
+            min_uvw =  uvw_vector;
+
+          }
+        }
+      }
+      newUVWStack.push_back(sortedUVW);
+    }
+    
+    itsUVWStack.swap(newUVWStack);
+    
   }
 }
-    
   
   
 

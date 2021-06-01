@@ -41,6 +41,7 @@
 #include <askap/dataaccess/TimeChunkIteratorAdapter.h>
 #include <askap/dataaccess/MemBufferDataAccessorStackable.h>
 #include <askap/dataaccess/StackedDataSource.h>
+#include <askap/dataaccess/StackedDataIterator.h>
 #include <askap/askap/AskapError.h>
 #include "TableTestRunner.h"
 #include <askap/askap/AskapUtil.h>
@@ -75,8 +76,23 @@ protected:
      for (counter = 0; it!=it.end(); ++it,++counter) {}
      return counter;     
   }
-  static bool testAcc(MemBufferDataAccessorStackable &test) {
+  static bool testAccUVW(MemBufferDataAccessorStackable &test) {
     test.setAccessorIndex(2);
+    // testing channel 2 (0 based) and baseline (2) (0 based)
+    // The UVW for this baseline and this input data set is:
+    // [-218.044021106325, 975.585041111335 , 826.584555325564]
+    // the data complex number should be
+    // (0.351497501134872,0.0155263254418969)
+    // UVW test
+    CPPUNIT_ASSERT_DOUBLES_EQUAL(double(-218.044021106325),double(test.uvw()[2](0)),1e-9);
+    CPPUNIT_ASSERT_DOUBLES_EQUAL(double(975.585041111335),double(test.uvw()[2](1)),1e-9);
+    CPPUNIT_ASSERT_DOUBLES_EQUAL(double(826.584555325564),double(test.uvw()[2](2)),1e-9);
+    
+    return true;
+  }
+  static bool testAccVIS(MemBufferDataAccessorStackable &test) {
+    test.setAccessorIndex(2);
+    test.sync();
     // testing channel 2 (0 based) and baseline (2) (0 based)
     // The UVW for this baseline and this input data set is:
     // [-218.044021106325, 975.585041111335 , 826.584555325564]
@@ -92,7 +108,6 @@ protected:
     return true;
   }
   
-  
 public:
   
   void testInstantiate() {
@@ -105,8 +120,8 @@ public:
     MemBufferDataAccessorStackable adapter(it);
     
     // This should have buffered all the input visibilities
-   
-    testAcc(adapter);
+    adapter.sync();
+    testAccVIS(adapter);
     
     
   }
@@ -120,7 +135,7 @@ public:
 
     boost::shared_ptr<MemBufferDataAccessorStackable> adapter(new MemBufferDataAccessorStackable(it));
     
-    testAcc(*adapter);
+    testAccVIS(*adapter);
     
     
   }
@@ -140,7 +155,7 @@ public:
       adapter->append(acc);
     }
       
-    testAcc(*adapter);
+    testAccUVW(*adapter);
   }
   void testChannelSelection() {
     // This tests whether we only pickup the channels we want.
@@ -167,6 +182,7 @@ public:
     int index = 0;
     for (it.init() ;it != it.end(); it.next(),index++) {
       adapter.setAccessorIndex(index);
+      adapter.sync();
       
       for (casacore::uInt row=0;row<it->nRow();++row) {
         
@@ -208,6 +224,32 @@ public:
     adapter.orderBy( MemBufferDataAccessorStackable::OrderByOptions::W_ORDER );
     
     
+    // compare the contents // starting at the end this time
+    int index = 0;
+    for (it.init() ;it != it.end(); it.next(),index++) {
+      adapter.setAccessorIndex(index);
+      adapter.sync();
+      casacore::Double w = adapter.uvw()(0)(2);
+      for (casacore::uInt row=0;row<it->nRow();++row) {
+        
+        casacore::RigidVector<casacore::Double, 3> uvw = adapter.uvw()(row);
+        casacore::Double wtrial = uvw(2);
+        if (wtrial < w) {
+          CPPUNIT_FAIL("W not increasing");
+        }
+        if ((uvw(0) == 0 && uvw(1) == 0) && uvw(2) == 0) {
+          
+          if (adapter.rwVisibility().at(row,0,0).imag() == 0 && adapter.rwVisibility().at(row,0,0).real() == 0) {
+            CPPUNIT_FAIL("Auto-correlation identically zero");
+          }
+          if (adapter.rwVisibility().at(row,0,0).real() > 0) {
+            if (adapter.rwVisibility().at(row,0,0).imag() != 0) {
+              CPPUNIT_FAIL("Auto-correlation not purely real");
+            }
+          }
+        }
+      }
+    }
   }
   void testOrderByReverse() {
     TableConstDataSource ds(TableTestRunner::msName());
@@ -221,7 +263,7 @@ public:
     int index = adapter.numAcc()-1;
     for (it.init() ;it != it.end(); it.next(),index--) {
       adapter.setAccessorIndex(index);
-      
+      adapter.sync();
       for (casacore::uInt row=0;row<it->nRow();++row) {
         
         const casacore::RigidVector<casacore::Double, 3> &uvw = it->uvw()(row);
@@ -290,23 +332,23 @@ public:
     
   }
    void testIterator() {
+     
      TableConstDataSource ds(TableTestRunner::msName());
      IConstDataSharedIter it = ds.createConstIterator();
      MemBufferDataAccessorStackable adapter(it);
      
      StackedDataSource ds2(adapter);
      IConstDataSharedIter it2 = ds2.createConstIterator();
+     
      for (it2.init(),it.init() ;it2 != it2.end(); it2.next(),it.next())
      {
-       MemBufferDataAccessor accBuffer(*it2);
-       accBuffer.rwVisibility().set(0.0); // this happens in the vis processing loop and I'm worried that I clobber the vis.
        for (casacore::uInt row=0;row<it2->nRow();++row)
        {
          for (int nchan = 0; nchan < it2->nChannel(); nchan++)
            {
              for (int npol = 0; npol < it2->nPol(); npol++)
              {
-      
+               
                CPPUNIT_ASSERT_DOUBLES_EQUAL(it->visibility().at(row,nchan,npol).real(),it2->visibility().at(row,nchan,npol).real(),1e-9);
                CPPUNIT_ASSERT_DOUBLES_EQUAL(it->visibility().at(row,nchan,npol).imag(),it2->visibility().at(row,nchan,npol).imag(),1e-9);
       

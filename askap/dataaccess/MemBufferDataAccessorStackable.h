@@ -95,6 +95,8 @@ public:
   
   MemBufferDataAccessorStackable & operator=(const MemBufferDataAccessorStackable &other);
   
+  /// @brief sync backing store of vis to the accessor
+  void sync();
   /// @brief append operator
   /// @details Simply adds the accessor to an internal stack. At the same time it should copy any elements that may be lost
   /// due to reference storage into local copies.
@@ -145,13 +147,13 @@ private:
  
   int itsAccessorIndex;
   
-  mutable casacore::Cube<casacore::Complex> itsBuffer;
+  std::vector< casacore::Cube<casacore::Complex> > itsVisBuffer;
   
   std::vector<MemBufferDataAccessor> itsAccessorStack;
   
   std::vector<casacore::Vector<casacore::RigidVector<casacore::Double, 3>> > itsUVWStack;
   
-  
+  bool canReOrder;
   
 };
 
