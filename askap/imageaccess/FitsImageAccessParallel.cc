@@ -141,7 +141,10 @@ void FitsImageAccessParallel::write(const std::string &name, const casacore::Arr
                    const casacore::IPosition &where)
 {
     bool parallel = canDoParallelIO(name);
-    int section = blctrcTosection(where, where + arr.shape() - 1);
+    casacore::IPosition tlc = where;
+    // Deal with 2d input array, but will only work correctly if axis>1
+    for (uint i=0; i<arr.shape().nelements(); i++) tlc(i) += arr.shape()(i) - 1;
+    int section = blctrcTosection(where, tlc);
 
     if (section>=0 && parallel) {
         int nsection = itsShape(itsAxis) / itsComms.nProcs();
@@ -163,7 +166,10 @@ void FitsImageAccessParallel::write(const std::string &name, const casacore::Arr
                    const casacore::Array<bool> &mask, const casacore::IPosition &where)
 {
    bool parallel = canDoParallelIO(name);
-   int section = blctrcTosection(where, where + arr.shape() - 1);
+   casacore::IPosition tlc = where;
+   // Deal with 2d input array, but will only work correctly if axis>1
+   for (uint i=0; i<arr.shape().nelements(); i++) tlc(i) += arr.shape()(i) - 1;
+   int section = blctrcTosection(where, tlc);
 
    if (section>=0 && parallel) {
        int nsection = itsShape(itsAxis) / itsComms.nProcs();
@@ -278,17 +284,26 @@ void FitsImageAccessParallel::copy_header(const casa::String &infile, const casa
     // get header size
     casa::IPosition shape;
     casa::Long headersize;
-    decode_header(infile, shape, headersize);
+    std::string fullinfile = infile;
+    if (fullinfile.rfind(".fits") == std::string::npos) {
+        fullinfile += ".fits";
+    }
+    std::string fulloutfile = outfile;
+    if (fulloutfile.rfind(".fits") == std::string::npos) {
+        fulloutfile += ".fits";
+    }
+    ASKAPLOG_INFO_STR(logger,"copy_header: "<<fullinfile<<", "<<fulloutfile);
+    decode_header(fullinfile, shape, headersize);
     // create the new output file and copy header
     //streampos size;
     char * header;
-    ifstream file (infile, ios::in|ios::binary);
+    ifstream file (fullinfile, ios::in|ios::binary);
     if (file.is_open())
     {
         header = new char [headersize];
         file.read (header, headersize);
         file.close();
-        ofstream ofile (outfile, ios::out|ios::binary|ios::trunc);
+        ofstream ofile (fulloutfile, ios::out|ios::binary|ios::trunc);
         if (ofile.is_open()) {
             ofile.write(header,headersize);
             ofile.close();

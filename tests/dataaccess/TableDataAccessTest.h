@@ -71,6 +71,7 @@ class TableDataAccessTest : public CppUnit::TestFixture {
   CPPUNIT_TEST(feedTest);
   CPPUNIT_TEST(fieldTest);
   CPPUNIT_TEST(antennaTest);
+  CPPUNIT_TEST(antennaPositionShortcutTest);
   CPPUNIT_TEST(originalVisRewriteTest);
   CPPUNIT_TEST(originalFlagRewriteTest);
   CPPUNIT_TEST(readOnlyTest);
@@ -111,6 +112,8 @@ public:
   void fieldTest();
   /// test access to the antenna subtable
   void antennaTest();
+  /// test access to antenna positions via a shortcut method
+  void antennaPositionShortcutTest(); 
   /// test to rewrite original visibilities
   void originalVisRewriteTest();
   /// test to rewrite original flags
@@ -549,6 +552,37 @@ void TableDataAccessTest::antennaTest()
                          getValue()<0.1);
       }
   }                     
+}
+
+/// test access to antenna positions via a short cut method, specific to
+/// table-based implementation
+void TableDataAccessTest::antennaPositionShortcutTest() {
+  TableConstDataSource ds(TableTestRunner::msName());
+  // this depends on the content of the test measurement set
+  std::vector<casacore::MVPosition> expectation;
+  expectation.push_back(casacore::MVPosition(-4.7522e+06, 2.79072e+06, -3.20048e+06));
+  expectation.push_back(casacore::MVPosition(-4.75193e+06, 2.79118e+06, -3.20048e+06));
+  expectation.push_back(casacore::MVPosition(-4.75155e+06, 2.79183e+06, -3.20048e+06));
+  expectation.push_back(casacore::MVPosition(-4.75107e+06, 2.79264e+06, -3.20048e+06));
+  expectation.push_back(casacore::MVPosition(-4.75092e+06, 2.79291e+06, -3.20048e+06));
+  expectation.push_back(casacore::MVPosition(-4.7496e+06, 2.79514e+06, -3.20048e+06));
+  // try non-short cut approach to test it too + test the number of antennas
+  IConstDataSharedIter it=ds.createConstIterator();
+  boost::shared_ptr<TableConstDataIterator> tabIt = it.dynamicCast<TableConstDataIterator>();
+  CPPUNIT_ASSERT(tabIt);
+  boost::shared_ptr<const ITableManager> mgr = tabIt->getTableManager();
+  CPPUNIT_ASSERT(mgr);
+  const casacore::uInt nAnt = mgr->getAntenna().getNumberOfAntennas();
+  CPPUNIT_ASSERT_EQUAL(static_cast<casacore::uInt>(expectation.size()), nAnt);
+  CPPUNIT_ASSERT_EQUAL(nAnt, ds.getNumberOfAntennas());
+  //
+
+  for (casacore::uInt ant=0;ant<expectation.size();++ant) {
+       const casacore::MPosition pos = ds.getAntennaPosition(ant);
+       CPPUNIT_ASSERT_EQUAL(casacore::MPosition::Ref(casacore::MPosition::ITRF).getType(), pos.getRef().getType());
+       const casacore::MVPosition diff = pos.getValue() - expectation[ant];
+       CPPUNIT_ASSERT_DOUBLES_EQUAL(0., diff.getLength().getValue("m") / expectation[ant].getLength().getValue("m"), 1e-5);
+  }
 }
 
 /// test read/write with channel selection

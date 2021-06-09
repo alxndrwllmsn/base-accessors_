@@ -65,7 +65,7 @@ struct TableInfoAccessor : virtual public ITableInfoAccessor {
   /// This pointer will be stored inside this class and used to
   /// access the table and derived information (i.e. reference semantics)
   TableInfoAccessor(const boost::shared_ptr<ITableManager const>
-                    &tabManager) throw();
+                    &tabManager);
 
   /// @brief construct from a table object
   /// @details This version of the constructor creates a TableManager
@@ -78,7 +78,7 @@ struct TableInfoAccessor : virtual public ITableInfoAccessor {
                     const std::string &dataColumn = "DATA"); 
   
   /// @return a non-const reference to Table held by this object
-  virtual casacore::Table& table() const throw();
+  virtual casacore::Table& table() const;
 
   /// @return a reference to ISubtableInfoHolder
   virtual const ISubtableInfoHolder& subtableInfo() const;

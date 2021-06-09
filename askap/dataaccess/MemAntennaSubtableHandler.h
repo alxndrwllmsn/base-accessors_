@@ -67,22 +67,22 @@ struct MemAntennaSubtableHandler : virtual public IAntennaSubtableHandler {
   /// @return a string describing the mount type
   virtual const casacore::String& getMount(casacore::uInt antID) const;
   
-  /// @brief check whether all antennae are equatorialy mounted
+  /// @brief check whether all antennas are equatorialy mounted
   /// @details
   /// This method checks the mount type for all antennas to be 
   /// either EQUATORIAL or equatorial. This mount type doesn't require
   /// parallactic angle rotation and can be trated separately.
-  /// @return true, if all antennae are equatorially mounted
+  /// @return true, if all antennas are equatorially mounted
   virtual bool allEquatorial() const throw();   
   
-  /// @brief get the number of antennae
+  /// @brief get the number of antennas
   /// @details
-  /// This method returns the number of antennae (i.e. all antID indices
+  /// This method returns the number of antennas (i.e. all antID indices
   /// are expected to be less than this number). Following the general
   /// assumptions about ANTENNA subtable, this number is assumed to be
   /// fixed.
-  /// @return total number of antennae 
-  virtual casacore::uInt getNumberOfAntennae() const;
+  /// @return total number of antennas 
+  virtual casacore::uInt getNumberOfAntennas() const;
     
 private:
   /// a cache of antenna mounts
@@ -91,7 +91,7 @@ private:
   /// a cache of antenna positions
   casacore::Vector<casacore::MPosition> itsPositions;
   
-  /// an internal buffer for a flag showing whether all antennae are equatorially
+  /// an internal buffer for a flag showing whether all antennas are equatorially
   /// mounted
   bool itsAllEquatorial;   
 };
