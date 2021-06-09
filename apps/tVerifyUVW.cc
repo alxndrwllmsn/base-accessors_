@@ -124,7 +124,7 @@ void UVWChecker::run() {
   for (IConstDataSharedIter it=itsDataSource.createConstIterator(sel,conv);it!=it.end();++it) {  
        const casacore::Vector<casacore::RigidVector<casacore::Double, 3> > testUVWs = simulateUVW(*it);
        const casacore::Vector<casacore::RigidVector<casacore::Double, 3> > measUVWs = it->uvw();
-       ASKAPDEBUGASSERT(testUVW.nelements() == measUVW.nelements());
+       ASKAPDEBUGASSERT(testUVWs.nelements() == measUVWs.nelements());
 
        const casacore::MEpoch epoch(casacore::Quantity(it->time()/86400. + itsRefMJD,"d"), casacore::MEpoch::Ref(casacore::MEpoch::UTC));
 
