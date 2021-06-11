@@ -103,6 +103,13 @@ struct ChanAdapterCalSolutionConstAccessor : public ICalSolutionConstAccessor {
    /// @return JonesDTerm object with leakages and validity flags
    virtual JonesDTerm bpleakage(const JonesIndex &index, const casacore::uInt chan) const;
 
+   /// @brief obtain ionospheric parameter
+   /// @details This method retrieves an ionospheric parameter.
+   /// If no gains are defined for a particular index zero is returned with an invalid flag.
+   /// @param[in] index ant/beam index
+   /// @return IonoTerm object with gains and validity flags
+   virtual IonoTerm ionoparam(const JonesIndex &index) const;
+
    /// @brief shared pointer definition
    typedef boost::shared_ptr<ChanAdapterCalSolutionConstAccessor> ShPtr;
 private:

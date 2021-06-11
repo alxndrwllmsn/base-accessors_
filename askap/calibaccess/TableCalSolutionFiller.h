@@ -106,6 +106,11 @@ public:
   /// @param[in] bp pair of cubes with bandpasses and validity flags (to be resized to (2*nChan) x nAnt x nBeam)
   virtual void fillBPLeakages(std::pair<casacore::Cube<casacore::Complex>, casacore::Cube<casacore::Bool> > &bpleakages) const;
 
+  /// @brief gains filler
+  /// @details
+  /// @param[in] pair of cubes with ionospheric parameters and validity flags (to be resised to 1 x nParam x nDir)
+  virtual void fillIonoParams(std::pair<casacore::Cube<casacore::Complex>, casacore::Cube<casacore::Bool> > &params) const;
+
   /// @brief gains writer
   /// @details
   /// @param[in] gains pair of cubes with gains and validity flags (should be 2 x nAnt x nBeam)
@@ -126,6 +131,11 @@ public:
   /// @param[in] bpleakages pair of cubes with bpleakages and validity flags (should be (2*nChan) x nAnt x nBeam)
   virtual void writeBPLeakages(const std::pair<casacore::Cube<casacore::Complex>, casacore::Cube<casacore::Bool> > &bpleakages) const;
 
+  /// @brief gains writer
+  /// @details
+  /// @param[in] pair of cubes with ionospheric parameters and validity flags (should be 1 x nAnt x nBeam)
+  virtual void writeIonoParams(const std::pair<casacore::Cube<casacore::Complex>, casacore::Cube<casacore::Bool> > &params) const;
+
   /// @brief check for gain solution
   /// @return true, if there is no gain solution, false otherwise
   virtual bool noGain() const;
@@ -141,6 +151,10 @@ public:
   /// @brief check for bpleakage solution
   /// @return true, if there is no bandpass leakage solution, false otherwise
   virtual bool noBPLeakage() const;
+
+  /// @brief check for ionospheric solution
+  /// @return true, if there is no ionospheric solution, false otherwise
+  virtual bool noIonosphere() const;
 
   /// @brief flush the table to disk
   virtual bool flush() { table().flush(); return true; }
@@ -189,6 +203,9 @@ private:
 
   /// @brief row for bpleakages
   mutable long itsBPLeakagesRow;
+
+  /// @brief row for ionoparams
+  mutable long itsIonoParamsRow;
 
   /// @brief Caches the existance of columns as the implementation
   /// for columnExists() is quite expensive

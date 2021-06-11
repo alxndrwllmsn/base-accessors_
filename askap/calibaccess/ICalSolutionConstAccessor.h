@@ -46,6 +46,7 @@
 #include <askap/calibaccess/JonesIndex.h>
 #include <askap/calibaccess/JonesJTerm.h>
 #include <askap/calibaccess/JonesDTerm.h>
+#include <askap/calibaccess/IonoTerm.h>
 
 namespace askap {
 namespace accessors {
@@ -107,6 +108,13 @@ struct ICalSolutionConstAccessor {
    /// @param[in] chan spectral channel of interest
    /// @return JonesDTerm object with leakages and validity flags
    virtual JonesDTerm bpleakage(const JonesIndex &index, const casacore::uInt chan) const = 0;
+
+   /// @brief obtain ionospheric parameter
+   /// @details This method retrieves an ionospheric parameter.
+   /// If no parameter is defined for a particular index, zero is returned with an invalid flag
+   /// @param[in] index ant/beam index
+   /// @return IonoTerm object with parameter and validity flag
+   virtual IonoTerm ionoparam(const JonesIndex &index) const = 0;
 
    // helper methods to simplify access to the calibration parameters
 
