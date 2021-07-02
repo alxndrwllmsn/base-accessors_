@@ -40,6 +40,7 @@
 
 // std includes
 #include <string>
+#include <iostream>
 
 // askap includes
 #include <askap/askap/AskapError.h>
@@ -105,7 +106,9 @@ TableTestRunner::~TableTestRunner()
     copiedMS.markForDelete();
   }
   catch (const casacore::AipsError &ae) {
-      ASKAPTHROW(AskapError, "Problems deleting the scratch table");
+      // throwing exceptions in destructor is not appreciated by the modern C++, besides this is the
+      // end of execution anyway, so just print the message instead
+      std::cerr<<"Problems deleting the scratch table: "<<ae.what()<<std::endl;
   }
 }
 

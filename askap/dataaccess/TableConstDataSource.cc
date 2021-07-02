@@ -55,6 +55,41 @@ TableConstDataSource::TableConstDataSource(const std::string &fname,
          itsUVWCacheSize(1), itsUVWCacheTolerance(1e-6),
          itsMaxChunkSize(INT_MAX) {}
 
+/// @brief obtain the position of the given antenna
+/// @details
+/// @param[in] antID antenna index to use, matches indices in the data table
+/// @return const reference to MPosition measure for the chosen antenna
+/// @note This method is deliberately not exposed via the IConstDataSource interface because
+/// it is table-specific and cannot be implemented in general in the streaming model where such metadata
+/// should be provided some other way (i.e. not in the stream). However, in the table-based case it can
+/// be used directly as the type is created explicitly at some point (or one could dynamic cast and
+/// test whether this operation is supported). Same information can be extracted manually via the 
+/// getTableManager() method of table-based iterators, essentially the same code used in this
+/// shortcut, but this method is public for iterators.
+const casacore::MPosition& TableConstDataSource::getAntennaPosition(casacore::uInt antID) const
+{
+  // the validity of indicies and initialisation of caches is checked inside these methods, 
+  // but only in the debug mode
+  return subtableInfo().getAntenna().getPosition(antID);
+}
+
+/// @brief obtain the number of antennas
+/// @details This is another method specific to the table-based implementation (in the streaming approach
+/// this has to be provided some other way, through configuration). Therefore, similarly to getAntennaPosition,
+/// it is not exposed via the IConstDataSource interface making its use more explicit in the code. In principle,
+/// the number of antennas should rarely be needed in the user code as only valid indices are returned by the 
+/// the accessor. 
+/// @note Strictly speaking, this is not the number of antennas, in general, but the number of entries in the 
+/// ANTENNA table of the measurement set which may not match (and the actual data may only use a subset of indices -
+/// this is yet another indication that ideally the user-level code should avoid this implementation-specific information).
+/// @return number of antennas in the measurement set (all antenna indices are less than this number)
+casacore::uInt TableConstDataSource::getNumberOfAntennas() const
+{
+  // the validity of indicies and initialisation of caches is checked inside these methods, 
+  // but only in the debug mode
+  return subtableInfo().getAntenna().getNumberOfAntennas();
+}
+
 /// @brief configure restriction on the chunk size
 /// @param[in] maxNumRows maximum number of rows wanted
 /// @note The new restriction will apply to any iterator created in the future, but will not
