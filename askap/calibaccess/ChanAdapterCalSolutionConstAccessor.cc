@@ -55,8 +55,7 @@ ChanAdapterCalSolutionConstAccessor::ChanAdapterCalSolutionConstAccessor(const b
 /// returned.
 /// @param[in] index ant/beam index
 /// @return JonesJTerm object with gains and validity flags
-JonesJTerm ChanAdapterCalSolutionConstAccessor::gain(const JonesIndex &index) const
-{
+JonesJTerm ChanAdapterCalSolutionConstAccessor::gain(const JonesIndex &index) const {
    return itsAccessor->gain(index);
 }
 
@@ -105,6 +104,15 @@ JonesDTerm ChanAdapterCalSolutionConstAccessor::bpleakage(const JonesIndex &inde
    return itsAccessor->bpleakage(index, chan + itsOffset);
 }
 
+/// @brief obtain ionospheric parameter
+/// @details This method retrieves an ionospheric parameter
+/// If no gains are defined for a particular index, zero is returned with an invalid flag.
+/// @param[in] index ant/beam index
+/// @return IonoTerm object with gains and validity flags
+IonoTerm ChanAdapterCalSolutionConstAccessor::ionoparam(const JonesIndex &index) const
+{
+   return itsAccessor->ionoparam(index);
+}
 
 } // namespace accessors
 } // namespace askap
