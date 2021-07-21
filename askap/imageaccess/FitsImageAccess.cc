@@ -82,8 +82,6 @@ casacore::Array<float> FitsImageAccess::read(const std::string &name) const
     trc -=1;
 
     return this->read(name, blc, trc);
-
-
 }
 
 /// @brief read part of the image
@@ -103,7 +101,6 @@ casacore::Array<float> FitsImageAccess::read(const std::string &name, const casa
     ASKAPLOG_INFO_STR(logger, "Reading a slice of the FITS image " << name << " slice " << slc);
     ASKAPCHECK(img.doGetSlice(buffer, slc) == casacore::False, "Cannot read image");
     return buffer;
-
 }
 
 /// @brief obtain coordinate system info
@@ -125,8 +122,8 @@ casacore::CoordinateSystem FitsImageAccess::coordSysSlice(const std::string &nam
     casacore::FITSImage img(fullname);
     casacore::SubImage<casacore::Float> si = casacore::SubImage<casacore::Float>(img, slc, casacore::AxesSpecifier(casacore::True));
     return si.coordinates();
-
 }
+
 /// @brief obtain beam info
 /// @param[in] name image name
 /// @return beam info vector
@@ -137,9 +134,12 @@ casacore::Vector<casacore::Quantum<double> > FitsImageAccess::beamInfo(const std
     casacore::ImageInfo ii = img.imageInfo();
     return ii.restoringBeam().toVector();
 }
+
+/// @brief obtain pixel units
+/// @param[in] name image name
+/// @return units string
 std::string FitsImageAccess::getUnits(const std::string &name) const
 {
-
     fitsfile *fptr;       /* pointer to the FITS file, defined in fitsio.h */
     std::string fullname = name + ".fits";
     int status = 0;
@@ -157,7 +157,6 @@ std::string FitsImageAccess::getUnits(const std::string &name) const
 
     std::string units(value);
     return units;
-
 }
 
 /// @brief Get a particular keyword from the image metadata (A.K.A header)
@@ -184,15 +183,17 @@ std::string FitsImageAccess::getMetadataKeyword(const std::string &name, const s
 
     std::string valueStr(value);
     return valueStr;
-
 }
 
-
+/// @brief connect accessor to an existing image
+/// @details Instantiates the private FITSImageRW shared pointer.
+/// @param[in] name image name
 void FitsImageAccess::connect(const std::string &name)
 {
     std::string fullname = name + ".fits";
     itsFITSImage.reset(new FITSImageRW(fullname));
 }
+
 // writing methods
 
 /// @brief create a new image
@@ -206,7 +207,6 @@ void FitsImageAccess::connect(const std::string &name)
 void FitsImageAccess::create(const std::string &name, const casacore::IPosition &shape,
                              const casacore::CoordinateSystem &csys)
 {
-
     ASKAPLOG_INFO_STR(logger, "Creating a new FITS image " << name << " with the shape " << shape);
     casacore::String error;
 
@@ -220,16 +220,6 @@ void FitsImageAccess::create(const std::string &name, const casacore::IPosition 
     #ifdef ASKAP_DEBUG
         itsFITSImage->print_hdr();
     #endif
-    // make an array
-    // this requires that the whole array fits in memory
-    // which may not in general be the case
-
-    // casacore::TempImage<casacore::Float> image(casacore::TiledShape(shape),csys,0);
-
-
-    // Now write the fits file.
-    // casacore::ImageFITSConverter::ImageToFITS (error, image, name);
-
 }
 
 /// @brief write full image
@@ -240,8 +230,6 @@ void FitsImageAccess::write(const std::string &name, const casacore::Array<float
     ASKAPLOG_INFO_STR(logger, "Writing an array with the shape " << arr.shape() << " into a FITS image " << name);
     connect(name);
     itsFITSImage->write(arr);
-
-
 }
 
 /// @brief write a slice of an image
@@ -259,8 +247,8 @@ void FitsImageAccess::write(const std::string &name, const casacore::Array<float
         error = casacore::String("Failed to write slice");
         ASKAPTHROW(AskapError, error);
     }
-
 }
+
 /// @brief write an image and mask
 /// @param[in] name image name (not used)
 /// @param[in] arr array with pixels
@@ -282,8 +270,8 @@ void FitsImageAccess::write(const std::string &name, const casacore::Array<float
         error = casacore::String("Failed to write slice");
         ASKAPTHROW(AskapError, error);
     }
-
 }
+
 /// @brief write a slice of an image and mask
 /// @param[in] name image name (not used)
 /// @param[in] arr array with pixels
@@ -307,8 +295,8 @@ void FitsImageAccess::write(const std::string &name, const casacore::Array<float
         error = casacore::String("Failed to write slice");
         ASKAPTHROW(AskapError, error);
     }
-
 }
+
 /// @brief write a slice of an image mask
 /// @param[in] name image name
 /// @param[in] arr array with pixels
@@ -330,8 +318,8 @@ void FitsImageAccess::writeMask(const std::string &name, const casacore::Array<b
         }
     }
     write(name,arr,where);
-
 }
+
 /// @brief write a slice of an image mask
 /// @param[in] name image name
 /// @param[in] arr array with pixels
@@ -347,8 +335,8 @@ void FitsImageAccess::writeMask(const std::string &name, const casacore::Array<b
         }
     }
     write(name,arr);
-
 }
+
 /// @brief set brightness units of the image
 /// @details
 /// @param[in] name image name
@@ -373,8 +361,8 @@ void FitsImageAccess::setBeamInfo(const std::string &name, double maj, double mi
 {
     connect(name);
     itsFITSImage->setRestoringBeam(maj, min, pa);
-
 }
+
 /// @brief apply mask to image
 /// @details Details depend upon the implemenation - CASA images will have the pixel mask assigned
 /// but FITS images will have it applied to the pixels ... which is an irreversible process
@@ -382,10 +370,9 @@ void FitsImageAccess::setBeamInfo(const std::string &name, double maj, double mi
 /// then write ...
 void FitsImageAccess::makeDefaultMask(const std::string &name)
 {
-
-    casacore::String error = casacore::String("A default mask in FITS makes no sense");
-    ASKAPLOG_INFO_STR(logger, error);
-
+    // printing out this message every time makes no sense either..
+    // casacore::String error = casacore::String("A default mask in FITS makes no sense");
+    // ASKAPLOG_INFO_STR(logger, error);
 }
 
 /// @brief Set a particular keyword for the metadata (A.K.A header)
@@ -407,8 +394,6 @@ void FitsImageAccess::setMetadataKeyword(const std::string &name, const std::str
 /// @param[in] history History comment to add
 void FitsImageAccess::addHistory(const std::string &name, const std::string &history)
 {
-
     connect(name);
     itsFITSImage->addHistory(history);
-
 }
