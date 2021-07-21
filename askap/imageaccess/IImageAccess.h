@@ -167,12 +167,10 @@ struct IImageAccess {
     virtual void setBeamInfo(const std::string &name, double maj, double min, double pa) = 0;
 
     /// @brief apply mask to image
-    /// @details Deteails depend upon the implemenation - CASA images will have the pixel mask assigned
+    /// @details Details depend upon the implementation - CASA images will have the pixel mask assigned
     /// but FITS images will have it applied to the pixels ... which is an irreversible process
     /// @param[in] name image name
-
     virtual void makeDefaultMask(const std::string &name) = 0;
-
 
     /// @brief Set a particular keyword for the metadata (A.K.A header)
     /// @details This adds a given keyword to the image metadata.
@@ -183,13 +181,11 @@ struct IImageAccess {
     virtual void setMetadataKeyword(const std::string &name, const std::string &keyword,
                                     const std::string value, const std::string &desc = "") = 0;
 
-
     /// @brief Add a HISTORY message to the image metadata
     /// @details Adds a string detailing the history of the image
     /// @param[in] name Image name
     /// @param[in] history History comment to add
     virtual void addHistory(const std::string &name, const std::string &history) = 0;
-
 
 };
 
