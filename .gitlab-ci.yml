@@ -2,7 +2,9 @@
 
 #image: sord/devops:lofar
 #image: sord/devops:30032020-162000
-image: registry.gitlab.com/askapsdp/all_yandasoft:latest
+#image: registry.gitlab.com/askapsdp/all_yandasoft:latest
+image: registry.gitlab.com/askapsdp/all_yandasoft:1.1.x-latest
+
 
 .common: {tags: [azure]}
 
