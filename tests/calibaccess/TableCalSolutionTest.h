@@ -208,9 +208,9 @@ public:
                           CPPUNIT_ASSERT(bpl.d12IsValid());
                           CPPUNIT_ASSERT(bpl.d21IsValid());
                       } else {
-                          // default bandpass leakage is 1.0
-                          testComplex(casa::Complex(1.0,0.), bpl.d12());
-                          testComplex(casa::Complex(1.0,0.), bpl.d21());
+                          // default bandpass leakage is 0.0
+                          testComplex(casa::Complex(0.), bpl.d12());
+                          testComplex(casa::Complex(0.), bpl.d21());
                           CPPUNIT_ASSERT(!bpl.d12IsValid());
                           CPPUNIT_ASSERT(!bpl.d21IsValid());
                       }
