@@ -71,7 +71,7 @@ casacore::SquareMatrix<casacore::Complex, 2> ICalSolutionConstAccessor::jones(co
 casacore::SquareMatrix<casacore::Complex, 2> ICalSolutionConstAccessor::jones(const casacore::uInt ant,
                                      const casacore::uInt beam, const casacore::uInt chan) const
 {
-  ASKAPCHECK(chan < 16416, "Channel number is supposed to be less than 16416");
+  ASKAPCHECK(chan < 20736, "Channel number is supposed to be less than 20736");
   return jones(JonesIndex(ant, beam), chan);
 }
 
@@ -98,7 +98,7 @@ bool ICalSolutionConstAccessor::jonesValid(const JonesIndex &index, const casaco
 /// valid, false otherwise
 bool ICalSolutionConstAccessor::jonesValid(const casacore::uInt ant, const casacore::uInt beam, const casacore::uInt chan) const
 {
-  ASKAPCHECK(chan < 16416, "Channel number is supposed to be less than 16416");
+  ASKAPCHECK(chan < 20736, "Channel number is supposed to be less than 20736");
   return jonesValid(JonesIndex(ant, beam), chan);
 }
 
@@ -112,7 +112,7 @@ bool ICalSolutionConstAccessor::jonesValid(const casacore::uInt ant, const casac
 /// valid, false otherwise
 bool ICalSolutionConstAccessor::jonesAllValid(const casacore::uInt ant, const casacore::uInt beam, const casacore::uInt chan) const
 {
-  ASKAPCHECK(chan < 16416, "Channel number is supposed to be less than 16416");
+  ASKAPCHECK(chan < 20736, "Channel number is supposed to be less than 20736");
   return jonesAllValid(JonesIndex(ant, beam), chan);
 }
 
