@@ -149,6 +149,16 @@ void ParsetCalSolutionAccessor::setBPLeakage(const JonesIndex &index, const Jone
   CachedCalSolutionAccessor::setBPLeakage(index, bpl, chan);
 }
 
+/// @brief set ionospheric parameter
+/// @details 
+/// @param[in] index ant/beam index
+/// @param[in] param IonoTerm object with ionospheric parameter and validity flag
+void ParsetCalSolutionAccessor::setIonosphere(const JonesIndex &index, const IonoTerm &param)
+{
+  prepareToWrite();
+  CachedCalSolutionAccessor::setIonosphere(index, param);
+}
+
 
 } // namespace accessors
 

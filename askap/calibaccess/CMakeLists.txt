@@ -32,6 +32,7 @@ ICalSolutionConstAccessor.h
 ICalSolutionConstSource.h
 ICalSolutionFiller.h
 ICalSolutionSource.h
+IonoTerm.h
 JonesDTerm.h
 JonesIndex.h
 JonesJTerm.h

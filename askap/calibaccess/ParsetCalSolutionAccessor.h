@@ -99,6 +99,14 @@ public:
   /// @param[in] bpleakages JonesDTerm object with leakages for the given channel and validity flags
   /// @param[in] chan spectral channel
   virtual void setBPLeakage(const JonesIndex &index, const JonesDTerm &bpleakages, const casacore::uInt chan);
+ 
+  /// @brief set leakages for a single bandpass channel
+  /// @details This method writes cross-pol leakages corresponding to a single
+  /// spectral channel.
+  /// @param[in] index ant/beam index
+  /// @param[in] bpleakages JonesDTerm object with leakages for the given channel and validity flags
+  /// @param[in] chan spectral channel
+  virtual void setIonosphere(const JonesIndex &index, const IonoTerm &param);
 
 protected:
 

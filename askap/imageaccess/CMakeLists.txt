@@ -7,6 +7,7 @@ FITSImageRW.cc
 FitsImageAccess.cc
 FitsImageAccessParallel.cc
 ImageAccessFactory.cc
+WeightsLog.cc
 )
 
 install (FILES
@@ -19,6 +20,7 @@ FitsImageAccessParallel.h
 IImageAccess.h
 IImageAccess.tcc
 ImageAccessFactory.h
+WeightsLog.h
 
 DESTINATION include/askap/imageaccess
 )

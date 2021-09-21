@@ -324,8 +324,7 @@ void CasaImageAccess<T>::makeDefaultMask(const std::string &name)
     // Create a mask and make it default region.
     // need to assert sizes etc ...
     img.makeMask("mask", casacore::True, casacore::True);
-    casacore::Array<casacore::Bool> mask(img.shape());
-    mask = casacore::True;
+    casacore::Array<casacore::Bool> mask(img.shape(),casacore::True);
     img.pixelMask().put(mask);
 
 }
