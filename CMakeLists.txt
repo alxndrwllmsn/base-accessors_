@@ -1,31 +1,121 @@
 cmake_minimum_required (VERSION 3.12.0)
-option(UPDATE_CMAKE "Update the cmake modules" ON)
- 
-if (UPDATE_CMAKE)
-# Reuse common cmake infrastructure
 
+#set (VERSION "")
+if ( "${VERSION}" STREQUAL "")
+    project(base-accessors LANGUAGES C CXX)
+else()
+    project(base-accessors VERSION ${VERSION} LANGUAGES C CXX)
+endif()
 
-if (EXISTS ${CMAKE_SOURCE_DIR}/askap-cmake)
-    execute_process(COMMAND git pull 
-	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/askap-cmake
-	TIMEOUT 5)
-else ()	
-    execute_process(COMMAND git clone https://bitbucket.csiro.au/scm/askapsdp/askap-cmake.git
-	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-	TIMEOUT 5)
-endif ()
+find_package(Git REQUIRED)
 
-endif ()
+option(IS_DEFAULT_VERSION "Create the .version file to make this build the default module" OFF )
 
-set (CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/askap-cmake")
+set (MODULE_NAME base-accessors)
+include(CheckCXXCompilerFlag)
+include (GNUInstallDirs)
+# Load the version IDs of all the dependency sub repos
+include(dependencies.cmake)
+
+message (STATUS "Forming build label")
+execute_process(
+   COMMAND git describe --tags --always --dirty
+   OUTPUT_VARIABLE BUILD_STR
+   OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+message(STATUS "Build label is ${BUILD_STR}")
+
+message (STATUS "DEV_OVERRIDES = $ENV{DEV_OVERRIDES}")
+if(DEFINED ENV{DEV_OVERRIDES})
+  message (STATUS "cmake config overrides file specified, $ENV{DEV_OVERRIDES}")
+  include($ENV{DEV_OVERRIDES} OPTIONAL)
+else()
+  message (STATUS "No cmake config overrides file specified, using defaults")
+endif()
+
+if ( "${CMAKE_PROJECT_NAME}" STREQUAL "base-accessors" )
+    # this cmake file is the top level cmakefile, for example it is not part of the askap-askapsoft build
+    message(STATUS "--- askap-analysis is a top level project")
+    set (BASE_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX} CACHE PATH "The original CMAKE_INSTALL_PREFIX passed in." FORCE)
+    set (CMAKE_INSTALL_PREFIX ${BASE_INSTALL_PREFIX}/${MODULE_NAME}/${BUILD_STR} CACHE PATH "Added module name and version to the install prefix." FORCE)
+else()
+    message(STATUS "--- askap-analysis is not a top level project")
+endif()
+
+message(STATUS "CMAKE_INSTALL_PREFIX is ${CMAKE_INSTALL_PREFIX}")
+message(STATUS "BASE_INSTALL_PREFIX is ${BASE_INSTALL_PREFIX}")
+
+# Declare all of sub repos and tools
+include(FetchContent)
+# Put our askap cmake modules in the cmake path
+# We need this before any other Fetch calls so we have the find_package routines available
+# -------- askap cmake modules --------
+FetchContent_Declare(askap-cmake
+  GIT_REPOSITORY    ssh://git@bitbucket.csiro.au:7999/askapsdp/askap-cmake.git
+  GIT_TAG           ${ASKAP_CMAKE_TAG}
+  SOURCE_DIR        askap-cmake
+)
+
+message (STATUS "Fetching askap-cmake files")
+FetchContent_GetProperties(askap-cmake)
+if(NOT askap-cmake_POPULATED)
+  FetchContent_Populate(askap-cmake)
+endif()
+
+list(APPEND CMAKE_MODULE_PATH "${askap-cmake_SOURCE_DIR}")
+#message(STATUS "askap-cmake path is ${askap-cmake_SOURCE_DIR}")
+message(STATUS "askap-cmake path is ${CMAKE_MODULE_PATH}")
+
 include(version_utils)
 get_version_string()
-if (VERSION_SHORT)
-    project(askap-accessors VERSION ${VERSION_SHORT} LANGUAGES C CXX)
-else ()
-    project(askap-accessors VERSION 0.0.0 LANGUAGES C CXX)
-endif ()
 
+# -------- lofar common --------
+FetchContent_Declare(lofar-common
+  GIT_REPOSITORY    ssh://git@bitbucket.csiro.au:7999/askapsdp/lofar-common.git
+  GIT_TAG           ${LOFAR_COMMON_TAG}
+  SOURCE_DIR        lofar-common
+)
+
+# -------- lofar blob --------
+FetchContent_Declare(lofar-blob
+  GIT_REPOSITORY    ssh://git@bitbucket.csiro.au:7999/askapsdp/lofar-blob.git
+  GIT_TAG           ${LOFAR_BLOB_TAG}
+  SOURCE_DIR        lofar-blob
+)
+
+# -------- base-askap --------
+FetchContent_Declare(base-askap
+  GIT_REPOSITORY    ssh://git@bitbucket.csiro.au:7999/askapsdp/base-askap.git
+  GIT_TAG           ${BASE_ASKAP_TAG}
+  SOURCE_DIR        base-askap
+)
+
+# -------- base-askapparallel --------
+FetchContent_Declare(base-askapparallel
+  GIT_REPOSITORY    ssh://git@bitbucket.csiro.au:7999/askapsdp/base-askapparallel.git
+  GIT_TAG           ${BASE_ASKAPPARRALLEL_TAG}
+  SOURCE_DIR        base-askapparallel
+)
+
+# -------- base-imagemath --------
+FetchContent_Declare(base-imagemath
+  GIT_REPOSITORY    ssh://git@bitbucket.csiro.au:7999/askapsdp/base-imagemath.git
+  GIT_TAG           ${BASE_IMAGEMATH_TAG}
+  SOURCE_DIR        base-imagemath
+)
+
+# -------- base-scimath --------
+FetchContent_Declare(base-scimath
+  GIT_REPOSITORY    ssh://git@bitbucket.csiro.au:7999/askapsdp/base-scimath.git
+  GIT_TAG           ${BASE_SCIMATH_TAG}
+  SOURCE_DIR        base-scimath
+)
+
+message (STATUS "Fetching sub repos")
+FetchContent_MakeAvailable( lofar-common lofar-blob
+                           base-askap base-imagemath base-askapparallel base-scimath
+)
+message (STATUS "Done - Fetching sub repos")
 
 configure_file(askap_accessors.cc.in ${CMAKE_CURRENT_BINARY_DIR}/askap_accessors.cc)
 
@@ -187,5 +277,5 @@ if (BUILD_TESTING)
 endif ()
 
 
-include(yanda_export)
-yanda_export(askap)
+#include(yanda_export)
+#yanda_export(askap)
