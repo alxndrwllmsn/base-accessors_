@@ -1,6 +1,8 @@
 cmake_minimum_required (VERSION 3.12.0)
 
-#set (VERSION "")
+include_guard()
+
+set (VERSION "1.3.0")
 if ( "${VERSION}" STREQUAL "")
     project(base-accessors LANGUAGES C CXX)
 else()
