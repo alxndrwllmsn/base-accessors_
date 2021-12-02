@@ -120,29 +120,21 @@ void WeightsLog::read()
     if (itsFilename != "") {
 
         std::ifstream fin(itsFilename.c_str());
+        ASKAPCHECK(fin.is_open(),"Weights log file " << itsFilename << " could not be opened.");
 
-        if (fin.is_open()) {
+        unsigned int chan;
+        float wt;
+        std::string line, name;
 
-            unsigned int chan;
-            float wt;
-            std::string line, name;
-
-            while (getline(fin, line),
-                    !fin.eof()) {
-                if (line[0] != '#') {
-                    std::stringstream ss(line);
-                    ss >> chan >> wt;
-                    itsWeightsList[chan] = wt;
-                }
+        while (getline(fin, line),
+                !fin.eof()) {
+            if (line[0] != '#') {
+                std::stringstream ss(line);
+                ss >> chan >> wt;
+                itsWeightsList[chan] = wt;
             }
-
-        } else {
-            ASKAPLOG_ERROR_STR(logger,
-                               "Weights log file " << itsFilename << " could not be opened.");
         }
-
     }
-
 }
 
 void WeightsLog::gather(askapparallel::AskapParallel &comms, int rankToGather, bool includeMaster)
