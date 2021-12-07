@@ -249,7 +249,7 @@ void TableCalSolutionFiller::fillBPLeakages(std::pair<casacore::Cube<casacore::C
   if (!isReadOnly() && needToCreateBPLeakage) {
       ASKAPDEBUGASSERT(itsBPLeakagesRow < 0);
       bpleakages.first.resize(2 * itsNChan, itsNAnt, itsNBeam);
-      bpleakages.first.set(1.);
+      bpleakages.first.set(0.);
       bpleakages.second.resize(2 * itsNChan, itsNAnt, itsNBeam);
       bpleakages.second.set(false);
       itsBPLeakagesRow = itsRefRow;

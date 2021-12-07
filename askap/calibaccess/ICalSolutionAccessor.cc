@@ -121,7 +121,7 @@ void ICalSolutionAccessor::setBandpassElement(casacore::uInt ant, casacore::uInt
                                               const casacore::Stokes::StokesTypes stokes, casacore::uInt chan,
                                               const casacore::Complex &elem)
 {
-  ASKAPCHECK(chan < 16416, "Channel number is supposed to be less than 16416");
+  ASKAPCHECK(chan < 20736, "Channel number is supposed to be less than 20736");
   setBandpassElement(JonesIndex(ant, beam), stokes, chan, elem);
 }
 
