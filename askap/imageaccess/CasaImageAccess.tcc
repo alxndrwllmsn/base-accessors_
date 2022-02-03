@@ -65,7 +65,7 @@ casacore::Array<T> CasaImageAccess<T>::read(const std::string &name) const
     if (img.hasPixelMask()) {
         ASKAPLOG_INFO_STR(casaImAccessLogger, " - setting unmasked pixels to zero");
         // generate an Array of zeros and copy the elements for which the mask is true
-        casacore::Array<T> tempArray(img.get().shape(), 0.0);
+        casacore::Array<T> tempArray(img.get().shape(), static_cast<T>(0.0));
         tempArray = casacore::MaskedArray<T>(img.get(), img.getMask(), casacore::True);
         return tempArray;
         // The following seems to avoid a copy but takes longer:
@@ -101,7 +101,7 @@ casacore::Array<T> CasaImageAccess<T>::read(const std::string &name, const casac
         ASKAPLOG_INFO_STR(casaImAccessLogger, " - setting unmasked pixels to zero");
         // generate an Array of zeros and copy the elements for which the mask is true
         const casacore::Slicer slicer(blc, trc, casacore::Slicer::endIsLast);
-        casacore::Array<T> tempSlice(img.getSlice(slicer).shape(), 0.0);
+        casacore::Array<T> tempSlice(img.getSlice(slicer).shape(), static_cast<T>(0.0));
         tempSlice = casacore::MaskedArray<T>(img.getSlice(slicer), img.getMaskSlice(slicer), casacore::True);
         return tempSlice;
         // The following seems to avoid a copy but takes longer:

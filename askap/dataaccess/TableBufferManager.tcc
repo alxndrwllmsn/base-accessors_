@@ -32,6 +32,7 @@
 // CASA includes
 #include <casacore/tables/Tables/ArrayColumn.h>
 #include <casacore/tables/Tables/ArrColDesc.h>
+#include <casacore/tables/Tables/TableRecord.h>
 
 // own includes
 #include <askap/dataaccess/DataAccessError.h>
