@@ -302,6 +302,12 @@ public:
      }
    }
 private:
+
+   void getVersion() const override
+   {
+      std::cerr << ASKAP_PACKAGE_VERSION << std::endl;
+   }
+
    /// @brief image accessor
    boost::shared_ptr<accessors::IImageAccess<casacore::Float> > itsImageAccessor;
 

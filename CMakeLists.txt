@@ -51,9 +51,6 @@ list(APPEND CMAKE_MODULE_PATH "${askap-cmake_SOURCE_DIR}")
 #message(STATUS "askap-cmake path is ${askap-cmake_SOURCE_DIR}")
 message(STATUS "askap-cmake path is ${CMAKE_MODULE_PATH}")
 
-include(version_utils)
-get_version_string()
-
 # -------- lofar common --------
 FetchContent_Declare(lofar-common
   GIT_REPOSITORY    ssh://git@bitbucket.csiro.au:7999/askapsdp/lofar-common.git
