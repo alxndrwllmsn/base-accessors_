@@ -304,7 +304,7 @@ public:
 private:
 
    std::string getVersion() const override {
-      std:: string pkgVersion = "base-accessor:" + ASKAP_PACKAGE_VERSION;
+      const std:: string pkgVersion = std::string("base-accessor:") + ASKAP_PACKAGE_VERSION;
       return pkgVersion;
    }
 
