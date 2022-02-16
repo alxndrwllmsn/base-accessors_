@@ -3,6 +3,6 @@
 
   /// @return version of the package
 std::string askap::getAskapPackageVersion_accessors() {
-    return "@VERSION_SHORT@";
+    return "@VERSION@";
 }
 

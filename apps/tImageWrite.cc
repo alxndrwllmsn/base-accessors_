@@ -302,6 +302,12 @@ public:
      }
    }
 private:
+
+   std::string getVersion() const override {
+      const std::string pkgVersion = std::string("base-accessor:") + ASKAP_PACKAGE_VERSION;
+      return pkgVersion;
+   }
+
    /// @brief image accessor
    boost::shared_ptr<accessors::IImageAccess<casacore::Float> > itsImageAccessor;
 
