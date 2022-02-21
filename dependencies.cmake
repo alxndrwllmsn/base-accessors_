@@ -4,4 +4,5 @@ set ( LOFAR_BLOB_TAG               tags/1.2.0                               CACH
 set ( BASE_ASKAP_TAG               tags/1.3.0                               CACHE  STRING    "base-askap version"               FORCE )
 set ( BASE_ASKAPPARRALLEL_TAG      tags/1.2.0                               CACHE  STRING    "base-askapparrallel version"      FORCE )
 set ( BASE_IMAGEMATH_TAG           feature/AXA-689-casacore-3.4-transition  CACHE  STRING    "base-imagemath version"           FORCE )
-set ( BASE_SCIMATH_TAG             tags/1.4.0                               CACHE  STRING    "base-scimath version"             FORCE )
+# the state of develop branch after PR 52 (AXA-689 changes compatible with the old casacore, hence merged)
+set ( BASE_SCIMATH_TAG             359a814402b8d70ab70b3387c26eba89fa86be87 CACHE  STRING    "base-scimath version"             FORCE )
