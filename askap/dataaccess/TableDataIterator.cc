@@ -299,7 +299,7 @@ void TableDataIterator::writeCube(const casacore::Cube<T> &cube,
   casacore::ArrayColumn<T> visCol(getCurrentIteration(), colName);
   ASKAPDEBUGASSERT(getCurrentIteration().nrow() >= getCurrentTopRow()+
                     nRow());
-  casacore::uInt tableRow = getCurrentTopRow();
+  casacore::rownr_t tableRow = getCurrentTopRow();
   casacore::Matrix<T> buf(nPol(),nChan);
   for (casacore::uInt row=0;row<cube.nrow();++row,++tableRow) {
        const casacore::IPosition shape = visCol.shape(row);
@@ -354,8 +354,8 @@ void TableDataIterator::writeOriginalFlag() const
        // check that updated flag doesn't contradict row-based flag
        casacore::ROScalarColumn<casacore::Bool> rowFlagCol(getCurrentIteration(), "FLAG_ROW");
        const casacore::Vector<casacore::Bool> rowBasedFlag = rowFlagCol.getColumn();
-       const casacore::uInt topRow = getCurrentTopRow();
-       ASKAPDEBUGASSERT(rowBasedFlag.nelements() >= topRow+flags.nrow());
+       const casacore::rownr_t topRow = getCurrentTopRow();
+       ASKAPDEBUGASSERT(static_cast<casacore::rownr_t>(rowBasedFlag.nelements()) >= topRow+flags.nrow());
        for (casacore::uInt row = 0; row < flags.nrow(); ++row) {
             if (rowBasedFlag[row + topRow]) {
                 bool oneUnflagged = false;

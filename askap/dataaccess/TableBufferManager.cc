@@ -52,7 +52,7 @@ void TableBufferManager::readBuffer(casacore::Cube<casacore::Complex> &vis,
                         const std::string &name,
 			   casacore::uInt index) const
 { 
- readCube(vis,name,index);
+ readCube(vis,name,static_cast<casacore::rownr_t>(index));
 }
 
 /// @brief write the cube back to the given buffer
@@ -65,7 +65,7 @@ void TableBufferManager::writeBuffer(const casacore::Cube<casacore::Complex> &vi
                          const std::string &name,
 			   casacore::uInt index) const
 {
-  writeCube(vis,name,index);  
+  writeCube(vis,name,static_cast<casacore::rownr_t>(index));  
 }
 
 
@@ -76,5 +76,5 @@ void TableBufferManager::writeBuffer(const casacore::Cube<casacore::Complex> &vi
 bool TableBufferManager::bufferExists(const std::string &name,
 			   casacore::uInt index) const
 {
-  return cellDefined<casacore::Complex>(name,index);
+  return cellDefined<casacore::Complex>(name,static_cast<casacore::rownr_t>(index));
 }

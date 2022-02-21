@@ -230,7 +230,7 @@ casacore::Bool TableConstDataIterator::next()
           setUpIteration();
       }
   } else {
-      uInt remainder=itsCurrentIteration.nrow()-itsCurrentTopRow;
+      casacore::rownr_t remainder=itsCurrentIteration.nrow()-itsCurrentTopRow;
       itsNumberOfRows=remainder<=itsMaxChunkSize ?
                       remainder : itsMaxChunkSize;
       itsAccessor.invalidateIterationCaches();
@@ -728,7 +728,6 @@ void TableConstDataIterator::fillFrequency(casacore::Vector<casacore::Double> &f
       for (uInt ch=0;ch<nChan;++ch) {
            freq[ch]=itsConverter->frequency(spWindowSubtable.getFrequency(
 	                                    spWindowID,ch+startChan));
-
       }
   }
 }
