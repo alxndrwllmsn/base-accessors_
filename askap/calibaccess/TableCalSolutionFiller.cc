@@ -50,8 +50,8 @@ TableCalSolutionFiller::TableCalSolutionFiller(const casa::Table& tab, const lon
        TableBufferManager(tab), itsNAnt(0), itsNBeam(0), itsNChan(0), itsRefRow(row), itsGainsRow(-1),
        itsLeakagesRow(-1), itsBandpassesRow(-1), itsBPLeakagesRow(-1), itsIonoParamsRow(-1)
 {
-  ASKAPCHECK((itsRefRow >= 0) && (itsRefRow <= long(table().nrow())), "Requested calibration solution ID = "<<itsRefRow<<" is outside calibration table");
-  // this is the reading case, we can use either of itsNAnt, itsNBeam or itsNChan to test this condition (they should be all 0). This is encapsulated in
+  ASKAPCHECK((itsRefRow >= 0) && (itsRefRow <= static_cast<long>(table().nrow())), "Requested calibration solution ID = "<<itsRefRow<<" is outside calibration table");
+  // this is the reading case, we can use either of itsNAnt, itsNBeam or itsNChan to assert this initial state (they should be all 0). The whole job is encapsulated in
   // the  isReadOnly method
   ASKAPDEBUGASSERT(isReadOnly());
 }
@@ -70,7 +70,7 @@ TableCalSolutionFiller::TableCalSolutionFiller(const casa::Table& tab, const lon
        TableBufferManager(tab), itsNAnt(nAnt), itsNBeam(nBeam), itsNChan(nChan), itsRefRow(row), itsGainsRow(-1),
        itsLeakagesRow(-1), itsBandpassesRow(-1), itsBPLeakagesRow(-1), itsIonoParamsRow(-1)
 {
-  ASKAPCHECK((itsRefRow >= 0) && (itsRefRow <= long(table().nrow())), "Requested calibration solution ID = "<<itsRefRow<<" is outside calibration table");
+  ASKAPCHECK((itsRefRow >= 0) && (itsRefRow <= static_cast<long>(table().nrow())), "Requested calibration solution ID = "<<itsRefRow<<" is outside calibration table");
   // this is the writing case, so numbers of antennas, beams and channels should be positive
   ASKAPCHECK(itsNAnt > 0, "TableCalSolutionFiller needs to know the number of antennas to be able to setup new table rows");
   ASKAPCHECK(itsNBeam > 0, "TableCalSolutionFiller needs to know the number of beams to be able to setup new table rows");
@@ -145,7 +145,7 @@ bool TableCalSolutionFiller::columnExists(const std::string &name) const
 void TableCalSolutionFiller::fillGains(std::pair<casacore::Cube<casacore::Complex>, casacore::Cube<casacore::Bool> > &gains) const
 {
   // cellDefined should not be called if noGain returns true according to C++ evaluation rules.
-  const bool needToCreateGains = noGain() || !cellDefined<casa::Complex>("GAIN", casa::uInt(itsRefRow));
+  const bool needToCreateGains = noGain() || !cellDefined<casa::Complex>("GAIN", static_cast<casacore::rownr_t>(itsRefRow));
   if (!isReadOnly() && needToCreateGains) {
       ASKAPDEBUGASSERT(itsGainsRow < 0);
       gains.first.resize(2, itsNAnt, itsNBeam);
@@ -165,10 +165,10 @@ void TableCalSolutionFiller::fillGains(std::pair<casacore::Cube<casacore::Comple
          ASKAPDEBUGASSERT(isReadOnly());
          ASKAPDEBUGASSERT(needToCreateGains);
      }
-     ASKAPCHECK(cellDefined<casa::Bool>("GAIN_VALID", casa::uInt(itsGainsRow)),
+     ASKAPCHECK(cellDefined<casa::Bool>("GAIN_VALID", static_cast<casacore::rownr_t>(itsGainsRow)),
          "Wrong format of the calibration table: GAIN element should always be accompanied by GAIN_VALID");
-     readCube(gains.first, "GAIN", casacore::uInt(itsGainsRow));
-     readCube(gains.second, "GAIN_VALID", casacore::uInt(itsGainsRow));
+     readCube(gains.first, "GAIN", static_cast<casacore::rownr_t>(itsGainsRow));
+     readCube(gains.second, "GAIN_VALID", static_cast<casacore::rownr_t>(itsGainsRow));
   }
   ASKAPCHECK(gains.first.shape() == gains.second.shape(), "GAIN and GAIN_VALID cubes are expected to have the same shape");
 }
@@ -179,7 +179,7 @@ void TableCalSolutionFiller::fillGains(std::pair<casacore::Cube<casacore::Comple
 void TableCalSolutionFiller::fillLeakages(std::pair<casacore::Cube<casacore::Complex>, casacore::Cube<casacore::Bool> > &leakages) const
 {
   // cellDefined should not be called if noLeakage returns true according to C++ evaluation rules.
-  const bool needToCreateLeakage = noLeakage() || !cellDefined<casa::Complex>("LEAKAGE", casa::uInt(itsRefRow));
+  const bool needToCreateLeakage = noLeakage() || !cellDefined<casa::Complex>("LEAKAGE", static_cast<casacore::rownr_t>(itsRefRow));
   if (!isReadOnly() && needToCreateLeakage) {
       ASKAPDEBUGASSERT(itsLeakagesRow < 0);
       leakages.first.resize(2, itsNAnt, itsNBeam);
@@ -198,10 +198,10 @@ void TableCalSolutionFiller::fillLeakages(std::pair<casacore::Cube<casacore::Com
          ASKAPDEBUGASSERT(isReadOnly());
          ASKAPDEBUGASSERT(needToCreateLeakage);
      }
-     ASKAPCHECK(cellDefined<casa::Bool>("LEAKAGE_VALID", casa::uInt(itsLeakagesRow)),
+     ASKAPCHECK(cellDefined<casa::Bool>("LEAKAGE_VALID", static_cast<casacore::rownr_t>(itsLeakagesRow)),
          "Wrong format of the calibration table: LEAKAGE element should always be accompanied by LEAKAGE_VALID");
-     readCube(leakages.first, "LEAKAGE", casacore::uInt(itsLeakagesRow));
-     readCube(leakages.second, "LEAKAGE_VALID", casacore::uInt(itsLeakagesRow));
+     readCube(leakages.first, "LEAKAGE", static_cast<casacore::rownr_t>(itsLeakagesRow));
+     readCube(leakages.second, "LEAKAGE_VALID", static_cast<casacore::rownr_t>(itsLeakagesRow));
   }
   ASKAPCHECK(leakages.first.shape() == leakages.second.shape(), "LEAKAGE and LEAKAGE_VALID cubes are expected to have the same shape");
 }
@@ -212,7 +212,7 @@ void TableCalSolutionFiller::fillLeakages(std::pair<casacore::Cube<casacore::Com
 void TableCalSolutionFiller::fillBandpasses(std::pair<casacore::Cube<casacore::Complex>, casacore::Cube<casacore::Bool> > &bp) const
 {
   // cellDefined should not be called if noBandpass returns true according to C++ evaluation rules.
-  const bool needToCreateBandpass = noBandpass() || !cellDefined<casa::Complex>("BANDPASS", casa::uInt(itsRefRow));
+  const bool needToCreateBandpass = noBandpass() || !cellDefined<casa::Complex>("BANDPASS", static_cast<casacore::rownr_t>(itsRefRow));
   if (!isReadOnly() && needToCreateBandpass) {
       ASKAPDEBUGASSERT(itsBandpassesRow < 0);
       bp.first.resize(2 * itsNChan, itsNAnt, itsNBeam);
@@ -231,10 +231,10 @@ void TableCalSolutionFiller::fillBandpasses(std::pair<casacore::Cube<casacore::C
          ASKAPDEBUGASSERT(isReadOnly());
          ASKAPDEBUGASSERT(needToCreateBandpass);
      }
-     ASKAPCHECK(cellDefined<casa::Bool>("BANDPASS_VALID", casa::uInt(itsBandpassesRow)),
+     ASKAPCHECK(cellDefined<casa::Bool>("BANDPASS_VALID", static_cast<casacore::rownr_t>(itsBandpassesRow)),
          "Wrong format of the calibration table: BANDPASS element should always be accompanied by BANDPASS_VALID");
-     readCube(bp.first, "BANDPASS", casacore::uInt(itsBandpassesRow));
-     readCube(bp.second, "BANDPASS_VALID", casacore::uInt(itsBandpassesRow));
+     readCube(bp.first, "BANDPASS", static_cast<casacore::rownr_t>(itsBandpassesRow));
+     readCube(bp.second, "BANDPASS_VALID", static_cast<casacore::rownr_t>(itsBandpassesRow));
   }
   ASKAPCHECK(bp.first.shape() == bp.second.shape(), "BANDPASS and BANDPASS_VALID cubes are expected to have the same shape");
 }
@@ -245,7 +245,7 @@ void TableCalSolutionFiller::fillBandpasses(std::pair<casacore::Cube<casacore::C
 void TableCalSolutionFiller::fillBPLeakages(std::pair<casacore::Cube<casacore::Complex>, casacore::Cube<casacore::Bool> > &bpleakages) const
 {
   // cellDefined should not be called if noBPLeakage returns true according to C++ evaluation rules.
-  const bool needToCreateBPLeakage = noBPLeakage() || !cellDefined<casa::Complex>("BPLEAKAGE", casa::uInt(itsRefRow));
+  const bool needToCreateBPLeakage = noBPLeakage() || !cellDefined<casa::Complex>("BPLEAKAGE", static_cast<casacore::rownr_t>(itsRefRow));
   if (!isReadOnly() && needToCreateBPLeakage) {
       ASKAPDEBUGASSERT(itsBPLeakagesRow < 0);
       bpleakages.first.resize(2 * itsNChan, itsNAnt, itsNBeam);
@@ -264,10 +264,10 @@ void TableCalSolutionFiller::fillBPLeakages(std::pair<casacore::Cube<casacore::C
          ASKAPDEBUGASSERT(isReadOnly());
          ASKAPDEBUGASSERT(needToCreateBPLeakage);
      }
-     ASKAPCHECK(cellDefined<casa::Bool>("BPLEAKAGE_VALID", casa::uInt(itsBPLeakagesRow)),
+     ASKAPCHECK(cellDefined<casa::Bool>("BPLEAKAGE_VALID", static_cast<casacore::rownr_t>(itsBPLeakagesRow)),
          "Wrong format of the calibration table: BPLEAKAGE element should always be accompanied by BPLEAKAGE_VALID");
-     readCube(bpleakages.first, "BPLEAKAGE", casacore::uInt(itsBPLeakagesRow));
-     readCube(bpleakages.second, "BPLEAKAGE_VALID", casacore::uInt(itsBPLeakagesRow));
+     readCube(bpleakages.first, "BPLEAKAGE", static_cast<casacore::rownr_t>(itsBPLeakagesRow));
+     readCube(bpleakages.second, "BPLEAKAGE_VALID", static_cast<casacore::rownr_t>(itsBPLeakagesRow));
   }
   ASKAPCHECK(bpleakages.first.shape() == bpleakages.second.shape(), "BPLEAKAGE and BPLEAKAGE_VALID cubes are expected to have the same shape");
 }
@@ -279,7 +279,7 @@ void TableCalSolutionFiller::fillIonoParams(std::pair<casacore::Cube<casacore::C
                                                       casacore::Cube<casacore::Bool> > &params) const
 {
   // cellDefined should not be called if noIonosphere returns true according to C++ evaluation rules.
-  const bool needToCreateIono = noIonosphere() || !cellDefined<casa::Complex>("IONOSPHERE", casa::uInt(itsRefRow));
+  const bool needToCreateIono = noIonosphere() || !cellDefined<casa::Complex>("IONOSPHERE", static_cast<casacore::rownr_t>(itsRefRow));
   if (!isReadOnly() && needToCreateIono) {
       ASKAPDEBUGASSERT(itsIonoParamsRow < 0);
       params.first.resize(1, itsNAnt, itsNBeam);
@@ -299,10 +299,10 @@ void TableCalSolutionFiller::fillIonoParams(std::pair<casacore::Cube<casacore::C
          ASKAPDEBUGASSERT(isReadOnly());
          ASKAPDEBUGASSERT(needToCreateIono);
      }
-     ASKAPCHECK(cellDefined<casa::Bool>("IONOSPHERE_VALID", casa::uInt(itsIonoParamsRow)),
+     ASKAPCHECK(cellDefined<casa::Bool>("IONOSPHERE_VALID", static_cast<casacore::rownr_t>(itsIonoParamsRow)),
          "Wrong format of the calibration table: IONOSPHERE element should always be accompanied by IONOSPHERE_VALID");
-     readCube(params.first, "IONOSPHERE", casacore::uInt(itsIonoParamsRow));
-     readCube(params.second, "IONOSPHERE_VALID", casacore::uInt(itsIonoParamsRow));
+     readCube(params.first, "IONOSPHERE", static_cast<casacore::rownr_t>(itsIonoParamsRow));
+     readCube(params.second, "IONOSPHERE_VALID", static_cast<casacore::rownr_t>(itsIonoParamsRow));
   }
   ASKAPCHECK(params.first.shape() == params.second.shape(), "IONOSPHERE and IONOSPHERE_VALID cubes are expected to have the same shape");
 }
@@ -314,8 +314,8 @@ void TableCalSolutionFiller::writeGains(const std::pair<casacore::Cube<casacore:
 {
   ASKAPASSERT(itsGainsRow>=0);
   ASKAPCHECK(gains.first.shape() == gains.second.shape(), "The cubes with gains and validity flags are expected to have the same shape");
-  writeCube(gains.first, "GAIN", casa::uInt(itsGainsRow));
-  writeCube(gains.second, "GAIN_VALID", casa::uInt(itsGainsRow));
+  writeCube(gains.first, "GAIN", static_cast<casacore::rownr_t>(itsGainsRow));
+  writeCube(gains.second, "GAIN_VALID", static_cast<casacore::rownr_t>(itsGainsRow));
 }
 
 /// @brief leakage writer
@@ -325,8 +325,8 @@ void TableCalSolutionFiller::writeLeakages(const std::pair<casacore::Cube<casaco
 {
   ASKAPASSERT(itsLeakagesRow>=0);
   ASKAPCHECK(leakages.first.shape() == leakages.second.shape(), "The cubes with leakages and validity flags are expected to have the same shape");
-  writeCube(leakages.first, "LEAKAGE", casa::uInt(itsLeakagesRow));
-  writeCube(leakages.second, "LEAKAGE_VALID", casa::uInt(itsLeakagesRow));
+  writeCube(leakages.first, "LEAKAGE", static_cast<casacore::rownr_t>(itsLeakagesRow));
+  writeCube(leakages.second, "LEAKAGE_VALID", static_cast<casacore::rownr_t>(itsLeakagesRow));
 }
 
 /// @brief bandpass writer
@@ -336,8 +336,8 @@ void TableCalSolutionFiller::writeBandpasses(const std::pair<casacore::Cube<casa
 {
   ASKAPASSERT(itsBandpassesRow>=0);
   ASKAPCHECK(bp.first.shape() == bp.second.shape(), "The cubes with bandpasses and validity flags are expected to have the same shape");
-  writeCube(bp.first, "BANDPASS", casa::uInt(itsBandpassesRow));
-  writeCube(bp.second, "BANDPASS_VALID", casa::uInt(itsBandpassesRow));
+  writeCube(bp.first, "BANDPASS", static_cast<casacore::rownr_t>(itsBandpassesRow));
+  writeCube(bp.second, "BANDPASS_VALID", static_cast<casacore::rownr_t>(itsBandpassesRow));
 }
 
 /// @brief bpleakage writer
@@ -347,8 +347,8 @@ void TableCalSolutionFiller::writeBPLeakages(const std::pair<casacore::Cube<casa
 {
   ASKAPASSERT(itsBPLeakagesRow>=0);
   ASKAPCHECK(bpleakages.first.shape() == bpleakages.second.shape(), "The cubes with bandpass leakage and validity flags are expected to have the same shape");
-  writeCube(bpleakages.first, "BPLEAKAGE", casa::uInt(itsBPLeakagesRow));
-  writeCube(bpleakages.second, "BPLEAKAGE_VALID", casa::uInt(itsBPLeakagesRow));
+  writeCube(bpleakages.first, "BPLEAKAGE", static_cast<casacore::rownr_t>(itsBPLeakagesRow));
+  writeCube(bpleakages.second, "BPLEAKAGE_VALID", static_cast<casacore::rownr_t>(itsBPLeakagesRow));
 }
 
 /// @brief ionospheric parameters writer
@@ -358,8 +358,8 @@ void TableCalSolutionFiller::writeIonoParams(const std::pair<casacore::Cube<casa
 {
   ASKAPASSERT(itsIonoParamsRow>=0);
   ASKAPCHECK(params.first.shape() == params.second.shape(), "The cubes with ionospheric parameters and validity flags are expected to have the same shape");
-  writeCube(params.first, "IONOSPHERE", casa::uInt(itsIonoParamsRow));
-  writeCube(params.second, "IONOSPHERE_VALID", casa::uInt(itsIonoParamsRow));
+  writeCube(params.first, "IONOSPHERE", static_cast<casacore::rownr_t>(itsIonoParamsRow));
+  writeCube(params.second, "IONOSPHERE_VALID", static_cast<casacore::rownr_t>(itsIonoParamsRow));
 }
 
 /// @brief find first defined cube searching backwards
@@ -372,7 +372,7 @@ void TableCalSolutionFiller::writeIonoParams(const std::pair<casacore::Cube<casa
 long TableCalSolutionFiller::findDefinedCube(const std::string &name) const
 {
   for (long tempRow = itsRefRow; tempRow >= 0; --tempRow) {
-       if (cellDefined<casacore::Complex>(name, casacore::uInt(tempRow))) {
+       if (cellDefined<casacore::Complex>(name, static_cast<casacore::rownr_t>(tempRow))) {
            return tempRow;
        }
   }
