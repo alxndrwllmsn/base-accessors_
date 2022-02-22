@@ -84,8 +84,7 @@ TableTestRunner::TableTestRunner(const std::string& name)
 
   std::string path2TestMS="./testdataset.ms";
   if (casacore::EnvironmentVariable::isDefined("TEST_DATASET_PATH")) {
-      path2TestMS=casacore::EnvironmentVariable::get("TEST_DATASET_PATH")+
-                "/testdataset.ms";
+      path2TestMS=casacore::EnvironmentVariable::get("TEST_DATASET_PATH");
   }
   try {
     casacore::Table originalMS(path2TestMS);
