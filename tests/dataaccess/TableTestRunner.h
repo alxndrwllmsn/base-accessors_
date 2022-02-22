@@ -83,9 +83,9 @@ TableTestRunner::TableTestRunner(const std::string& name)
   theirTestMSName="./.test.ms";
 
   std::string path2TestMS="./testdataset.ms";
-  if (casacore::EnvironmentVariable::isDefined("ASKAP_ROOT")) {
-      path2TestMS=casacore::EnvironmentVariable::get("ASKAP_ROOT")+
-                "/Code/Base/accessors/current/testdataset.ms";
+  if (casacore::EnvironmentVariable::isDefined("TEST_DATASET_PATH")) {
+      path2TestMS=casacore::EnvironmentVariable::get("TEST_DATASET_PATH")+
+                "/testdataset.ms";
   }
   try {
     casacore::Table originalMS(path2TestMS);
@@ -96,6 +96,11 @@ TableTestRunner::TableTestRunner(const std::string& name)
                   "Either the current directory is not writable, or the test measurement set "<<
                   "doesn't exist. AipsError: "<<ae.what());
   }  
+  catch (const std::exception &ex) {
+      ASKAPTHROW(AskapError, "Problems in making a copy of the test measurement set. "<<
+                  "Either the current directory is not writable, or the test measurement set "<<
+                  "doesn't exist. std::exception: "<<ex.what());
+  }
 }
 
 /// @brief delete the scratch table
@@ -106,6 +111,11 @@ TableTestRunner::~TableTestRunner()
     copiedMS.markForDelete();
   }
   catch (const casacore::AipsError &ae) {
+      // throwing exceptions in destructor is not appreciated by the modern C++, besides this is the
+      // end of execution anyway, so just print the message instead
+      std::cerr<<"Problems deleting the scratch table: "<<ae.what()<<std::endl;
+  }
+  catch (const std::exception &ex) {
       // throwing exceptions in destructor is not appreciated by the modern C++, besides this is the
       // end of execution anyway, so just print the message instead
       std::cerr<<"Problems deleting the scratch table: "<<ae.what()<<std::endl;
