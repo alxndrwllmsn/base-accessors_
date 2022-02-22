@@ -53,7 +53,7 @@ test:
     - "echo 'measures.directory: '${PWD}'/data' > ${CASARCFILES}"
     - cat $CASARCFILES
     - tar -xjf ../testdataset.tar.bz2
-    - cat $TEST_DATASET_PATH
+    - echo $TEST_DATASET_PATH
     - ctest -C DartConfiguration.tcl -T test --verbose --no-compress-output
   after_script:
     - cd _build
