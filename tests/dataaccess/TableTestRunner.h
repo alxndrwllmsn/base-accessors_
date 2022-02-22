@@ -118,7 +118,7 @@ TableTestRunner::~TableTestRunner()
   catch (const std::exception &ex) {
       // throwing exceptions in destructor is not appreciated by the modern C++, besides this is the
       // end of execution anyway, so just print the message instead
-      std::cerr<<"Problems deleting the scratch table: "<<ae.what()<<std::endl;
+      std::cerr<<"Problems deleting the scratch table: "<<ex.what()<<std::endl;
   }
 }
 
