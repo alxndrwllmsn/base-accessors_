@@ -1,4 +1,5 @@
-set ( ASKAP_CMAKE_TAG              bugfix/AXA-1636-unit-test-results-are-not-reported-in-ci-in-base-accessors    CACHE  STRING    "askap.cmake tools"                FORCE )
+# the state of develop branch after PR 29 (AXA-1636) has been merged
+set ( ASKAP_CMAKE_TAG              30a2e560c549865aeb4743df1ae6f793c5ef656d CACHE  STRING    "askap.cmake tools"                FORCE )
 set ( LOFAR_COMMON_TAG             tags/1.2.0                               CACHE  STRING    "lofar-common version"             FORCE )
 set ( LOFAR_BLOB_TAG               tags/1.2.0                               CACHE  STRING    "lofar-blob version"               FORCE )
 set ( BASE_ASKAP_TAG               tags/1.3.0                               CACHE  STRING    "base-askap version"               FORCE )
