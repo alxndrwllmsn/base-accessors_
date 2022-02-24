@@ -1,11 +1,9 @@
 # GitLab CI script for base-accessors
 
-#image: sord/devops:lofar
-#image: sord/devops:30032020-162000
-#image: registry.gitlab.com/askapsdp/all_yandasoft:latest
 #image: registry.gitlab.com/askapsdp/all_yandasoft:1.1.x-latest
 #image: registry.gitlab.com/askapsdp/yandasoft_image/all_yandasoft:1.1.x-latest
-image: csirocass/yandabase:casacore3.4-mpich
+#image: csirocass/yandabase:casacore3.4-mpich
+image: csirocass/yandasoft:casacore0572d931d-mpich
 
 
 .common: {tags: [azure]}
