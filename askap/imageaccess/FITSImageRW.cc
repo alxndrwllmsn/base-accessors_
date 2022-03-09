@@ -30,7 +30,7 @@
 ///
 #include <askap_accessors.h>
 #include <askap/askap/AskapLogging.h>
-
+#include <askap/askap/AskapUtil.h>
 #include <casacore/images/Images/FITSImage.h>
 #include <casacore/casa/BasicSL/String.h>
 #include <casacore/casa/Utilities/DataType.h>
@@ -501,8 +501,64 @@ void FITSImageRW::setHeader(const std::string &keyword, const std::string &value
 
     if (fits_close_file(fptr, &status))
         printerror(status);
+}
 
+void FITSImageRW::setHeader(const LOFAR::ParameterSet & keywords)
+{
+    ASKAPLOG_INFO_STR(FITSlogger, "Setting header values from parset ");
+    fitsfile *fptr;       /* pointer to the FITS file, defined in fitsio.h */
+    int status = 0;
+    if (fits_open_file(&fptr, this->name.c_str(), READWRITE, &status)) {
+        printerror(status);
+    }
 
+    for (auto &elem : keywords) {
+      const string keyword = elem.first;
+      const std::vector<string> valanddesc = elem.second.getStringVector();
+      if (valanddesc.size() > 0) {
+        const string value = valanddesc[0];
+        const string desc = (valanddesc.size() > 1 ? valanddesc[1] : "");
+
+        const string type = (valanddesc.size() > 2 ? toUpper(valanddesc[2]) : "STRING");
+        if (type == "INT") {
+          try {
+            int intVal = std::stoi(value);
+            if (fits_update_key(fptr, TINT, keyword.c_str(), &intVal,
+            desc.c_str(), &status)) {
+              printerror(status);
+            }
+          } catch (const std::invalid_argument&) {
+            ASKAPLOG_WARN_STR(FITSlogger, "Invalid int value for header keyword "<<keyword<<" : "<<value);
+          } catch (const std::out_of_range&) {
+            ASKAPLOG_WARN_STR(FITSlogger, "Out of range int value for header keyword "<<keyword<<" : "<<value);
+          }
+        } else if (type == "DOUBLE") {
+          try {
+            double doubleVal = std::stod(value);
+            if (fits_update_key(fptr, TDOUBLE, keyword.c_str(), &doubleVal,
+            desc.c_str(), &status)) {
+              printerror(status);
+            }
+          } catch (const std::invalid_argument&) {
+            ASKAPLOG_WARN_STR(FITSlogger, "Invalid double value for header keyword "<<keyword<<" : "<<value);
+          } catch (const std::out_of_range&) {
+            ASKAPLOG_WARN_STR(FITSlogger, "Out of range double value for header keyword "<<keyword<<" : "<<value);
+          }
+        } else if (type == "STRING") {
+          if (fits_update_key(fptr, TSTRING, keyword.c_str(), (char *)value.c_str(),
+          desc.c_str(), &status)) {
+            printerror(status);
+          }
+        } else {
+          ASKAPLOG_WARN_STR(FITSlogger, "Invalid type for header keyword "<<keyword<<" : "<<type);
+        }
+
+      }
+    }
+
+    if (fits_close_file(fptr, &status)) {
+        printerror(status);
+    }
 }
 
 void FITSImageRW::setRestoringBeam(double maj, double min, double pa)
