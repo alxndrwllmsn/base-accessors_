@@ -362,3 +362,19 @@ void CasaImageAccess<T>::addHistory(const std::string &name, const std::string &
     log << history << casacore::LogIO::POST;
 
 }
+
+/// @brief Add HISTORY messages to the image metadata
+/// @details Adds a list of strings detailing the history of the image
+/// @param[in] name Image name
+/// @param[in] historyLines History comments to add
+template <class T>
+void CasaImageAccess<T>::addHistory(const std::string &name, const std::vector<std::string> &historyLines)
+{
+
+    casacore::PagedImage<T> img(name);
+    casacore::LogIO log = img.logSink();
+    for (const auto& history : historyLines) {
+        log << history << casacore::LogIO::POST;
+    }
+}
+

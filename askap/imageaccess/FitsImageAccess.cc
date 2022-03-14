@@ -397,3 +397,14 @@ void FitsImageAccess::addHistory(const std::string &name, const std::string &his
     connect(name);
     itsFITSImage->addHistory(history);
 }
+
+/// @brief Add HISTORY messages to the image metadata
+/// @details Adds a list of strings detailing the history of the image
+/// @param[in] name Image name
+/// @param[in] historyLines History comments to add
+void FitsImageAccess::addHistory(const std::string &name, const std::vector<std::string> &historyLines)
+{
+    connect(name);
+    itsFITSImage->addHistory(historyLines);
+}
+

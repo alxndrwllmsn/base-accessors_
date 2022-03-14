@@ -91,7 +91,8 @@ class FITSImageRW {
 
         void setHeader(const std::string &keyword, const std::string &value, const std::string &desc);
         void setRestoringBeam(double, double, double);
-    void addHistory(const std::string &history);
+        void addHistory(const std::string &history);
+        void addHistory(const std::vector<std::string> &historyLines);
 
         // write into a FITS image
         bool write(const casacore::Array<float>&);
