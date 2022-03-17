@@ -42,9 +42,10 @@
 #include <askap/askapparallel/AskapParallel.h>
 #include <Common/ParameterSet.h>
 
-
 namespace askap {
 namespace accessors {
+
+typedef std::map<unsigned int, casacore::Vector<casacore::Quantum<double> > > BeamList;
 
 /// @brief Basic interface to access an image
 /// @details This interface class is somewhat analogous to casacore::ImageInterface. But it has
@@ -94,6 +95,11 @@ struct IImageAccess {
     /// @param[in] name image name
     /// @return beam info vector
     virtual casacore::Vector<casacore::Quantum<double> > beamInfo(const std::string &name) const = 0;
+
+    /// @brief obtain beam info
+    /// @param[in] name image name
+    /// @return beam info list
+    virtual BeamList beamList(const std::string &name) const = 0;
 
     /// @brief obtain pixel units
     /// @param[in] name image name
@@ -166,6 +172,13 @@ struct IImageAccess {
     /// @param[in] min minor axis in radians
     /// @param[in] pa position angle in radians
     virtual void setBeamInfo(const std::string &name, double maj, double min, double pa) = 0;
+
+    /// @brief set restoring beam info for all channels
+    /// @details For the restored image we want to carry size and orientation of the restoring beam
+    /// with the image. This method allows to assign this info.
+    /// @param[in] name image name
+    /// @param[in] beamlist The list of beams
+    virtual void setBeamInfo(const std::string &name, const BeamList & beamlist) = 0;
 
     /// @brief apply mask to image
     /// @details Details depend upon the implementation - CASA images will have the pixel mask assigned

@@ -135,6 +135,23 @@ casacore::Vector<casacore::Quantum<double> > FitsImageAccess::beamInfo(const std
     return ii.restoringBeam().toVector();
 }
 
+/// @brief obtain beam info
+/// @param[in] name image name
+/// @return beam info list
+BeamList FitsImageAccess::beamList(const std::string &name) const
+{
+    std::string fullname = name + ".fits";
+    casacore::FITSImage img(fullname);
+    casacore::ImageInfo ii = img.imageInfo();
+    BeamList bl;
+    for (int chan = 0; chan < ii.nChannels(); chan++) {
+      casacore::GaussianBeam gb = ii.restoringBeam(chan,0);
+      bl[chan] = gb.toVector();
+    }
+    return bl;
+}
+
+
 /// @brief obtain pixel units
 /// @param[in] name image name
 /// @return units string
@@ -356,11 +373,23 @@ void FitsImageAccess::setUnits(const std::string &name, const std::string &units
 /// @param[in] pa position angle in radians
 /// The values are stored in a FITS header - note the FITS standard requires degrees
 /// so these arguments are converted.
-
 void FitsImageAccess::setBeamInfo(const std::string &name, double maj, double min, double pa)
 {
     connect(name);
     itsFITSImage->setRestoringBeam(maj, min, pa);
+}
+
+/// @brief set restoring beam info for all channels
+/// @details For the restored image we want to carry size and orientation of the restoring beam
+/// with the image. This method allows to assign this info for all channels
+/// @param[in] name image name
+/// @param[in] beamlist list of beams
+/// The values are stored in a FITS binary table - note the FITS standard requires degrees
+/// so these arguments are converted.
+void FitsImageAccess::setBeamInfo(const std::string &name, const BeamList& beamlist)
+{
+    connect(name);
+    itsFITSImage->setRestoringBeam(beamlist);
 }
 
 /// @brief apply mask to image

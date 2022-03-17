@@ -154,6 +154,23 @@ casacore::Vector<casacore::Quantum<double> > CasaImageAccess<T>::beamInfo(const 
     casacore::ImageInfo ii = img.imageInfo();
     return ii.restoringBeam().toVector();
 }
+
+/// @brief get restoring beam info
+/// @param[in] name image name
+/// @return beamlist  list of beams
+template <class T>
+BeamList CasaImageAccess<T>::beamList(const std::string &name) const
+{
+    casacore::PagedImage<T> img(name);
+    casacore::ImageInfo ii = img.imageInfo();
+    BeamList bl;
+    for (int chan = 0; chan < ii.nChannels(); chan++) {
+      casacore::GaussianBeam gb = ii.restoringBeam(chan,0);
+      bl[chan] = gb.toVector();
+    }
+    return bl;
+}
+
 template <class T>
 std::string CasaImageAccess<T>::getUnits(const std::string &name) const
 {
@@ -308,6 +325,24 @@ void CasaImageAccess<T>::setBeamInfo(const std::string &name, double maj, double
     casacore::PagedImage<T> img(name);
     casacore::ImageInfo ii = img.imageInfo();
     ii.setRestoringBeam(casacore::Quantity(maj, "rad"), casacore::Quantity(min, "rad"), casacore::Quantity(pa, "rad"));
+    img.setImageInfo(ii);
+}
+
+/// @brief set restoring beam info
+/// @details For the restored image we want to carry size and orientation of the restoring beam
+/// with the image. This method allows to assign this info for all channels
+/// @param[in] name image name
+/// @param[in] beamlist  list of beams
+template <class T>
+void CasaImageAccess<T>::setBeamInfo(const std::string &name, const BeamList & beamlist)
+{
+    casacore::PagedImage<T> img(name);
+    casacore::ImageInfo ii = img.imageInfo();
+    ii.setAllBeams(beamlist.size(),1,casacore::GaussianBeam());
+    for (const auto& beam : beamlist) {
+      ASKAPDEBUGASSERT(beam.second.size()==3);
+      ii.setBeam(beam.first,0,beam.second[0],beam.second[1],beam.second[2]);
+    }
     img.setImageInfo(ii);
 }
 
