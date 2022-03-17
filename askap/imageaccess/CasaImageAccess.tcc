@@ -349,6 +349,53 @@ void CasaImageAccess<T>::setMetadataKeyword(const std::string &name, const std::
 
 }
 
+template <class T>
+void CasaImageAccess<T>::setMetadataKeywords(const std::string &name, const LOFAR::ParameterSet &keywords)
+{
+    casacore::PagedImage<T> img(name);
+    casacore::TableRecord miscinfo = img.miscInfo();
+    // Note: we could sort through the keywords here and pick out ones that need to go in places
+    // other than miscInfo to be more compatible with casacore
+    for (auto &elem : keywords) {
+      const string keyword = elem.first;
+      const std::vector<string> valanddesc = elem.second.getStringVector();
+      if (valanddesc.size() > 0) {
+        const string value = valanddesc[0];
+        const string desc = (valanddesc.size() > 1 ? valanddesc[1] : "");
+
+        const string type = (valanddesc.size() > 2 ? toUpper(valanddesc[2]) : "STRING");
+        if (type == "INT") {
+          try {
+            const int intVal = std::stoi(value);
+            miscinfo.define(keyword, intVal);
+            miscinfo.setComment(keyword, desc);
+          } catch (const std::invalid_argument&) {
+            ASKAPLOG_WARN_STR(casaImAccessLogger, "Invalid int value for header keyword "<<keyword<<" : "<<value);
+          } catch (const std::out_of_range&) {
+            ASKAPLOG_WARN_STR(casaImAccessLogger, "Out of range int value for header keyword "<<keyword<<" : "<<value);
+          }
+        } else if (type == "DOUBLE") {
+          try {
+            const double doubleVal = std::stod(value);
+            miscinfo.define(keyword, doubleVal);
+            miscinfo.setComment(keyword, desc);
+          } catch (const std::invalid_argument&) {
+            ASKAPLOG_WARN_STR(casaImAccessLogger, "Invalid double value for header keyword "<<keyword<<" : "<<value);
+          } catch (const std::out_of_range&) {
+            ASKAPLOG_WARN_STR(casaImAccessLogger, "Out of range double value for header keyword "<<keyword<<" : "<<value);
+          }
+        } else if (type == "STRING") {
+          miscinfo.define(keyword, value);
+          miscinfo.setComment(keyword, desc);
+        } else {
+          ASKAPLOG_WARN_STR(casaImAccessLogger, "Invalid type for header keyword "<<keyword<<" : "<<type);
+        }
+      }
+    }
+    img.setMiscInfo(miscinfo);
+}
+
+
 /// @brief Add a HISTORY message to the image metadata
 /// @details Adds a string detailing the history of the image
 /// @param[in] name Image name
