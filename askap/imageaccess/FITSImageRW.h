@@ -35,6 +35,7 @@
 #include <casacore/casa/BasicSL/String.h>
 #include <casacore/casa/Utilities/DataType.h>
 #include <casacore/fits/FITS/fitsio.h>
+#include <Common/ParameterSet.h>
 
 #include "boost/scoped_ptr.hpp"
 
@@ -90,6 +91,8 @@ class FITSImageRW {
         void setUnits(const std::string &units);
 
         void setHeader(const std::string &keyword, const std::string &value, const std::string &desc);
+        void setHeader(const LOFAR::ParameterSet & keywords);
+
         void setRestoringBeam(double, double, double);
         void addHistory(const std::string &history);
         void addHistory(const std::vector<std::string> &historyLines);

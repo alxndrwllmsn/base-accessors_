@@ -189,11 +189,17 @@ struct FitsImageAccess : public IImageAccess<> {
         virtual void setMetadataKeyword(const std::string &name, const std::string &keyword,
                                         const std::string value, const std::string &desc = "");
 
-    /// @brief Add a HISTORY message to the image metadata
-    /// @details Adds a string detailing the history of the image
-    /// @param[in] name Image name
-    /// @param[in] history History comment to add
-    virtual void addHistory(const std::string &name, const std::string &history);
+        /// @brief Set the keywords for the metadata (A.K.A header)
+        /// @details This adds keywords to the image metadata.
+        /// @param[in] name Image name
+        /// @param[in] keywords A parset with keyword entries (KEYWORD = ["keyword value","keyword description","STRING"])
+        virtual void setMetadataKeywords(const std::string &name, const LOFAR::ParameterSet &keywords);
+
+        /// @brief Add a HISTORY message to the image metadata
+        /// @details Adds a string detailing the history of the image
+        /// @param[in] name Image name
+        /// @param[in] history History comment to add
+        virtual void addHistory(const std::string &name, const std::string &history);
 
     /// @brief Add HISTORY messages to the image metadata
     /// @details Adds a list of strings detailing the history of the image
