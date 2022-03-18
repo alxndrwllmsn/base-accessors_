@@ -75,10 +75,16 @@ struct CasaImageAccess : public IImageAccess<T> {
     /// @return coordinate system object
     virtual casacore::CoordinateSystem coordSysSlice(const std::string &name, const casacore::IPosition &blc,
             const casacore::IPosition &trc) const;
+
     /// @brief obtain beam info
     /// @param[in] name image name
     /// @return beam info vector
     virtual casacore::Vector<casacore::Quantum<double> > beamInfo(const std::string &name) const;
+
+    /// @brief obtain beam info
+    /// @param[in] name image name
+    /// @return beam info list
+    virtual BeamList beamList(const std::string &name) const;
 
     /// @brief obtain pixel units
     /// @param[in] name image name
@@ -86,7 +92,7 @@ struct CasaImageAccess : public IImageAccess<T> {
     virtual std::string getUnits(const std::string &name) const;
 
     /// @brief Get a particular keyword from the image metadata (A.K.A header)
-    /// @details This reads a given keyword to the image metadata.
+    /// @details This reads a given keyword from the image metadata.
     /// @param[in] name Image name
     /// @param[in] keyword The name of the metadata keyword
     virtual std::string getMetadataKeyword(const std::string &name, const std::string &keyword) const;
@@ -160,6 +166,13 @@ struct CasaImageAccess : public IImageAccess<T> {
     /// @param[in] min minor axis in radians
     /// @param[in] pa position angle in radians
     virtual void setBeamInfo(const std::string &name, double maj, double min, double pa);
+
+    /// @brief set restoring beam info for all channels
+    /// @details For the restored image we want to carry size and orientation of the restoring beam
+    /// with the image. This method allows to assign this info.
+    /// @param[in] name image name
+    /// @param[in] beamlist The list of beams
+    virtual void setBeamInfo(const std::string &name, const BeamList & beamlist);
 
     /// @brief apply mask to image
     /// @details Deteails depend upon the implemenation - CASA images will have the pixel mask assigned

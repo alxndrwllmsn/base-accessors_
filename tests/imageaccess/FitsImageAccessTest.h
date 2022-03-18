@@ -157,7 +157,7 @@ public:
 
         itsImageAccessor->create(name, shape, coordsys);
     }
- 
+
     void testReadWrite() {
         // Create FITS image
         const std::string name = "tmpfitsimage";
@@ -252,6 +252,24 @@ public:
 
         casacore::Vector<casacore::Quantum<double> > beamInfo = itsImageAccessor->beamInfo(name);
 
+        // set per plane beam information
+        BeamList beamlist;
+        int nchan = 5;
+        for (int chan = 0; chan < nchan; chan++) {
+          casacore::Vector<casacore::Quantum<double> > currentbeam(3);
+          currentbeam[0] = casacore::Quantum<double>(10+chan*0.1, "arcsec");
+          currentbeam[1] = casacore::Quantum<double>(5+chan*0.1, "arcsec");
+          currentbeam[2] = casacore::Quantum<double>(12.0+chan, "deg");
+          beamlist[chan] = currentbeam;
+        }
+        itsImageAccessor->setBeamInfo(name, beamlist);
+
+        BeamList beamlist2 = itsImageAccessor->beamList(name);
+        for (int chan = 0; chan < nchan; chan++) {
+          CPPUNIT_ASSERT(abs(beamlist[chan][0].getValue() - beamlist2[chan][0].getValue()) < 1e-6);
+          CPPUNIT_ASSERT(abs(beamlist[chan][1].getValue() - beamlist2[chan][1].getValue()) < 1e-6);
+          CPPUNIT_ASSERT(abs(beamlist[chan][2].getValue() - beamlist2[chan][2].getValue()) < 1e-6);
+        }
    }
 
 protected:

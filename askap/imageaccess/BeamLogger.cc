@@ -85,7 +85,7 @@ void BeamLogger::extractBeams(const std::vector<std::string>& imageList)
 
 casacore::Vector<casacore::Quantum<double> > BeamLogger::beam(const unsigned int channel)
 {
-    std::map<unsigned int, casacore::Vector<casacore::Quantum<double> > >::iterator it = itsBeamList.find(channel);
+    BeamList::iterator it = itsBeamList.find(channel);
     if (it != itsBeamList.end()) {
         return itsBeamList[channel];
     } else {
@@ -105,12 +105,11 @@ void BeamLogger::write()
         std::ofstream fout(itsFilename.c_str());
         fout << "#Channel BMAJ[arcsec] BMIN[arcsec] BPA[deg]\n";
 
-        std::map<unsigned int, casacore::Vector<casacore::Quantum<double> > >::iterator beam = itsBeamList.begin();
-        for (; beam != itsBeamList.end(); beam++) {
-            fout << beam->first << " "
-                 << beam->second[0].getValue("arcsec") << " "
-                 << beam->second[1].getValue("arcsec") << " "
-                 << beam->second[2].getValue("deg") << "\n";
+        for (const auto& beam : itsBeamList) {
+            fout << beam.first << " "
+                 << beam.second[0].getValue("arcsec") << " "
+                 << beam.second[1].getValue("arcsec") << " "
+                 << beam.second[2].getValue("deg") << "\n";
         }
 
     } else {
@@ -159,7 +158,7 @@ void BeamLogger::gather(askapparallel::AskapParallel &comms, int rankToGather, b
 {
 
     ASKAPLOG_DEBUG_STR(logger, "Gathering the beam info - on rank " << comms.rank() << " and gathering onto rank " << rankToGather);
-    
+
     if (comms.isParallel()) {
 
         int minrank=0;
@@ -182,12 +181,12 @@ void BeamLogger::gather(askapparallel::AskapParallel &comms, int rankToGather, b
             out << size;
             if (itsBeamList.size() > 0) {
                 ASKAPLOG_DEBUG_STR(logger, "This has data, so sending beam list of size " << size);
-                std::map<unsigned int, casacore::Vector<casacore::Quantum<double> > >::iterator beam = itsBeamList.begin();
-                for (; beam != itsBeamList.end(); beam++) {
-                    out << beam->first
-                        << beam->second[0].getValue("arcsec")
-                        << beam->second[1].getValue("arcsec")
-                        << beam->second[2].getValue("deg");
+                BeamList::iterator beam = itsBeamList.begin();
+                for (const auto& beam : itsBeamList) {
+                    out << beam.first
+                        << beam.second[0].getValue("arcsec")
+                        << beam.second[1].getValue("arcsec")
+                        << beam.second[2].getValue("deg");
                 }
             }
             out.putEnd();
@@ -197,7 +196,7 @@ void BeamLogger::gather(askapparallel::AskapParallel &comms, int rankToGather, b
             // The rank on which we are gathering the data
             // Loop over all the others and read their beam.
             for (int rank = minrank; rank < comms.nProcs(); rank++) {
-                
+
                 if (rank != comms.rank()) {
                     ASKAPLOG_DEBUG_STR(logger, "Preparing to receive beamlist from rank " << rank);
                     LOFAR::BlobString bs;
@@ -227,13 +226,13 @@ void BeamLogger::gather(askapparallel::AskapParallel &comms, int rankToGather, b
                         ASKAPLOG_DEBUG_STR(logger, "No data from rank " << rank);
                     }
                     in.getEnd();
-                    
+
                 }
-                
+
             }
-            
+
         }
-        
+
     }
 
 }
@@ -241,4 +240,3 @@ void BeamLogger::gather(askapparallel::AskapParallel &comms, int rankToGather, b
 
 }
 }
-
