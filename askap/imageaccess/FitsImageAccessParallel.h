@@ -115,6 +115,13 @@ class FitsImageAccessParallel : public FitsImageAccess {
         /// @param[in] infile, the input fits file
         /// @param[in] outfile, the output fits file (overwritten if it exists)
         void copy_header(const casa::String &infile, const casa::String& outfile) const;
+        /// @brief copy the header of a fits image (i.e., copies the fits 'cards' preceeding the data)
+        ///        off the input file along with the image HISTORY keywords to the output file.
+        /// @param[in] infile, the input fits file
+        /// @param[in] outfile, the output fits file (overwritten if it exists)
+        /// @param[in] historyLines, image HISTORY keywords
+        void copy_header_with_historykw(const casa::String &infile, const casa::String& outfile,
+                          const std::vector<std::string>& historyLines) const;
 
     private:
         /// @brief check if we can do parallel I/O on the file

@@ -312,6 +312,96 @@ void FitsImageAccessParallel::copy_header(const casa::String &infile, const casa
     }
 }
 
+void FitsImageAccessParallel::copy_header_with_historykw(const casa::String &infile, 
+                                                         const casa::String& outfile,
+                                                         const std::vector<std::string>& historyLines) const
+{
+    using namespace std;
+
+    ASKAPCHECK(!historyLines.empty(), "FitsImageAccessParallel::copy_header_historykw historyLines argument is empty");
+
+    const unsigned long KEYWORD_SIZE = 80; // number of bytes per keyword
+    const unsigned long KEYWORD_NAME_SIZE = 8; // number of bytes per keyword name
+    char* fitsHistoryLinesBuffer = nullptr;
+    std::size_t fitsHistoryLinesBufferSize = -1;
+    // put the keywords in the vector (this is what the user input) to a
+    // buffer in a format that fits expected.
+    if ( ! historyLines.empty() ) {
+        // allocate the buffer for the HISTORY keywords in the historyLines vector where each keyword
+        // is 80 bytes
+        fitsHistoryLinesBuffer = new char[historyLines.size() * KEYWORD_SIZE * sizeof(char)];
+        fitsHistoryLinesBufferSize = historyLines.size() * KEYWORD_SIZE * sizeof(char);
+        std::memset(fitsHistoryLinesBuffer,0,historyLines.size() * KEYWORD_SIZE * sizeof(char));
+        // Copy the history keyword to the buffer so that it conforms to FITS keyword header format.
+        unsigned long offset = 0;
+        for (const auto& line : historyLines) {
+            std::memcpy(fitsHistoryLinesBuffer+offset,"HISTORY ",KEYWORD_NAME_SIZE);
+            offset = offset + 8;
+            std::memcpy(fitsHistoryLinesBuffer+offset,line.c_str(),line.size()); 
+            offset = offset + (KEYWORD_SIZE - KEYWORD_NAME_SIZE);
+        }
+    }
+    //std::vector<std::array<unsigned char,80>> FitsHistoryLines;
+    // get header size
+    casa::IPosition shape;
+    casa::Long headersize;
+    std::string fullinfile = infile;
+    if (fullinfile.rfind(".fits") == std::string::npos) {
+        fullinfile += ".fits";
+    }
+    std::string fulloutfile = outfile;
+    if (fulloutfile.rfind(".fits") == std::string::npos) {
+        fulloutfile += ".fits";
+    }
+    ASKAPLOG_INFO_STR(logger,"copy_header_with: "<<fullinfile<<", "<<fulloutfile);
+    decode_header(fullinfile, shape, headersize);
+    ifstream file (fullinfile, ios::in|ios::binary);
+    if (file.is_open())
+    {
+        // create the new output file and copy header
+        char * header;
+        header = new char [headersize];
+        file.read (header, headersize);
+        file.close();
+
+        // kwPtr points to the end of the keyword section
+        char* kwPtr = header + headersize - 1;
+
+        // We only want to copy to the last keyword before the END keyword
+        long spaceAfterEndKW = 0; // how many spaces after the END keyword
+        while ( *kwPtr == ' ' ) {
+            spaceAfterEndKW = spaceAfterEndKW + 1;
+            kwPtr = kwPtr - 1;
+        }
+
+        // Found the END keyword. kwPtr points to 'D'
+        // 'END' keyword is 80 bytes so we have to add 3 to
+        // spaceAfterEndKW to get to the end of the last keyword before the
+        // END keyword
+        spaceAfterEndKW = spaceAfterEndKW + 3;
+
+        ofstream ofile (fulloutfile, ios::out|ios::binary|ios::trunc);
+        if (ofile.is_open()) {
+            char endKW[KEYWORD_SIZE];
+            std::memset(endKW,' ',KEYWORD_SIZE);
+            std::memcpy(endKW,"END",3);
+
+            // copy the keywords of the input file to the output file
+            // minus the END keyword
+            ofile.write(header,headersize - spaceAfterEndKW);
+            // copy the HISTORY keyword to the output file
+            ofile.write(fitsHistoryLinesBuffer,fitsHistoryLinesBufferSize);
+            // write END keyword
+            ofile.write(endKW,KEYWORD_SIZE);
+            ofile.close();
+            // now the padding to make it a multiple of 2880 bytes.
+            fits_padding(outfile);
+        }
+        delete[] fitsHistoryLinesBuffer;
+        delete[] header;
+    }
+}
+
 void FitsImageAccessParallel::setFileAccess(const casa::String& name,
     casa::IPosition& bufshape, MPI_Offset& offset, MPI_Datatype&  filetype, int iax,
     int nsub, int sub) const
