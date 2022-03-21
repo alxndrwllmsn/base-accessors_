@@ -48,7 +48,7 @@
 
 ASKAP_LOGGER(FITSlogger, ".FITSImageRW");
 
-void printerror(int status)
+void askap::accessors::printerror(int status)
 {
     /*****************************************************/
     /* Print out cfitsio error messages and exit program */

@@ -78,6 +78,11 @@ public:
    /// @brief fill the buffer with fake data
    /// @param[in] seed seed for the random number generator
    void setupData(casa::Int seed = 0) {
+//    auto ss = config().makeSubset("imageHistory","imageHistory");
+//    std::cout << "????? " << ss << std::endl;
+//    auto v = ss.getStringVector("imageHistory");
+//    for ( auto s : v )
+//        std::cout << "111111 = " << s << std::endl;
      const casa::uInt size = config().getUint32("size", 1024u);
      itsPixels.resize(size,size);
      const double variance = config().getDouble("variance", 1.);
@@ -150,6 +155,10 @@ public:
    void updateHeader() {
        itsImageAccessor->setUnits(itsName,"Jy/pixel");
        itsImageAccessor->setBeamInfo(itsName,2.e-4,1.e-4,1.0e-1);
+       std::vector<std::string> historyLines;
+       historyLines.push_back("history line 1");
+       historyLines.push_back("history line 2");
+       itsImageAccessor->addHistory(itsName,historyLines);
    }
 
    /// @brief create the cube via the interface
