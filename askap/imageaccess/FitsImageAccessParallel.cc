@@ -397,7 +397,8 @@ void FitsImageAccessParallel::copy_header_with_historykw(const casa::String &inf
             ofile.write(endKW,KEYWORD_SIZE);
             ofile.close();
             // now the padding to make it a multiple of 2880 bytes.
-            fits_padding(outfile);
+            //fits_padding(outfile);
+            fits_padding(fulloutfile);
         }
         delete[] fitsHistoryLinesBuffer;
         delete[] header;
