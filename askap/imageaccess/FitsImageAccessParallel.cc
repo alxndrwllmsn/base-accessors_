@@ -408,10 +408,16 @@ void FitsImageAccessParallel::setFileAccess(const casa::String& name,
     casa::IPosition& bufshape, MPI_Offset& offset, MPI_Datatype&  filetype, int iax,
     int nsub, int sub) const
 {
+    std::string fullname = name;
+    if (fullname.rfind(".fits") == std::string::npos) {
+        fullname += ".fits";
+    }
+    ASKAPLOG_INFO_STR(logger,"setFileAccess: name - " << name
+                        << ", fullname - " << fullname);
     // get header and data size, get image dimensions
     casa::IPosition imageShape;
     casa::Long headersize;
-    decode_header(name, imageShape, headersize);
+    decode_header(fullname, imageShape, headersize);
     int nz = imageShape(2);
     if (imageShape.size()>3) nz *= imageShape(3);
     // Now work out the file access pattern and start offset
@@ -444,7 +450,12 @@ void FitsImageAccessParallel::decode_header(const casa::String& infile, casa::IP
     fitsfile *infptr;  // FITS file pointers
     int status = 0;  // CFITSIO status value MUST be initialized to zero!
 
-    fits_open_file(&infptr, infile.c_str(), READONLY, &status); // open input image
+    std::string fullinfile = infile;
+    if (fullinfile.rfind(".fits") == std::string::npos) {
+        fullinfile += ".fits";
+    }
+
+    fits_open_file(&infptr, fullinfile.c_str(), READONLY, &status); // open input image
     if (status) {
         fits_report_error(stderr, status); // print error message
         return;
@@ -468,13 +479,21 @@ void FitsImageAccessParallel::decode_header(const casa::String& infile, casa::IP
 void FitsImageAccessParallel::fits_padding(const casa::String& filename) const
 {
     using namespace std;
-    std::ifstream infile(filename, ios::binary | ios::ate);
+
+    std::string fullinfile = filename;
+    if (fullinfile.rfind(".fits") == std::string::npos) {
+        fullinfile += ".fits";
+    }
+
+    ASKAPLOG_INFO_STR(logger,"fits_padding: filename - " << filename
+                        << ", fullinfile - " << fullinfile);
+    std::ifstream infile(fullinfile, ios::binary | ios::ate);
     const size_t file_size = infile.tellg();
     const size_t padding = 2880 - (file_size % 2880);
     infile.close();
     if (padding != 2880) {
         ofstream ofile;
-        ofile.open(filename, ios::binary | ios::app);
+        ofile.open(fullinfile, ios::binary | ios::app);
         char * buf = new char[padding];
         for (char* bufp = &buf[padding-1]; bufp >= buf; bufp--) *bufp = 0;
         ofile.write(buf,padding);

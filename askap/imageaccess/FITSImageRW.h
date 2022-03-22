@@ -44,8 +44,6 @@
 namespace askap {
 namespace accessors {
 
-void printerror(int status);
-
 /// @brief Extend FITSImage class functionality
 /// @details It is made clear in the casacore implementation that there are
 /// difficulties in writing general FITS access routines for writing.
