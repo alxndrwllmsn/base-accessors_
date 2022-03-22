@@ -334,25 +334,25 @@ void FitsImageAccessParallel::copy_header_with_historykw(const casa::String &inf
     fitsfile *input;
     fitsfile *output;
 
+    // open the input file
     if (fits_open_file(&input, fullinfile.c_str(), READONLY, &status))
         printerror(status);
 
-    // check if file is already existed
+    // create the output file
     if (fits_create_file(&output, fulloutfile.c_str(), &status))
           printerror(status);
 
+    // copy the header of the input file
     if ( fits_copy_header(input,output,&status) )
         printerror(status);
 
-    std::vector<std::string> v = historyLines;
-    for (int i = 0; i < 200; i++) {
-        v.push_back(std::string("history line ") + std::to_string(i));
-    }
-    for (auto l : v) {
+    // add the HISTORY keywords 
+    for (const auto& l : historyLines) {
         if (fits_write_history(output, l.c_str(),&status))
             printerror(status);
     }
 
+    // close the files
     if (fits_close_file(input, &status))
         printerror(status);
 
