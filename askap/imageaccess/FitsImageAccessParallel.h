@@ -135,9 +135,14 @@ class FitsImageAccessParallel : public FitsImageAccess {
         int blctrcTosection(const casacore::IPosition & blc, const casacore::IPosition & trc) const;
 
         /// @brief determine image dimensions (up to 3 non degenerate axes) and headersize from file
+        /// param[in]  infile filename
+        /// param[out] imageShape image dimension
+        /// param[out] headerSize the size in bytes of the header section (i.e the start of the 
+        /// data section) of a fits file.
         void decodeHeader(const casa::String& infile, casa::IPosition& imageShape, casa::Long& headersize) const;
 
         /// @brief add padding to the fits file to make it complient
+        /// param[in]  filename   name of fits file
         void fitsPadding(const casa::String& filename) const;
 
         /// @brief determine the file access pattern, offset to start reading or writing and the buffer shape needed
