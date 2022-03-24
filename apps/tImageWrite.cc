@@ -78,11 +78,6 @@ public:
    /// @brief fill the buffer with fake data
    /// @param[in] seed seed for the random number generator
    void setupData(casa::Int seed = 0) {
-//    auto ss = config().makeSubset("imageHistory","imageHistory");
-//    std::cout << "????? " << ss << std::endl;
-//    auto v = ss.getStringVector("imageHistory");
-//    for ( auto s : v )
-//        std::cout << "111111 = " << s << std::endl;
      const casa::uInt size = config().getUint32("size", 1024u);
      itsPixels.resize(size,size);
      const double variance = config().getDouble("variance", 1.);
