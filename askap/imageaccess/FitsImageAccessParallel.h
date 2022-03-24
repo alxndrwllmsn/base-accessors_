@@ -121,7 +121,7 @@ class FitsImageAccessParallel : public FitsImageAccess {
         /// @param[in] infile, the input fits file
         /// @param[in] outfile, the output fits file (overwritten if it exists)
         /// @param[in] historyLines, image HISTORY keywords
-        void copyHeaderWithHisotryKW(const casa::String &infile, const casa::String& outfile,
+        void copyHeaderWithHistoryKW(const casa::String &infile, const casa::String& outfile,
                           const std::vector<std::string>& historyLines) const;
 
     private:

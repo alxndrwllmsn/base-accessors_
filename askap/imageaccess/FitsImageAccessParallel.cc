@@ -411,7 +411,7 @@ bool FitsImageAccessParallel::writeHistoryKWToFile(const std::string& fulloutfil
     return result;
 }
 
-void FitsImageAccessParallel::copyHeaderWithHisotryKW(const casa::String &infile, 
+void FitsImageAccessParallel::copyHeaderWithHistoryKW(const casa::String &infile, 
                                                          const casa::String& outfile,
                                                          const std::vector<std::string>& historyLines) const
 {
