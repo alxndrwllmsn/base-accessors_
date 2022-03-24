@@ -109,7 +109,7 @@ casacore::Array<float> FitsImageAccessParallel::readAll(const std::string &name,
     MPI_File_set_view(fh, offset, MPI_FLOAT, filetype, "native", MPI_INFO_NULL);
     const MPI_Offset bufsize = bufshape.product();  // local number to read
     //casa::Float* buf = new casa::Float[bufsize];
-    boost::shared_array<casa::Float> buf {new casa::Float[bufsize]}
+    boost::shared_array<casa::Float> buf {new casa::Float[bufsize]};
     // Collective read of the whole cube
     MPI_Status status;
     MPI_File_read_all(fh, buf.get(), bufsize, MPI_FLOAT, &status);
