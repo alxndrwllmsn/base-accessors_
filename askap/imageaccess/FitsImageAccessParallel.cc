@@ -108,15 +108,16 @@ casacore::Array<float> FitsImageAccessParallel::readAll(const std::string &name,
     MPI_File_open(MPI_COMM_WORLD, fullname.c_str(), MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);
     MPI_File_set_view(fh, offset, MPI_FLOAT, filetype, "native", MPI_INFO_NULL);
     const MPI_Offset bufsize = bufshape.product();  // local number to read
-    casa::Float* buf = new casa::Float[bufsize];
+    //casa::Float* buf = new casa::Float[bufsize];
+    boost::shared_array<casa::Float> buf {new casa::Float[bufsize]}
     // Collective read of the whole cube
     MPI_Status status;
-    MPI_File_read_all(fh, buf, bufsize, MPI_FLOAT, &status);
+    MPI_File_read_all(fh, buf.get(), bufsize, MPI_FLOAT, &status);
     MPI_File_close(&fh);
     // Take care of endianness
     casa::Array<casa::Float> buffer(bufshape);
-    casa::CanonicalConversion::toLocal(buffer.data(), buf, bufsize);
-    delete [] buf;
+    casa::CanonicalConversion::toLocal(buffer.data(), buf.get(), bufsize);
+    //delete [] buf;
     if (nsub > 1) ASKAPLOG_INFO_STR(logger, " - returning section " << sub << ", an array with shape " << buffer.shape());
     return buffer;
 }
@@ -320,7 +321,7 @@ bool FitsImageAccessParallel::formatHistoryLines(const std::vector<std::string>&
 {
     bool result = false;
 
-    if ( historyLines.empty() ) {
+    if ( ! historyLines.empty() ) {
         // put the keywords in the vector (this is what the user input) to a
         // buffer in a format that fits expected.
         // allocate the buffer for the HISTORY keywords in the historyLines vector where each keyword
