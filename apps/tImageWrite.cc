@@ -150,6 +150,10 @@ public:
    void updateHeader() {
        itsImageAccessor->setUnits(itsName,"Jy/pixel");
        itsImageAccessor->setBeamInfo(itsName,2.e-4,1.e-4,1.0e-1);
+       std::vector<std::string> historyLines;
+       historyLines.push_back("history line 1");
+       historyLines.push_back("history line 2");
+       itsImageAccessor->addHistory(itsName,historyLines);
    }
 
    /// @brief create the cube via the interface
