@@ -183,20 +183,22 @@ std::string CasaImageAccess<T>::getUnits(const std::string &name) const
 /// @details This reads a given keyword to the image metadata.
 /// @param[in] name Image name
 /// @param[in] keyword The name of the metadata keyword
+/// @return pair of strings - keyword value and comment
 template <class T>
-std::string CasaImageAccess<T>::getMetadataKeyword(const std::string &name,
-        const std::string &keyword) const
+std::pair<std::string, std::string> CasaImageAccess<T>::getMetadataKeyword(const std::string &name, const std::string &keyword) const
 {
 
     casacore::PagedImage<T> img(name);
     casacore::TableRecord miscinfo = img.miscInfo();
     std::string value = "";
+    std::string comment = "";
     if (miscinfo.isDefined(keyword)) {
         value = miscinfo.asString(keyword);
+        comment = miscinfo.comment(keyword);
     } else {
         ASKAPLOG_WARN_STR(casaImAccessLogger, "Keyword " << keyword << " is not defined in metadata for image " << name);
     }
-    return value;
+    return std::pair<std::string,std::string>(value,comment);
 
 }
 
@@ -459,4 +461,3 @@ void CasaImageAccess<T>::addHistory(const std::string &name, const std::vector<s
         log << history << casacore::LogIO::POST;
     }
 }
-

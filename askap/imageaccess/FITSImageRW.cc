@@ -660,8 +660,6 @@ void FITSImageRW::addHistory(const std::string &history)
 
 void FITSImageRW::addHistory(const std::vector<std::string> &historyLines)
 {
-
-    ASKAPLOG_INFO_STR(FITSlogger,"Adding HISTORY string: " << history);
     fitsfile *fptr;       /* pointer to the FITS file, defined in fitsio.h */
     int status = 0;
     if ( fits_open_file(&fptr, this->name.c_str(), READWRITE, &status) )

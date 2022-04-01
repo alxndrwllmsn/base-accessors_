@@ -95,7 +95,8 @@ struct CasaImageAccess : public IImageAccess<T> {
     /// @details This reads a given keyword from the image metadata.
     /// @param[in] name Image name
     /// @param[in] keyword The name of the metadata keyword
-    virtual std::string getMetadataKeyword(const std::string &name, const std::string &keyword) const;
+    /// @return pair of strings - keyword value and comment
+    virtual std::pair<std::string, std::string> getMetadataKeyword(const std::string &name, const std::string &keyword) const;
 
     //////////////////
     // Writing methods

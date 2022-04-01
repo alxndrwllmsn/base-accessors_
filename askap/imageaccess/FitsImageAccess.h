@@ -94,7 +94,7 @@ struct FitsImageAccess : public IImageAccess<> {
         /// @param[in] name image name
         /// @return beam info vector
         virtual casacore::Vector<casacore::Quantum<double> > beamInfo(const std::string &name) const;
-        
+
         /// @brief obtain beam info
         /// @param[in] name image name
         /// @return beam info list
@@ -109,7 +109,8 @@ struct FitsImageAccess : public IImageAccess<> {
         /// @details This reads a given keyword to the image metadata.
         /// @param[in] name Image name
         /// @param[in] keyword The name of the metadata keyword
-        virtual std::string getMetadataKeyword(const std::string &name, const std::string &keyword) const;
+        /// @return pair of strings - keyword value and comment
+        virtual std::pair<std::string, std::string> getMetadataKeyword(const std::string &name, const std::string &keyword) const;
 
         //////////////////
         // Writing methods
