@@ -180,7 +180,8 @@ std::string FitsImageAccess::getUnits(const std::string &name) const
 /// @details This reads a given keyword to the image metadata.
 /// @param[in] name Image name
 /// @param[in] keyword The name of the metadata keyword
-std::string FitsImageAccess::getMetadataKeyword(const std::string &name, const std::string &keyword) const
+/// @return pair of strings - keyword value and comment
+std::pair<std::string, std::string> FitsImageAccess::getMetadataKeyword(const std::string &name, const std::string &keyword) const
 {
 
     fitsfile *fptr;       /* pointer to the FITS file, defined in fitsio.h */
@@ -199,7 +200,8 @@ std::string FitsImageAccess::getMetadataKeyword(const std::string &name, const s
         ASKAPCHECK(status == 0, "FITSImageAccess:: Error on closing file, status="<<status);
 
     std::string valueStr(value);
-    return valueStr;
+    std::string commentStr(comment);
+    return std::pair<std::string,std::string>(valueStr,commentStr);
 }
 
 /// @brief connect accessor to an existing image
@@ -443,4 +445,3 @@ void FitsImageAccess::addHistory(const std::string &name, const std::vector<std:
     connect(name);
     itsFITSImage->addHistory(historyLines);
 }
-
