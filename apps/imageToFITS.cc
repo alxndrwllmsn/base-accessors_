@@ -146,6 +146,12 @@ class ConvertApp : public askap::Application {
 
             return 0;
         }
+
+    private:
+        std::string getVersion() const override {
+            const std::string pkgVersion = std::string("base-accessor:") + ASKAP_PACKAGE_VERSION;
+            return pkgVersion;
+        }
 };
 
 int main(int argc, char *argv[])

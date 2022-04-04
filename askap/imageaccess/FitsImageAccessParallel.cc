@@ -37,7 +37,7 @@
 #include <askap/imageaccess/FitsImageAccessParallel.h>
 
 #include <fitsio.h>
-#
+
 ASKAP_LOGGER(logger, ".fitsImageAccessParallel");
 
 using namespace askap;
@@ -59,7 +59,7 @@ FitsImageAccessParallel::FitsImageAccessParallel(askapparallel::AskapParallel &c
 /// @return array with pixels
 casacore::Array<float> FitsImageAccessParallel::read(const std::string &name) const
 {
-    if (canDoParallelIO(name)) return read_all(name, itsAxis);
+    if (canDoParallelIO(name)) return readAll(name, itsAxis);
     else return FitsImageAccess::read(name);
 
 }
@@ -80,7 +80,7 @@ casacore::Array<float> FitsImageAccessParallel::read(const std::string &name, co
 
     if (section>=0 && parallel) {
         int nsection = itsShape(itsAxis) / itsComms.nProcs();
-        return read_all(name, itsAxis, nsection, section);
+        return readAll(name, itsAxis, nsection, section);
     } else {
         return FitsImageAccess::read(name, blc, trc);
     }
@@ -90,7 +90,7 @@ casacore::Array<float> FitsImageAccessParallel::read(const std::string &name, co
 /// @param[in] name image name
 /// @param[in] iax, axis to distribute over: use 1 for 2D images,  0, 1 or 2 for x, y, z, i.e., yz planes, xz planes, xy planes
 /// @return array with pixels for the section of the image read
-casacore::Array<float> FitsImageAccessParallel::read_all(const std::string &name,
+casacore::Array<float> FitsImageAccessParallel::readAll(const std::string &name,
     int iax, int nsub, int sub) const
 {
     std::string fullname = name;
@@ -108,15 +108,16 @@ casacore::Array<float> FitsImageAccessParallel::read_all(const std::string &name
     MPI_File_open(MPI_COMM_WORLD, fullname.c_str(), MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);
     MPI_File_set_view(fh, offset, MPI_FLOAT, filetype, "native", MPI_INFO_NULL);
     const MPI_Offset bufsize = bufshape.product();  // local number to read
-    casa::Float* buf = new casa::Float[bufsize];
+    //casa::Float* buf = new casa::Float[bufsize];
+    boost::shared_array<casa::Float> buf {new casa::Float[bufsize]};
     // Collective read of the whole cube
     MPI_Status status;
-    MPI_File_read_all(fh, buf, bufsize, MPI_FLOAT, &status);
+    MPI_File_read_all(fh, buf.get(), bufsize, MPI_FLOAT, &status);
     MPI_File_close(&fh);
     // Take care of endianness
     casa::Array<casa::Float> buffer(bufshape);
-    casa::CanonicalConversion::toLocal(buffer.data(), buf, bufsize);
-    delete [] buf;
+    casa::CanonicalConversion::toLocal(buffer.data(), buf.get(), bufsize);
+    //delete [] buf;
     if (nsub > 1) ASKAPLOG_INFO_STR(logger, " - returning section " << sub << ", an array with shape " << buffer.shape());
     return buffer;
 }
@@ -126,7 +127,7 @@ casacore::Array<float> FitsImageAccessParallel::read_all(const std::string &name
 /// @return array with pixels
 void FitsImageAccessParallel::write(const std::string &name, const casacore::Array<float> &arr)
 {
-    if (canDoParallelIO(name)) write_all(name, arr, itsAxis);
+    if (canDoParallelIO(name)) writeAll(name, arr, itsAxis);
     else FitsImageAccess::write(name, arr);
 }
 
@@ -148,7 +149,7 @@ void FitsImageAccessParallel::write(const std::string &name, const casacore::Arr
 
     if (section>=0 && parallel) {
         int nsection = itsShape(itsAxis) / itsComms.nProcs();
-        write_all(name, arr, itsAxis, nsection, section);
+        writeAll(name, arr, itsAxis, nsection, section);
     } else {
         FitsImageAccess::write(name, arr, where);
     }
@@ -180,7 +181,7 @@ void FitsImageAccessParallel::write(const std::string &name, const casacore::Arr
                casacore::setNaN(arrmasked.data()[i]);
            }
        }
-       write_all(name, arrmasked, itsAxis, nsection, section);
+       writeAll(name, arrmasked, itsAxis, nsection, section);
    } else {
        FitsImageAccess::write(name, arr, mask, where);
    }
@@ -191,7 +192,7 @@ void FitsImageAccessParallel::write(const std::string &name, const casacore::Arr
 /// @param[in] name image name
 /// @param[in] arr array with pixels. Array dimension iax * #ranks must match the corresponding image dimension
 /// @param[in] iax, axis to distribute over: 0, 1 or 2 for x, y, z, i.e., yz planes, xz planes, xy planes
-void FitsImageAccessParallel::write_all(const std::string &name,
+void FitsImageAccessParallel::writeAll(const std::string &name,
     const casacore::Array<float> &arr, int iax, int nsub, int sub) const
 {
     ASKAPLOG_INFO_STR(logger, "Writing array with the shape " << arr.shape() << " into a FITS image " <<
@@ -227,7 +228,7 @@ void FitsImageAccessParallel::write_all(const std::string &name,
 
     // Add fits padding to make file size multiple of 2880
     if (itsComms.isMaster() && sub == nsub-1) {
-        fits_padding(fullname);
+        fitsPadding(fullname);
     }
 
     // All wait for padding to be written
@@ -235,6 +236,7 @@ void FitsImageAccessParallel::write_all(const std::string &name,
 
 }
 
+/// @brief check if we can do parallel I/O on the file
 bool FitsImageAccessParallel::canDoParallelIO(const std::string &name) const
 {
     if (name != itsName) {
@@ -247,7 +249,7 @@ bool FitsImageAccessParallel::canDoParallelIO(const std::string &name) const
         if (name.rfind(".fits") == std::string::npos) {
             fullname = name + ".fits";
         }
-        decode_header(fullname, imageShape, headersize);
+        decodeHeader(fullname, imageShape, headersize);
         int ndim = imageShape.size();
         This->itsShape.resize(ndim);
         This->itsShape = imageShape;
@@ -277,8 +279,10 @@ int FitsImageAccessParallel::blctrcTosection(const casacore::IPosition & blc, co
     return -1;
 }
 
-
-void FitsImageAccessParallel::copy_header(const casa::String &infile, const casa::String& outfile) const
+/// @brief copy the header of a fits image (i.e., copies the fits 'cards' preceeding the data)
+/// @param[in] infile, the input fits file
+/// @param[in] outfile, the output fits file (overwritten if it exists)
+void FitsImageAccessParallel::copyHeader(const casa::String &infile, const casa::String& outfile) const
 {
     using namespace std;
     // get header size
@@ -293,33 +297,201 @@ void FitsImageAccessParallel::copy_header(const casa::String &infile, const casa
         fulloutfile += ".fits";
     }
     ASKAPLOG_INFO_STR(logger,"copy_header: "<<fullinfile<<", "<<fulloutfile);
-    decode_header(fullinfile, shape, headersize);
+    decodeHeader(fullinfile, shape, headersize);
     // create the new output file and copy header
     //streampos size;
     char * header;
     ifstream file (fullinfile, ios::in|ios::binary);
     if (file.is_open())
     {
-        header = new char [headersize];
-        file.read (header, headersize);
+        //header = new char [headersize];
+        boost::shared_array<char> header {new char [headersize]};
+        file.read (header.get(), headersize);
         file.close();
         ofstream ofile (fulloutfile, ios::out|ios::binary|ios::trunc);
         if (ofile.is_open()) {
-            ofile.write(header,headersize);
+            ofile.write(header.get(),headersize);
             ofile.close();
         }
-        delete[] header;
+        //delete[] header;
     }
 }
 
+/// @brief copy the user input history lines to the format the FITS expected
+/// @param[in]  historyLines  a list of HISTORY keywords
+/// @param[out] fitsHistoryLinesBuffer  an array of HISTORY keywords in FITS format
+/// @param[out] fitsHistoryLinesBufferSize the size of the fitsHistoryLinesBuffer
+bool FitsImageAccessParallel::formatHistoryLines(const std::vector<std::string>& historyLines,
+                                                   boost::shared_array<char>& fitsHistoryLinesBuffer,
+                                                   long& fitsHistoryLinesBufferSize) const
+{
+    bool result = false;
+
+    if ( ! historyLines.empty() ) {
+        // put the keywords in the vector (this is what the user input) to a
+        // buffer in a format that fits expected.
+        // allocate the buffer for the HISTORY keywords in the historyLines vector where each keyword
+        // is 80 bytes
+        fitsHistoryLinesBuffer.reset(new char[historyLines.size() * KEYWORD_SIZE * sizeof(char)]);
+        fitsHistoryLinesBufferSize = historyLines.size() * KEYWORD_SIZE * sizeof(char);
+        std::memset(fitsHistoryLinesBuffer.get(),0,historyLines.size() * KEYWORD_SIZE * sizeof(char));
+        // Copy the history keyword to the buffer so that it conforms to FITS keyword header format.
+        unsigned long offset = 0;
+        for (const auto& line : historyLines) {
+            std::memcpy(fitsHistoryLinesBuffer.get()+offset,"HISTORY ",KEYWORD_NAME_SIZE);
+            offset = offset + 8;
+            std::memcpy(fitsHistoryLinesBuffer.get()+offset,line.c_str(),line.size());
+            offset = offset + (KEYWORD_SIZE - KEYWORD_NAME_SIZE);
+        }
+        result = true;
+    }
+
+    return result;
+}
+
+/// @brief copy the fits keywords (not including the END keyword) from the input fits file in the header array.
+/// @param[in]  fullinfile fits input file
+/// @param[out] header an array to store the keywords (minus the END keyword) of the input file
+/// @param[out] shape image shape
+/// @param[out] headersize  the size of the header (i.e the file offset to the start data section)
+/// @param[out] spaceAfterEndKW  the number of bytes (keywrods) in the input fits file up to the
+bool FitsImageAccessParallel::copyHeaderFromFile(const std::string& fullinfile,
+                                                    boost::shared_array<char>& header,
+                                                    casa::IPosition& shape,
+                                                    casa::Long& headersize,
+                                                    long& spaceAfterEndKW) const
+{
+    using namespace std;
+    bool result = false;
+    decodeHeader(fullinfile, shape, headersize);
+    ifstream file (fullinfile, ios::in|ios::binary);
+    if (file.is_open())
+    {
+        // create the new output file and copy header
+        header.reset(new char [headersize]);
+        file.read (header.get(), headersize);
+        file.close();
+
+        // kwPtr points to the end of the keyword section
+        char* kwPtr = header.get() + headersize - 1;
+
+        // We only want to copy to the last keyword before the END keyword
+        spaceAfterEndKW = 0; // how many spaces after the END keyword
+        while ( *kwPtr == ' ' ) {
+            spaceAfterEndKW = spaceAfterEndKW + 1;
+            kwPtr = kwPtr - 1;
+        }
+
+        // Found the END keyword. kwPtr points to 'D'
+        // 'END' keyword is 80 bytes so we have to add 3 to
+        // spaceAfterEndKW to get to the end of the last keyword before the
+        // END keyword
+        spaceAfterEndKW = spaceAfterEndKW + 3;
+        result = true;
+    }
+
+    return result;
+}
+
+/// @brief write the keywords of the fits input file plus the HISTORY keywords to the output fits file.
+/// @param[in]  fulloutfile fits output file
+/// @param[in] header an array of keywords (minus the END keyword) of the input file
+/// @param[in] fitsHistoryLinesBuffer  an array of HISTORY keywords in FITS format
+/// @param[in] headersize  the size of the header (i.e the file offset to the start data section)
+/// @param[in] fitsHistoryLinesBufferSize the size of the fitsHistoryLinesBuffer
+/// @param[in] spaceAfterEndKW  the number of bytes (keywrods) in the input fits file up to the
+///                             END keyword
+bool FitsImageAccessParallel::writeHistoryKWToFile(const std::string& fulloutfile, 
+                                                   const boost::shared_array<char>& header,
+                                                   const boost::shared_array<char>& fitsHistoryLinesBuffer,
+                                                   long headersize, long fitsHistoryLinesBufferSize, 
+                                                   long spaceAfterEndKW) const
+{
+    using namespace std;
+
+    ASKAPLOG_INFO_STR(logger,"writeHistoryKWToFile: " << fulloutfile);
+    bool result = false;
+    ofstream ofile (fulloutfile, ios::out|ios::binary|ios::trunc);
+    if (ofile.is_open()) {
+        char endKW[KEYWORD_SIZE];
+        std::memset(endKW,' ',KEYWORD_SIZE);
+        std::memcpy(endKW,"END",3);
+
+        // copy the keywords of the input file to the output file
+        // minus the END keyword
+        ofile.write(header.get(),headersize - spaceAfterEndKW);
+        // copy the HISTORY keyword to the output file
+        ofile.write(fitsHistoryLinesBuffer.get(),fitsHistoryLinesBufferSize);
+        // write END keyword
+        ofile.write(endKW,KEYWORD_SIZE);
+        ofile.close();
+        // now the padding to make it a multiple of 2880 bytes.
+        fitsPadding(fulloutfile);
+        result = true;     
+    }
+    return result;
+}
+
+/// @brief copy the header of a fits image (i.e., copies the fits 'cards' preceeding the data)
+///        off the input file along with the image HISTORY keywords to the output file.
+/// @param[in] infile, the input fits file
+/// @param[in] outfile, the output fits file (overwritten if it exists)
+/// @param[in] historyLines, image HISTORY keywords
+void FitsImageAccessParallel::copyHeaderWithHistoryKW(const casa::String &infile, 
+                                                         const casa::String& outfile,
+                                                         const std::vector<std::string>& historyLines) const
+{
+    using namespace std;
+
+    ASKAPCHECK(!historyLines.empty(), "FitsImageAccessParallel::copy_header_historykw historyLines argument is empty");
+
+    std::string fullinfile = infile;
+    if (fullinfile.rfind(".fits") == std::string::npos) {
+        fullinfile += ".fits";
+    }
+    std::string fulloutfile = outfile;
+    if (fulloutfile.rfind(".fits") == std::string::npos) {
+        fulloutfile += ".fits";
+    }
+
+
+    boost::shared_array<char> fitsHistoryLinesBuffer;
+    long fitsHistoryLinesBufferSize = -1;
+    if ( formatHistoryLines(historyLines,fitsHistoryLinesBuffer,fitsHistoryLinesBufferSize) ) {
+        casa::IPosition shape;
+        casa::Long headersize;
+
+        ASKAPLOG_INFO_STR(logger,"copy_header_with_historykw: "<<fullinfile<<", "<<fulloutfile);
+
+        boost::shared_array<char> header;
+        long spaceAfterEndKW = 0; // how many spaces after the END keyword
+
+        if ( copyHeaderFromFile(fullinfile,header,shape,headersize,spaceAfterEndKW) ) {
+            writeHistoryKWToFile(fulloutfile,header,fitsHistoryLinesBuffer, 
+                                 headersize,fitsHistoryLinesBufferSize,spaceAfterEndKW);    
+        } else {
+            ASKAPLOG_DEBUG_STR(logger,"copy_header_with_historykw: copyHeaderFromFile failed ");
+        }
+    } else {
+        ASKAPLOG_DEBUG_STR(logger,"copy_header_with_historykw: formatHistoryLines failed ");
+    }
+}
+
+/// @brief determine the file access pattern, offset to start reading or writing and the buffer shape needed
 void FitsImageAccessParallel::setFileAccess(const casa::String& name,
     casa::IPosition& bufshape, MPI_Offset& offset, MPI_Datatype&  filetype, int iax,
     int nsub, int sub) const
 {
+    std::string fullname = name;
+    if (fullname.rfind(".fits") == std::string::npos) {
+        fullname += ".fits";
+    }
+    ASKAPLOG_INFO_STR(logger,"setFileAccess: name - " << name
+                        << ", fullname - " << fullname);
     // get header and data size, get image dimensions
     casa::IPosition imageShape;
     casa::Long headersize;
-    decode_header(name, imageShape, headersize);
+    decodeHeader(fullname, imageShape, headersize);
     int nz = imageShape(2);
     if (imageShape.size()>3) nz *= imageShape(3);
     // Now work out the file access pattern and start offset
@@ -345,22 +517,31 @@ void FitsImageAccessParallel::setFileAccess(const casa::String& name,
     offset = headersize + (myrank + sub * numprocs) * blocksize * sizeof(float);
 }
 
-
-void FitsImageAccessParallel::decode_header(const casa::String& infile, casa::IPosition& imageShape,
-                    casa::Long& headersize) const
+/// @brief determine image dimensions (up to 3 non degenerate axes) and headersize from file
+/// param[in]  infile filename
+/// param[out] imageShape image dimension
+/// param[out] headerSize the size in bytes of the header section (i.e the start of the data section)
+///                       of a fits file.
+void FitsImageAccessParallel::decodeHeader(const casa::String& infile, casa::IPosition& imageShape,
+                    casa::Long& headerSize) const
 {
     fitsfile *infptr;  // FITS file pointers
     int status = 0;  // CFITSIO status value MUST be initialized to zero!
 
-    fits_open_file(&infptr, infile.c_str(), READONLY, &status); // open input image
+    std::string fullinfile = infile;
+    if (fullinfile.rfind(".fits") == std::string::npos) {
+        fullinfile += ".fits";
+    }
+
+    fits_open_file(&infptr, fullinfile.c_str(), READONLY, &status); // open input image
     if (status) {
         fits_report_error(stderr, status); // print error message
         return;
     }
     LONGLONG headstart, datastart, dataend;
     fits_get_hduaddrll (infptr, &headstart, &datastart, &dataend, &status);
-    //ASKAPLOG_INFO_STR(logger,"header starts at: "<<headstart<<" data start: "<<datastart<<" end: "<<dataend);
-    headersize = datastart;
+    ASKAPLOG_INFO_STR(logger,"header starts at: "<<headstart<<" data start: "<<datastart<<" end: "<<dataend);
+    headerSize = datastart;
     int naxis;
     long naxes[4];
     fits_get_img_dim(infptr, &naxis, &status);  // read dimensions
@@ -373,21 +554,34 @@ void FitsImageAccessParallel::decode_header(const casa::String& infile, casa::IP
     fits_close_file(infptr, &status);
 }
 
-void FitsImageAccessParallel::fits_padding(const casa::String& filename) const
+/// @brief add padding to the fits file to make it complient
+/// param[in]  filename   name of fits file
+void FitsImageAccessParallel::fitsPadding(const casa::String& filename) const
 {
     using namespace std;
-    std::ifstream infile(filename, ios::binary | ios::ate);
+
+    std::string fullinfile = filename;
+    if (fullinfile.rfind(".fits") == std::string::npos) {
+        fullinfile += ".fits";
+    }
+
+    ASKAPLOG_INFO_STR(logger,"fits_padding: filename - " << filename
+                        << ", fullinfile - " << fullinfile);
+    std::ifstream infile(fullinfile, ios::binary | ios::ate);
     const size_t file_size = infile.tellg();
     const size_t padding = 2880 - (file_size % 2880);
     infile.close();
     if (padding != 2880) {
         ofstream ofile;
-        ofile.open(filename, ios::binary | ios::app);
-        char * buf = new char[padding];
-        for (char* bufp = &buf[padding-1]; bufp >= buf; bufp--) *bufp = 0;
+        ofile.open(fullinfile, ios::binary | ios::app);
+        boost::shared_array<char> storage {new char[padding]};
+        //char * buf = new char[padding];
+        char* buf = storage.get();
+        //for (char* bufp = &buf[padding-1]; bufp >= buf; bufp--) { *bufp = 0; }
+        std::fill_n(buf,padding,0);
         ofile.write(buf,padding);
         ofile.close();
-        delete [] buf;
+        //delete [] buf;
     }
     ASKAPLOG_INFO_STR(logger,"master added "<< padding % 2880 << " bytes of FITS padding to file of size "<<file_size);
 }

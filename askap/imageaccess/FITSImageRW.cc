@@ -30,7 +30,7 @@
 ///
 #include <askap_accessors.h>
 #include <askap/askap/AskapLogging.h>
-
+#include <askap/askap/AskapUtil.h>
 #include <casacore/images/Images/FITSImage.h>
 #include <casacore/casa/BasicSL/String.h>
 #include <casacore/casa/Utilities/DataType.h>
@@ -339,10 +339,7 @@ bool FITSImageRW::write(const casacore::Array<float> &arr)
     fitsfile *fptr;       /* pointer to the FITS file, defined in fitsio.h */
 
 
-    int status;
-
-
-    status = 0;
+    int status = 0;
 
     if (fits_open_file(&fptr, this->name.c_str(), READWRITE, &status))
         printerror(status);
@@ -501,8 +498,64 @@ void FITSImageRW::setHeader(const std::string &keyword, const std::string &value
 
     if (fits_close_file(fptr, &status))
         printerror(status);
+}
 
+void FITSImageRW::setHeader(const LOFAR::ParameterSet & keywords)
+{
+    ASKAPLOG_INFO_STR(FITSlogger, "Setting header values from parset ");
+    fitsfile *fptr;       /* pointer to the FITS file, defined in fitsio.h */
+    int status = 0;
+    if (fits_open_file(&fptr, this->name.c_str(), READWRITE, &status)) {
+        printerror(status);
+    }
 
+    for (auto &elem : keywords) {
+      const string keyword = elem.first;
+      const std::vector<string> valanddesc = elem.second.getStringVector();
+      if (valanddesc.size() > 0) {
+        const string value = valanddesc[0];
+        const string desc = (valanddesc.size() > 1 ? valanddesc[1] : "");
+
+        const string type = (valanddesc.size() > 2 ? toUpper(valanddesc[2]) : "STRING");
+        if (type == "INT") {
+          try {
+            int intVal = std::stoi(value);
+            if (fits_update_key(fptr, TINT, keyword.c_str(), &intVal,
+            desc.c_str(), &status)) {
+              printerror(status);
+            }
+          } catch (const std::invalid_argument&) {
+            ASKAPLOG_WARN_STR(FITSlogger, "Invalid int value for header keyword "<<keyword<<" : "<<value);
+          } catch (const std::out_of_range&) {
+            ASKAPLOG_WARN_STR(FITSlogger, "Out of range int value for header keyword "<<keyword<<" : "<<value);
+          }
+        } else if (type == "DOUBLE") {
+          try {
+            double doubleVal = std::stod(value);
+            if (fits_update_key(fptr, TDOUBLE, keyword.c_str(), &doubleVal,
+            desc.c_str(), &status)) {
+              printerror(status);
+            }
+          } catch (const std::invalid_argument&) {
+            ASKAPLOG_WARN_STR(FITSlogger, "Invalid double value for header keyword "<<keyword<<" : "<<value);
+          } catch (const std::out_of_range&) {
+            ASKAPLOG_WARN_STR(FITSlogger, "Out of range double value for header keyword "<<keyword<<" : "<<value);
+          }
+        } else if (type == "STRING") {
+          if (fits_update_key(fptr, TSTRING, keyword.c_str(), (char *)value.c_str(),
+          desc.c_str(), &status)) {
+            printerror(status);
+          }
+        } else {
+          ASKAPLOG_WARN_STR(FITSlogger, "Invalid type for header keyword "<<keyword<<" : "<<type);
+        }
+
+      }
+    }
+
+    if (fits_close_file(fptr, &status)) {
+        printerror(status);
+    }
 }
 
 void FITSImageRW::setRestoringBeam(double maj, double min, double pa)
@@ -535,6 +588,59 @@ void FITSImageRW::setRestoringBeam(double maj, double min, double pa)
 
 }
 
+void FITSImageRW::setRestoringBeam(const BeamList & beamlist)
+{
+  ASKAPCHECK(!beamlist.empty(),"Called FITSImageRW::setRestoringBeam with empty beamlist");
+  // write multiple beams to a binary table
+  ASKAPLOG_INFO_STR(FITSlogger, "Writing BEAMS binary table");
+  fitsfile *fptr;
+  // note status is passed on from each call and calls do not execute if status is non zero on entry
+  int status = 0;
+  fits_open_file(&fptr, this->name.c_str(), READWRITE, &status);
+
+  // set header keyword to indicate beams table is present
+  int present = 1;
+  fits_update_key(fptr, TLOGICAL, "CASAMBM", &present, "CASA Multiple beams table present", &status);
+
+  int nchan = beamlist.size();
+  int npol = 1;
+
+  const int tfields = 5;
+  const char *ttype[] = {"BMAJ", "BMIN", "BPA", "CHAN", "POL"};
+  const char *tform[] = {"1E", "1E", "1E", "1J", "1J"};
+  const char *tunit[] = {"arcsec", "arcsec", "deg", "\0", "\0"};
+  char extname[] = "BEAMS";
+  int extver = 1;
+
+  fits_create_tbl(fptr, BINARY_TBL, nchan, tfields, (char**)ttype, (char**)tform, (char**)tunit,
+		  extname, &status);
+  fits_write_key(fptr, TINT, "EXTVER", &extver, "", &status);
+  fits_write_key(fptr, TINT, "NCHAN", &nchan, "Number of channels", &status);
+  fits_write_key(fptr, TINT, "NPOL", &npol, "Number of polarisations", &status);
+
+  int row = 0;
+  for (const auto& beam : beamlist) {
+    row++;
+    // can't make these const due to fits_write_col signature
+    ASKAPDEBUGASSERT(beam.second.size()==3);
+    float bmaj = beam.second[0].getValue("arcsec");
+    float bmin = beam.second[1].getValue("arcsec");
+    float bpa = beam.second[2].getValue("deg");
+    int chan = row - 1;
+    int pol = 0;
+    fits_write_col(fptr, TFLOAT, 1, row, 1, 1, &bmaj , &status);
+    fits_write_col(fptr, TFLOAT, 2, row, 1, 1, &bmin, &status);
+    fits_write_col(fptr, TFLOAT, 3, row, 1, 1, &bpa, &status);
+    fits_write_col(fptr, TINT, 4, row, 1, 1, &chan, &status);
+    fits_write_col(fptr, TINT, 5, row, 1, 1, &pol, &status);
+  }
+  fits_close_file(fptr, &status);
+
+  if (status) {
+    printerror(status);
+  }
+}
+
 void FITSImageRW::addHistory(const std::string &history)
 {
 
@@ -552,7 +658,24 @@ void FITSImageRW::addHistory(const std::string &history)
 
 }
 
+void FITSImageRW::addHistory(const std::vector<std::string> &historyLines)
+{
+    fitsfile *fptr;       /* pointer to the FITS file, defined in fitsio.h */
+    int status = 0;
+    if ( fits_open_file(&fptr, this->name.c_str(), READWRITE, &status) )
+        printerror( status );
 
+    for ( const auto& history : historyLines ) {
+        ASKAPLOG_INFO_STR(FITSlogger,"Adding HISTORY string: " << history);
+        if ( fits_write_history(fptr, history.c_str(), &status) )
+            printerror( status );
+    }
+
+
+    if ( fits_close_file(fptr, &status) )
+        printerror( status );
+
+}
 
 FITSImageRW::~FITSImageRW()
 {

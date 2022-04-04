@@ -2,7 +2,7 @@ cmake_minimum_required (VERSION 3.12.0)
 
 include_guard()
 
-set (VERSION "1.4.0")
+set (VERSION "1.5.0")
 project(base-accessors VERSION ${VERSION} LANGUAGES C CXX)
 
 find_package(Git REQUIRED)
@@ -50,9 +50,6 @@ endif()
 list(APPEND CMAKE_MODULE_PATH "${askap-cmake_SOURCE_DIR}")
 #message(STATUS "askap-cmake path is ${askap-cmake_SOURCE_DIR}")
 message(STATUS "askap-cmake path is ${CMAKE_MODULE_PATH}")
-
-include(version_utils)
-get_version_string()
 
 # -------- lofar common --------
 FetchContent_Declare(lofar-common

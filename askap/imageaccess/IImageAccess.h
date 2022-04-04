@@ -40,10 +40,12 @@
 #include <casacore/coordinates/Coordinates/CoordinateSystem.h>
 #include <casacore/casa/Quanta/Quantum.h>
 #include <askap/askapparallel/AskapParallel.h>
-
+#include <Common/ParameterSet.h>
 
 namespace askap {
 namespace accessors {
+
+typedef std::map<unsigned int, casacore::Vector<casacore::Quantum<double> > > BeamList;
 
 /// @brief Basic interface to access an image
 /// @details This interface class is somewhat analogous to casacore::ImageInterface. But it has
@@ -94,6 +96,11 @@ struct IImageAccess {
     /// @return beam info vector
     virtual casacore::Vector<casacore::Quantum<double> > beamInfo(const std::string &name) const = 0;
 
+    /// @brief obtain beam info
+    /// @param[in] name image name
+    /// @return beam info list
+    virtual BeamList beamList(const std::string &name) const = 0;
+
     /// @brief obtain pixel units
     /// @param[in] name image name
     /// @return units string
@@ -103,7 +110,8 @@ struct IImageAccess {
     /// @details This reads a given keyword to the image metadata.
     /// @param[in] name Image name
     /// @param[in] keyword The name of the metadata keyword
-    virtual std::string getMetadataKeyword(const std::string &name, const std::string &keyword) const = 0;
+    /// @return pair of strings - keyword value and comment
+    virtual std::pair<std::string, std::string> getMetadataKeyword(const std::string &name, const std::string &keyword) const = 0;
 
     //////////////////
     // Writing methods
@@ -166,6 +174,13 @@ struct IImageAccess {
     /// @param[in] pa position angle in radians
     virtual void setBeamInfo(const std::string &name, double maj, double min, double pa) = 0;
 
+    /// @brief set restoring beam info for all channels
+    /// @details For the restored image we want to carry size and orientation of the restoring beam
+    /// with the image. This method allows to assign this info.
+    /// @param[in] name image name
+    /// @param[in] beamlist The list of beams
+    virtual void setBeamInfo(const std::string &name, const BeamList & beamlist) = 0;
+
     /// @brief apply mask to image
     /// @details Details depend upon the implementation - CASA images will have the pixel mask assigned
     /// but FITS images will have it applied to the pixels ... which is an irreversible process
@@ -181,11 +196,23 @@ struct IImageAccess {
     virtual void setMetadataKeyword(const std::string &name, const std::string &keyword,
                                     const std::string value, const std::string &desc = "") = 0;
 
+    /// @brief Set the keywords for the metadata (A.K.A header)
+    /// @details This adds keywords to the image metadata.
+    /// @param[in] name Image name
+    /// @param[in] keywords A parset with keyword entries (KEYWORD = ["keyword value","keyword description","STRING"])
+    virtual void setMetadataKeywords(const std::string &name, const LOFAR::ParameterSet &keywords) = 0;
+
     /// @brief Add a HISTORY message to the image metadata
     /// @details Adds a string detailing the history of the image
     /// @param[in] name Image name
     /// @param[in] history History comment to add
     virtual void addHistory(const std::string &name, const std::string &history) = 0;
+
+    /// @brief Add HISTORY messages to the image metadata
+    /// @details Adds a list of strings detailing the history of the image
+    /// @param[in] name Image name
+    /// @param[in] historyLines History comments to add
+    virtual void addHistory(const std::string &name, const std::vector<std::string> &historyLines) = 0;
 
 };
 
