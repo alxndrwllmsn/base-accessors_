@@ -30,9 +30,6 @@
 
 #include <askap_accessors.h>
 
-
-
-
 #include <askap/askap/AskapLogging.h>
 #include <casacore/casa/System/ProgressMeter.h>
 #include <casacore/images/Images/FITSImage.h>
@@ -46,6 +43,9 @@
 #include <askap/imageaccess/FitsImageAccess.h>
 
 #include <fitsio.h>
+#include <sstream>
+#include <tuple>
+#include <map>
 
 ASKAP_LOGGER(logger, ".fitsImageAccessor");
 
@@ -444,4 +444,10 @@ void FitsImageAccess::addHistory(const std::string &name, const std::vector<std:
 {
     connect(name);
     itsFITSImage->addHistory(historyLines);
+}
+
+void FitsImageAccess::setInfo(const std::string &name, const casacore::RecordInterface &info)
+{
+    connect(name);
+    itsFITSImage->setInfo(info);
 }

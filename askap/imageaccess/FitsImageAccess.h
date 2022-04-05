@@ -214,16 +214,37 @@ struct FitsImageAccess : public IImageAccess<> {
         /// @param[in] history History comment to add
         virtual void addHistory(const std::string &name, const std::string &history);
 
-    /// @brief Add HISTORY messages to the image metadata
-    /// @details Adds a list of strings detailing the history of the image
-    /// @param[in] name Image name
-    /// @param[in] historyLines History comments to add
-    virtual void addHistory(const std::string &name, const std::vector<std::string> &historyLines) override;
+        /// @brief Add HISTORY messages to the image metadata
+        /// @details Adds a list of strings detailing the history of the image
+        /// @param[in] name Image name
+        /// @param[in] historyLines History comments to add
+        virtual void addHistory(const std::string &name, const std::vector<std::string> &historyLines) override;
+
+        /// @brief Write what is in the info object to FITS binary table.
+        /// @param[in] info - In this case the info object is an instance of casacore::Record class.
+        /// It is required that the info object confirms to the following requirements :
+        /// (1) It is a top level record. The fields in the top level record can only have
+        ///     the following types : String (TpString), Float (TpFloat) , Double (TpDouble),
+        ///     Integer (TpInt) and Record (TpRecord). Fields that are not of type Record (TpRecord)
+        ///     are treated as FITS keywords in the binary table.
+        /// (2) It (info object) has one and ony one sub record (i.e it has a field of type TpRecord).
+        ///     This record contains information which is inserted into a FITS binary table data.
+        ///     The format of this record is as follows:
+        ///        Each field in the record represents a column in the FITS binary table.
+        ///     (ii)  The data types of the fields are : array of string (TpArrayString), array of float
+        ///           (TpArrayFloat), array of double (TpArrayDouble), array of integer (TpArrayInt)
+        ///     (iii) Each element in the array in (ii) denotes a value of a cell in the FITS binary column.
+        ///           e.g: a field whose name is "col1" and has an array of 5 integer numbers is written to
+        ///           FITS binary table as a table that has a column name "col1" which contains 5 rows where
+        ///           the first cell of the first row has the value of array[0] and so on.
+        ///     (iv)  The name of the fields becomes the columns' name in the FITS binary table.
+        ///     (v)   Lastly, there is a field in this record that has a name called "Unit" of type TpArrayString.
+        ///           It is used to specified the units of the table columns. e.g: the first element of this array
+        ///           indicates the unit of the first column in the table and so on.
+        virtual void setInfo(const std::string &name, const casacore::RecordInterface &info) override;
 
 
     private:
-
-
         boost::shared_ptr<FITSImageRW> itsFITSImage;
 
 };

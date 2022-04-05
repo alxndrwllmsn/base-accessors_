@@ -35,10 +35,14 @@
 #include <casacore/casa/BasicSL/String.h>
 #include <casacore/casa/Utilities/DataType.h>
 #include <casacore/fits/FITS/fitsio.h>
+#include <casacore/casa/Containers/RecordInterface.h>
+
 #include <Common/ParameterSet.h>
 #include <askap/imageaccess/IImageAccess.h>
 
-
+#include <sstream>
+#include <tuple>
+#include <map>
 #include "boost/scoped_ptr.hpp"
 
 namespace askap {
@@ -103,8 +107,35 @@ class FITSImageRW {
         // write into a FITS image
         bool write(const casacore::Array<float>&);
         bool write(const casacore::Array<float> &arr, const casacore::IPosition &where);
+
+        void setInfo(const casacore::RecordInterface &info);
     private:
 
+        struct CPointerWrapper 
+        {
+            friend class FITSImageRW;
+
+            explicit CPointerWrapper(unsigned int numColumns);
+            ~CPointerWrapper();
+
+            unsigned int itsNumColumns;
+            char** itsTType;
+            char** itsTForm;
+            char** itsUnits;
+        };
+
+        /// @brief check the given info object confirms to the requirements specified in the setInfo() method
+        /// @param[in] info  the casacore::Record object to be validated.
+        void setInfoValidityCheck(const casacore::RecordInterface &info);
+
+        using TableKeywordInfo = std::tuple<std::string, // keyword name
+                                            std::string, // keyword value
+                                            std::string>; // keyword comment
+        void getTableKeywords(const casacore::RecordInterface& info,
+                              std::map<std::string,TableKeywordInfo>& tableKeywords);
+        void createTable(const casacore::RecordInterface &info);
+        void writeTableKeywords(fitsfile* fptr, std::map<std::string,TableKeywordInfo>& tableKeywords);
+        void writeTableColumns(fitsfile* fptr,  const casacore::RecordInterface &table);
 
 
         std::string name;

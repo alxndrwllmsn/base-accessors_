@@ -39,6 +39,7 @@
 #include <casacore/casa/Arrays/Array.h>
 #include <casacore/coordinates/Coordinates/CoordinateSystem.h>
 #include <casacore/casa/Quanta/Quantum.h>
+#include <casacore/casa/Containers/RecordInterface.h>
 #include <askap/askapparallel/AskapParallel.h>
 #include <Common/ParameterSet.h>
 
@@ -213,6 +214,12 @@ struct IImageAccess {
     /// @param[in] name Image name
     /// @param[in] historyLines History comments to add
     virtual void addHistory(const std::string &name, const std::vector<std::string> &historyLines) = 0;
+
+    /// @brief set info for image that can vary by e.g., channel
+    /// @details Add arbitrary info to the image as either keywords or a binary table
+    /// @param[in] name image name
+    /// @param[in] info record with information
+    virtual void setInfo(const std::string &name, const casacore::RecordInterface & info) = 0;
 
 };
 

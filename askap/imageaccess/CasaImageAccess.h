@@ -209,6 +209,15 @@ struct CasaImageAccess : public IImageAccess<T> {
     /// @param[in] name Image name
     /// @param[in] historyLines History comments to add
     virtual void addHistory(const std::string &name, const std::vector<std::string> &historyLines) override;
+
+    /// @brief set info for image that can vary by e.g., channel
+    /// @details Add arbitrary info to the image as either keywords or a binary table
+    /// @param[in] name image name
+    /// @param[in] info record with information
+    virtual void setInfo(const std::string &name, const casacore::RecordInterface & info) override
+    {
+        // @TODO
+    }
 };
 
 
