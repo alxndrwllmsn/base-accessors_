@@ -136,10 +136,10 @@ public:
         shapeDec(0) = 5;
         casacore::Array<casacore::Int> decValues(shapeDec);
         casacore::Array<casacore::Int>::iterator iterendDec(decValues.end());
-        count = 10;
+        count = 0;
         for (casacore::Array<casacore::Int>::iterator iter=decValues.begin(); iter!=iterendDec; ++iter) {
-            *iter = count * 2;
-            count *= 10;
+            *iter = count*3 ;
+            count += 100;
         }
         subrecord.define("Dec",decValues);
 

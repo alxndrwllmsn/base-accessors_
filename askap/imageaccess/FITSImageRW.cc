@@ -903,8 +903,8 @@ void FITSImageRW::createTable(const casacore::RecordInterface &info)
                 std::vector<casacore::String> v = stringArr.tovector();
                 //cPointerWrapper.itsUnits = new char* [sizeof(char*) * numUnits];
                 for (int i = 0; i < numUnits; i++) {
-                    cPointerWrapper.itsUnits[i] = new char[sizeof(char) * (v[i].length() + 1)];
-                    std::fill_n(cPointerWrapper.itsUnits[i],'\0',v[i].length() +1);
+                    cPointerWrapper.itsUnits[i] = new char[sizeof(char) * (v[i].length())];
+                    std::fill_n(cPointerWrapper.itsUnits[i],'\0',v[i].length());
                     std::copy_n(v[i].data(),v[i].length(),cPointerWrapper.itsUnits[i]);
                 }
             }
@@ -966,7 +966,7 @@ void FITSImageRW::writeTableColumns(fitsfile *fptr, const casacore::RecordInterf
             long nrows = floatArr.capacity();
             fits_write_col(fptr, TFLOAT, f+1, firstrow, firstelem, nrows, floatArr.data(), &status);
         } else if ( type == casacore::DataType::TpArrayInt ) {
-            casacore::Array<float> intArr;
+            casacore::Array<int> intArr;
             table.get(f,intArr);
             long nrows = intArr.capacity();
             fits_write_col(fptr, TINT, f+1, firstrow, firstelem, nrows, intArr.data(), &status);
