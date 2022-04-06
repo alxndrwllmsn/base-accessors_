@@ -136,16 +136,18 @@ casacore::Vector<casacore::Quantum<double> > FitsImageAccess::beamInfo(const std
 
 /// @brief obtain beam info
 /// @param[in] name image name
-/// @return beam info list
+/// @return beam info list, beamlist will be empty if image only has a single beam
 BeamList FitsImageAccess::beamList(const std::string &name) const
 {
     std::string fullname = name + ".fits";
     casacore::FITSImage img(fullname);
     casacore::ImageInfo ii = img.imageInfo();
     BeamList bl;
-    for (int chan = 0; chan < ii.nChannels(); chan++) {
-      casacore::GaussianBeam gb = ii.restoringBeam(chan,0);
-      bl[chan] = gb.toVector();
+    if (img.imageInfo().hasMultipleBeams()) {
+      for (int chan = 0; chan < ii.nChannels(); chan++) {
+        casacore::GaussianBeam gb = ii.restoringBeam(chan,0);
+        bl[chan] = gb.toVector();
+      }
     }
     return bl;
 }

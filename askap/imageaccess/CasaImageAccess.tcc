@@ -157,16 +157,18 @@ casacore::Vector<casacore::Quantum<double> > CasaImageAccess<T>::beamInfo(const 
 
 /// @brief get restoring beam info
 /// @param[in] name image name
-/// @return beamlist  list of beams
+/// @return beamlist  list of beams, beamlist will be empty if image only has a single beam
 template <class T>
 BeamList CasaImageAccess<T>::beamList(const std::string &name) const
 {
     casacore::PagedImage<T> img(name);
     casacore::ImageInfo ii = img.imageInfo();
     BeamList bl;
-    for (int chan = 0; chan < ii.nChannels(); chan++) {
-      casacore::GaussianBeam gb = ii.restoringBeam(chan,0);
-      bl[chan] = gb.toVector();
+    if (img.imageInfo().hasMultipleBeams()) {
+      for (int chan = 0; chan < ii.nChannels(); chan++) {
+        casacore::GaussianBeam gb = ii.restoringBeam(chan,0);
+        bl[chan] = gb.toVector();
+      }
     }
     return bl;
 }
