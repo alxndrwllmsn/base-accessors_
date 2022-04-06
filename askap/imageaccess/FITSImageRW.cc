@@ -72,9 +72,13 @@ FITSImageRW::CPointerWrapper::CPointerWrapper(unsigned int numColumns)
     : itsNumColumns(numColumns),
       itsTType  { new char* [sizeof(char*) * numColumns] },
       itsTForm { new char* [sizeof(char*) * numColumns] },
-      //itsUnits { new char* [sizeof(char*) * numColumns] }
-      itsUnits { nullptr }
+      itsUnits { new char* [sizeof(char*) * numColumns] }
 {
+    for ( unsigned int i = 0; i < itsNumColumns; i++ ) {
+        itsTType[i] = nullptr;
+        itsTForm[i] = nullptr;
+        itsUnits[i] = nullptr;
+    }
 }
 
 FITSImageRW::CPointerWrapper::~CPointerWrapper()
@@ -721,7 +725,6 @@ FITSImageRW::~FITSImageRW()
 /// @param[in] info  the casacore::Record object to be validated.
 void FITSImageRW::setInfoValidityCheck(const casacore::RecordInterface &info)
 {
-    // check info has one and only one sub record
     casacore::uInt subRecordFieldId = 0;
     int numSubRecord = 0;
     casacore::uInt nFields = info.nfields();
@@ -731,10 +734,10 @@ void FITSImageRW::setInfoValidityCheck(const casacore::RecordInterface &info)
         if ( type == casacore::DataType::TpRecord ) {
             numSubRecord += 1;
             subRecordFieldId = f;
-        } else if ( type != casacore::DataType::TpDouble ||
-                    type != casacore::DataType::TpString ||
-                    type != casacore::DataType::TpFloat ||
-                    type != casacore::DataType::TpInt ||
+        } else if ( type != casacore::DataType::TpDouble && 
+                    type != casacore::DataType::TpString && 
+                    type != casacore::DataType::TpFloat &&
+                    type != casacore::DataType::TpInt &&
                     type != casacore::DataType::TpUInt ) {
             // check the datatypes of the info object itself.
             // fields that are not subrecord are treated as table keywords and they can only
@@ -764,10 +767,10 @@ void FITSImageRW::setInfoValidityCheck(const casacore::RecordInterface &info)
     for(casacore::uInt f = 0; f < nFields; f++) {
         casacore::String name = subRec.name(f);
         casacore::DataType type = subRec.dataType(f) ;
-        if ( type != casacore::DataType::TpArrayDouble ||
-             type != casacore::DataType::TpArrayString ||
-             type != casacore::DataType::TpArrayFloat ||
-             type != casacore::DataType::TpArrayInt ||
+        if ( type != casacore::DataType::TpArrayDouble &&
+             type != casacore::DataType::TpArrayString &&
+             type != casacore::DataType::TpArrayFloat &&
+             type != casacore::DataType::TpArrayInt &&
              type != casacore::DataType::TpArrayUInt ) {
              std::stringstream ss;
              ss << "field " << name << " has incorrect datatype. Supported datatype are: TpArrayDouble,  TpArrayString, TpAarrayFloat, TpArrayInt and TpArrayUInt.";
@@ -818,6 +821,8 @@ void FITSImageRW::getTableKeywords(const casacore::RecordInterface& info,
 
 void FITSImageRW::createTable(const casacore::RecordInterface &info)
 {
+
+
     // find the sub record. it is the table we want to create
     casacore::uInt nFields = info.nfields();
     casacore::uInt subRecordFieldId = 0;
@@ -875,8 +880,8 @@ void FITSImageRW::createTable(const casacore::RecordInterface &info)
                 rows.emplace_back(floatArr.capacity());
 
                 // assume that the column that has string value has max 20 character
-                cPointerWrapper.itsTForm[f] = new char[sizeof(char)*3];
-                std::fill_n(cPointerWrapper.itsTForm[f],'\0',3);
+                cPointerWrapper.itsTForm[f] = new char[sizeof(char)*2];
+                std::fill_n(cPointerWrapper.itsTForm[f],'\0',2);
                 std::copy_n("1E",2,cPointerWrapper.itsTForm[f]);
             } else if ( type == casacore::DataType::TpArrayInt ) {
                 casacore::Array<int> intArr;
@@ -884,8 +889,8 @@ void FITSImageRW::createTable(const casacore::RecordInterface &info)
                 rows.emplace_back(intArr.capacity());
 
                 // assume that the column that has string value has max 20 character
-                cPointerWrapper.itsTForm[f] = new char[sizeof(char)*3];
-                std::fill_n(cPointerWrapper.itsTForm[f],'\0',3);
+                cPointerWrapper.itsTForm[f] = new char[sizeof(char)*2];
+                std::fill_n(cPointerWrapper.itsTForm[f],'\0',2);
                 std::copy_n("1I",2,cPointerWrapper.itsTForm[f]);
             }
         } else {
@@ -896,7 +901,7 @@ void FITSImageRW::createTable(const casacore::RecordInterface &info)
                 table.get(f,stringArr);
                 auto numUnits = static_cast<int> (stringArr.capacity());
                 std::vector<casacore::String> v = stringArr.tovector();
-                cPointerWrapper.itsUnits = new char* [sizeof(char*) * (numUnits - 1)];
+                //cPointerWrapper.itsUnits = new char* [sizeof(char*) * numUnits];
                 for (int i = 0; i < numUnits; i++) {
                     cPointerWrapper.itsUnits[i] = new char[sizeof(char) * (v[i].length() + 1)];
                     std::fill_n(cPointerWrapper.itsUnits[i],'\0',v[i].length() +1);
@@ -929,6 +934,10 @@ void FITSImageRW::createTable(const casacore::RecordInterface &info)
 
     // write the table columns
     writeTableColumns(fptr,table);
+
+    if (fits_close_file(fptr, &status))
+        printerror(status);
+
 }
 
 void FITSImageRW::writeTableColumns(fitsfile *fptr, const casacore::RecordInterface &table)

@@ -4,6 +4,7 @@ tDataAccess
 tVerifyUVW
 tTableCalSolution
 tImageWrite
+tImageWriteBinaryTable
 )
 
 
