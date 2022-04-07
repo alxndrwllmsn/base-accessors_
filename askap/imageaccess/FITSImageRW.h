@@ -108,9 +108,14 @@ class FITSImageRW {
         bool write(const casacore::Array<float>&);
         bool write(const casacore::Array<float> &arr, const casacore::IPosition &where);
 
+        /// @brief this method is the implementation of the interface FitsImageAccess::setInfo()
+        /// @see the description in FitsImageAccess::setInfo() for details.
+        /// @param[in] the top level casacore::Record object.
         void setInfo(const casacore::RecordInterface &info);
     private:
 
+        /// @brief this structure wraps the c pointers required by cfitsio library to ensure
+        ///        memory used is properly freed.
         struct CPointerWrapper 
         {
             friend class FITSImageRW;
@@ -131,11 +136,30 @@ class FITSImageRW {
         using TableKeywordInfo = std::tuple<std::string, // keyword name
                                             std::string, // keyword value
                                             std::string>; // keyword comment
+
+        /// @brief a helper method to parse the casacore::Record and collect the keywords
+        /// @param[in] info  a casacore::Record contains the keywords and table columns data
+        /// @param[out] tableKeyworda  a map of keywords with their vaues and comments (optional)
         void getTableKeywords(const casacore::RecordInterface& info,
                               std::map<std::string,TableKeywordInfo>& tableKeywords);
-        void createTable(const casacore::RecordInterface &info);
+
+        /// @brief a helper method to write the keywords to FITS binary table
+        /// @param[in] fptr  FITS file pointer. The file must be opened for writting before calling this 
+        ///                  method. It does not close the file pointer after the call
+        /// @param[in] tableKeywords  a map of FITS keywords to be written to the FITS table
         void writeTableKeywords(fitsfile* fptr, std::map<std::string,TableKeywordInfo>& tableKeywords);
+
+        /// @brief a helper method to write the casacore::Record to the FITS binary table columns.
+        /// @param[in] fptr  FITS file pointer. The file must be opened for writting before calling this
+        ///                  method. It does not close the file pointer after the call.
+        /// @param[in] table a casacore::Record contains the columns' data to be written FITS binary table.
+        ///                  The Record (table) must confirm to the format outlined in theFitsImageAccess:: setInfo() method.
         void writeTableColumns(fitsfile* fptr,  const casacore::RecordInterface &table);
+
+        /// @brief this method creates and writes the keywords and table data stored in the casacore::Record 
+        ///        to the FITS binary table.
+        /// @param[in] info  keywords and table data kept in the casacore::Record
+        void createTable(const casacore::RecordInterface &info);
 
 
         std::string name;

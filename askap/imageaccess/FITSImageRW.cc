@@ -738,12 +738,13 @@ void FITSImageRW::setInfoValidityCheck(const casacore::RecordInterface &info)
                     type != casacore::DataType::TpString && 
                     type != casacore::DataType::TpFloat &&
                     type != casacore::DataType::TpInt &&
+                    type != casacore::DataType::TpInt64 &&
                     type != casacore::DataType::TpUInt ) {
             // check the datatypes of the info object itself.
             // fields that are not subrecord are treated as table keywords and they can only
             // have the following types: string, double, float and int
             std::stringstream ss;
-            ss << "field (table keyword) " << name << " has incorrect datatype. Supported datatype are: TpString, TpDouble, TpFloat, TpInt and TpUInt.";
+            ss << "field (table keyword) " << name << " has incorrect datatype. Supported datatype are: TpString, TpDouble, TpFloat, TpInt, TpInt64 and TpUInt.";
             ASKAPLOG_INFO_STR(FITSlogger,ss.str());
             ASKAPASSERT(false);
         }
@@ -771,9 +772,10 @@ void FITSImageRW::setInfoValidityCheck(const casacore::RecordInterface &info)
              type != casacore::DataType::TpArrayString &&
              type != casacore::DataType::TpArrayFloat &&
              type != casacore::DataType::TpArrayInt &&
+             type != casacore::DataType::TpArrayInt64 &&
              type != casacore::DataType::TpArrayUInt ) {
              std::stringstream ss;
-             ss << "field " << name << " has incorrect datatype. Supported datatype are: TpArrayDouble,  TpArrayString, TpAarrayFloat, TpArrayInt and TpArrayUInt.";
+             ss << "field " << name << " has incorrect datatype. Supported datatype are: TpArrayDouble,  TpArrayString, TpAarrayFloat, TpArrayInt, TpArrayUInt and TpArrayInt64.";
              ASKAPLOG_INFO_STR(FITSlogger,ss.str());
              ASKAPASSERT(false);
         }
@@ -815,10 +817,23 @@ void FITSImageRW::getTableKeywords(const casacore::RecordInterface& info,
             info.get(f,value);
             auto t = std::make_tuple(name,value,comment);
             tableKeywords.emplace(std::make_pair(name,t));
+        } else if ( type == casacore::DataType::TpUInt ) {
+            unsigned int value = 0;
+            info.get(f,value);
+            auto t = std::make_tuple(name,std::to_string(value),comment);
+            tableKeywords.emplace(std::make_pair(name,t));
+        } else if ( type == casacore::DataType::TpInt64 ) {
+            long long value = 0;
+            info.get(f,value);
+            auto t = std::make_tuple(name,std::to_string(value),comment);
+            tableKeywords.emplace(std::make_pair(name,t));
         }
     }
 }
 
+/// @brief this method creates and writes the keywords and table data stored in the casacore::Record
+///        to the FITS binary table.
+/// @param[in] info  keywords and table data kept in the casacore::Record
 void FITSImageRW::createTable(const casacore::RecordInterface &info)
 {
 
@@ -869,17 +884,14 @@ void FITSImageRW::createTable(const casacore::RecordInterface &info)
                 casacore::Array<casacore::String> stringArr;
                 table.get(f,stringArr);
                 rows.emplace_back(stringArr.capacity());
-
                 // assume that the column that has string value has max 20 character
-                cPointerWrapper.itsTForm[f] = new char[sizeof(char)*5];
-                std::fill_n(cPointerWrapper.itsTForm[f],'\0',5);
+                cPointerWrapper.itsTForm[f] = new char[sizeof(char)*3];
+                std::fill_n(cPointerWrapper.itsTForm[f],'\0',3);
                 std::copy_n("20a",3,cPointerWrapper.itsTForm[f]);
             } else if ( type == casacore::DataType::TpArrayFloat ) {
                 casacore::Array<float> floatArr;
                 table.get(f,floatArr);
                 rows.emplace_back(floatArr.capacity());
-
-                // assume that the column that has string value has max 20 character
                 cPointerWrapper.itsTForm[f] = new char[sizeof(char)*2];
                 std::fill_n(cPointerWrapper.itsTForm[f],'\0',2);
                 std::copy_n("1E",2,cPointerWrapper.itsTForm[f]);
@@ -887,11 +899,23 @@ void FITSImageRW::createTable(const casacore::RecordInterface &info)
                 casacore::Array<int> intArr;
                 table.get(f,intArr);
                 rows.emplace_back(intArr.capacity());
-
-                // assume that the column that has string value has max 20 character
                 cPointerWrapper.itsTForm[f] = new char[sizeof(char)*2];
                 std::fill_n(cPointerWrapper.itsTForm[f],'\0',2);
                 std::copy_n("1I",2,cPointerWrapper.itsTForm[f]);
+            } else if ( type == casacore::DataType::TpArrayUInt ) {
+                casacore::Array<unsigned int> uintArr;
+                table.get(f,uintArr);
+                rows.emplace_back(uintArr.capacity());
+                cPointerWrapper.itsTForm[f] = new char[sizeof(char)*2];
+                std::fill_n(cPointerWrapper.itsTForm[f],'\0',2);
+                std::copy_n("1V",2,cPointerWrapper.itsTForm[f]);
+            } else if ( type == casacore::DataType::TpArrayInt64 ) {
+                casacore::Array<long long> int64Arr;
+                table.get(f,int64Arr);
+                rows.emplace_back(int64Arr.capacity());
+                cPointerWrapper.itsTForm[f] = new char[sizeof(char)*2];
+                std::fill_n(cPointerWrapper.itsTForm[f],'\0',2);
+                std::copy_n("1K",2,cPointerWrapper.itsTForm[f]);
             }
         } else {
             // this is a Units field. We expects an array of strings i.e the first unit
@@ -940,6 +964,12 @@ void FITSImageRW::createTable(const casacore::RecordInterface &info)
 
 }
 
+/// @brief a helper method to write the casacore::Record to the FITS binary table columns.
+/// @param[in] fptr  FITS file pointer. The file must be opened for writting before calling this
+///                  method. It does not close the file pointer after the call.
+/// @param[in] table a casacore::Record contains the columns' data to be written FITS binary table.
+///                  The Record (table) must confirm to the format outlined in the 
+///                  FitsImageAccess::setInfo() method.
 void FITSImageRW::writeTableColumns(fitsfile *fptr, const casacore::RecordInterface &table)
 {
     auto nFields = table.nfields();
@@ -970,6 +1000,16 @@ void FITSImageRW::writeTableColumns(fitsfile *fptr, const casacore::RecordInterf
             table.get(f,intArr);
             long nrows = intArr.capacity();
             fits_write_col(fptr, TINT, f+1, firstrow, firstelem, nrows, intArr.data(), &status);
+        } else if ( type == casacore::DataType::TpArrayUInt ) {
+            casacore::Array<unsigned int> uintArr;
+            table.get(f,uintArr);
+            long nrows = uintArr.capacity();
+            fits_write_col(fptr, TUINT, f+1, firstrow, firstelem, nrows, uintArr.data(), &status);
+        } else if ( type == casacore::DataType::TpArrayInt64 ) {
+            casacore::Array<long long> int64Arr;
+            table.get(f,int64Arr);
+            long nrows = int64Arr.capacity();
+            fits_write_col(fptr, TLONGLONG, f+1, firstrow, firstelem, nrows, int64Arr.data(), &status);
         } else if ( type == casacore::DataType::TpArrayString ) {
             casacore::Array<casacore::String> stringArr;
             table.get(f,stringArr);
@@ -992,6 +1032,10 @@ void FITSImageRW::writeTableColumns(fitsfile *fptr, const casacore::RecordInterf
     }
 }
 
+/// @brief a helper method to write the keywords to FITS binary table
+/// @param[in] fptr  FITS file pointer. The file must be opened for writting before calling this
+///                  method. It does not close the file pointer after the call
+/// @param[in] tableKeywords  a map of FITS keywords to be written to the FITS table
 void FITSImageRW::writeTableKeywords(fitsfile* fptr, std::map<std::string,TableKeywordInfo>& tableKeywords)
 {
     int status = 0;
@@ -1005,6 +1049,9 @@ void FITSImageRW::writeTableKeywords(fitsfile* fptr, std::map<std::string,TableK
     }
 }
 
+/// @brief this method is the implementation of the interface FitsImageAccess::setInfo()
+/// @see the description in FitsImageAccess::setInfo() for details.
+/// @param[in] the top level casacore::Record object.
 void FITSImageRW::setInfo(const casacore::RecordInterface &info)
 {
     setInfoValidityCheck(info);
