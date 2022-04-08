@@ -451,3 +451,7 @@ void FitsImageAccess::setInfo(const std::string &name, const casacore::RecordInt
     connect(name);
     itsFITSImage->setInfo(info);
 }
+void FitsImageAccess::getInfo(const std::string &name, const std::string& tableName, casacore::Record &info)
+{
+    itsFITSImage->getInfo(name,tableName,info);
+}

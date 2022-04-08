@@ -134,12 +134,12 @@ public:
         
         casacore::IPosition shapeDec(1);
         shapeDec(0) = 5;
-        casacore::Array<casacore::Int> decValues(shapeDec);
-        casacore::Array<casacore::Int>::iterator iterendDec(decValues.end());
-        count = 0;
-        for (casacore::Array<casacore::Int>::iterator iter=decValues.begin(); iter!=iterendDec; ++iter) {
+        casacore::Array<casacore::Int64> decValues(shapeDec);
+        casacore::Array<casacore::Int64>::iterator iterendDec(decValues.end());
+        count = 1;
+        for (casacore::Array<casacore::Int64>::iterator iter=decValues.begin(); iter!=iterendDec; ++iter) {
             *iter = count*3 ;
-            count += 100;
+            count = count * -2 ;
         }
         subrecord.define("Dec",decValues);
 

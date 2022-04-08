@@ -242,6 +242,7 @@ struct FitsImageAccess : public IImageAccess<> {
         ///           It is used to specified the units of the table columns. e.g: the first element of this array
         ///           indicates the unit of the first column in the table and so on.
         virtual void setInfo(const std::string &name, const casacore::RecordInterface &info) override;
+        virtual void getInfo(const std::string &name, const std::string& tableName, casacore::Record &info) override;
 
 
     private:

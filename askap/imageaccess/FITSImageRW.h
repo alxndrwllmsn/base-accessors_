@@ -112,6 +112,7 @@ class FITSImageRW {
         /// @see the description in FitsImageAccess::setInfo() for details.
         /// @param[in] the top level casacore::Record object.
         void setInfo(const casacore::RecordInterface &info);
+        void getInfo(const std::string& filename, const std::string& tblName,casacore::RecordInterface &info);
     private:
 
         /// @brief this structure wraps the c pointers required by cfitsio library to ensure
@@ -161,6 +162,17 @@ class FITSImageRW {
         /// @param[in] info  keywords and table data kept in the casacore::Record
         void createTable(const casacore::RecordInterface &info);
 
+        template<typename T>
+        void addColToRecord(const std::string& columnName,
+                            long nelem, const T* data,
+                            casacore::Record& table) 
+        {
+            casacore::Vector<T> casaVector(nelem);
+            for (std::size_t index = 0; index < nelem; index++) {
+                casaVector[index] = data[index];
+            }
+            table.define(columnName,casaVector);
+        }
 
         std::string name;
         casacore::IPosition shape;

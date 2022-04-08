@@ -214,10 +214,9 @@ struct CasaImageAccess : public IImageAccess<T> {
     /// @details Add arbitrary info to the image as either keywords or a binary table
     /// @param[in] name image name
     /// @param[in] info record with information
-    virtual void setInfo(const std::string &name, const casacore::RecordInterface & info) override
-    {
-        // @TODO
-    }
+    virtual void setInfo(const std::string &name, const casacore::RecordInterface & info) override;
+    virtual void getInfo(const std::string &name, const std::string& tableName, casacore::Record &info) override
+    {}
 };
 
 

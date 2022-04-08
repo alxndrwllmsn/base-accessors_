@@ -901,7 +901,7 @@ void FITSImageRW::createTable(const casacore::RecordInterface &info)
                 rows.emplace_back(intArr.capacity());
                 cPointerWrapper.itsTForm[f] = new char[sizeof(char)*2];
                 std::fill_n(cPointerWrapper.itsTForm[f],'\0',2);
-                std::copy_n("1I",2,cPointerWrapper.itsTForm[f]);
+                std::copy_n("1J",2,cPointerWrapper.itsTForm[f]);
             } else if ( type == casacore::DataType::TpArrayUInt ) {
                 casacore::Array<unsigned int> uintArr;
                 table.get(f,uintArr);
@@ -1056,4 +1056,132 @@ void FITSImageRW::setInfo(const casacore::RecordInterface &info)
 {
     setInfoValidityCheck(info);
     createTable(info);
+}
+
+void FITSImageRW::getInfo(const std::string& filename, const std::string& tblName,casacore::RecordInterface &info)
+{
+    fitsfile *fptr;
+    int hdunum = -1; 
+    int hdutype = -1;
+    int status = 0;
+    
+
+    if ( fits_open_file(&fptr,filename.c_str(),READONLY,&status) )
+         printerror( status );
+
+    if ( fits_get_num_hdus(fptr,&hdunum,&status) )
+        printerror( status );
+
+    for (int hdu = 2; hdu <= hdunum; hdu++) {
+        casacore::Record table;
+
+        if ( fits_movabs_hdu(fptr, hdu, &hdutype, &status) )
+           printerror( status );
+
+        // read the number of columns
+        char tFields[10];
+        char comment[10];
+        if ( fits_read_key_str(fptr, "TFIELDS",tFields,comment,&status) )
+            printerror( status );
+
+        int numColumns = std::atoi(tFields);
+        CPointerWrapper cPtrWrapper(numColumns);
+        for (int i = 0; i < numColumns; i++) {
+            cPtrWrapper.itsTType[i] = new char [FLEN_VALUE]; // max label length = 69. defined in cfitsio
+            cPtrWrapper.itsTForm[i] = new char [FLEN_VALUE];
+        }
+        int nfound = -1;
+        // read the TFORMn to workout the datatype
+        if ( fits_read_keys_str(fptr, "TFORM", 1, numColumns, cPtrWrapper.itsTForm, &nfound, &status) )
+            printerror( status );
+
+        // read the column names from the TTYPEn keywords
+        if ( fits_read_keys_str(fptr, "TTYPE", 1, numColumns, cPtrWrapper.itsTType, &nfound, &status) )
+            printerror( status );
+        
+        long nelem; // this is the number of rows to read
+        if ( fits_get_num_rows(fptr,&nelem,&status) )
+            printerror( status );
+
+        for ( int i = 0; i < numColumns; i++ ) {
+            std::string columnType = cPtrWrapper.itsTForm[i];
+            std::string columnName = cPtrWrapper.itsTType[i];
+            casacore::DataType casaType;
+            long frow = 1; 
+            long felem = 1; 
+            int anynull;
+            char strnull[10];
+            std::copy_n(" ",10,strnull);
+            if ( columnType.find("A") != std::string::npos ) {
+                // convert to casacore string array
+                casaType = casacore::DataType::TpArrayString;
+                // read the column values
+                CPointerWrapper arrayOfStringValues(nelem);
+                for (int j = 0; j < nelem; j++) {
+                    arrayOfStringValues.itsTType[j] = new char[FLEN_VALUE];
+                }
+                // here we use the CPointerWrapper.itsType pointer to store the 
+                // column value as array of string
+                if (fits_read_col(fptr,TSTRING,i+1,frow,felem,nelem,strnull,
+                                  arrayOfStringValues.itsTType, &anynull, &status))
+                    printerror( status );
+
+                // copy the column data (arrayOfStringValues.itsTType) to casa array
+                casacore::IPosition shape(1);
+                shape(0) = nelem;
+                casacore::Array<casacore::String> casaStrArr(shape);
+                int index = 0;
+                casacore::Array<casacore::String>::iterator iterend(casaStrArr.end());
+                for (casacore::Array<casacore::String>::iterator iter=casaStrArr.begin(); 
+                     iter!=iterend; ++iter) {
+                    *iter = arrayOfStringValues.itsTType[index];
+                    index += 1;
+                }       
+                table.define(columnName,casaStrArr);
+            } else if ( columnType.find("E") != std::string::npos ) {
+                // convert to casacore float array
+                casaType = casacore::DataType::TpArrayFloat;
+                boost::shared_array<float> floatArray {new float[nelem]};
+                if (fits_read_col(fptr,TFLOAT,1,frow,felem,nelem,strnull,
+                                  floatArray.get(), &anynull, &status))
+                    printerror( status );
+                this->addColToRecord<float>(columnName,nelem,floatArray.get(),table);
+            } else if ( columnType.find("J") != std::string::npos ) {
+                // convert to casacore integer array
+                casaType = casacore::DataType::TpArrayInt;
+                boost::shared_array<int> intArray {new int[nelem]};
+                if (fits_read_col(fptr,TINT,1,frow,felem,nelem,strnull,
+                                  intArray.get(), &anynull, &status))
+                    printerror( status );
+                this->addColToRecord<int>(columnName,nelem,intArray.get(),table);
+            } else if ( columnType.find("V") != std::string::npos ) {
+                // convert to casacore unsigned integer array
+                casaType = casacore::DataType::TpArrayUInt;
+                boost::shared_array<unsigned int> uintArray {new unsigned int[nelem]};
+                if (fits_read_col(fptr,TUINT,1,frow,felem,nelem,strnull,
+                                  uintArray.get(), &anynull, &status))
+                    printerror( status );
+                this->addColToRecord<unsigned int>(columnName,nelem,uintArray.get(),table);
+            } else if ( columnType.find("K") != std::string::npos ) {
+                // convert to casacore long array 
+                casaType = casacore::DataType::TpArrayInt64;
+                boost::shared_array<long long> longlongArray {new long long[nelem]};
+                if (fits_read_col(fptr,TLONGLONG,1,frow,felem,nelem,strnull,
+                                  longlongArray.get(), &anynull, &status))
+                    printerror( status );
+                this->addColToRecord<long long>(columnName,nelem,longlongArray.get(),table);
+            } else if ( columnType.find("D") != std::string::npos ) {
+                // convert to casacore double array
+                casaType = casacore::DataType::TpArrayDouble;
+                boost::shared_array<double> doubleArray {new double[nelem]};
+                if (fits_read_col(fptr,TDOUBLE,1,frow,felem,nelem,strnull,
+                                  doubleArray.get(), &anynull, &status))
+                    printerror( status );
+                this->addColToRecord<double>(columnName,nelem,doubleArray.get(),table);
+            }
+        }
+        info.defineRecord("TestTable",table);    
+    }
+    if (fits_close_file(fptr, &status))
+        printerror(status);
 }

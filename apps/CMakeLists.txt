@@ -5,6 +5,7 @@ tVerifyUVW
 tTableCalSolution
 tImageWrite
 tImageWriteBinaryTable
+tImageReadBinaryTable
 )
 
 

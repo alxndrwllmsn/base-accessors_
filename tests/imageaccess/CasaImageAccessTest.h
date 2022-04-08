@@ -36,6 +36,7 @@
 #include <casacore/coordinates/Coordinates/SpectralCoordinate.h>
 #include <casacore/images/Regions/ImageRegion.h>
 #include <casacore/images/Regions/RegionHandler.h>
+#include <casacore/casa/Containers/Record.h>
 
 
 #include <boost/shared_ptr.hpp>
@@ -50,17 +51,26 @@ namespace accessors {
 class CasaImageAccessTest : public CppUnit::TestFixture
 {
    CPPUNIT_TEST_SUITE(CasaImageAccessTest);
-   CPPUNIT_TEST(testReadWrite);
+//   CPPUNIT_TEST(testReadWrite);
+   CPPUNIT_TEST(testWriteTable);
    CPPUNIT_TEST_SUITE_END();
 public:
    void setUp() {
       LOFAR::ParameterSet parset;
       parset.add("imagetype","casa");
       itsImageAccessor = imageAccessFactory(parset);
+      name = "tmp.testimage";
    }
 
+   void testWriteTable() {
+      auto rec = create_dummy_record();
+      name = "tmp.testaddtabletoimage";
+      testReadWrite();
+      
+      itsImageAccessor->setInfo("tmp.testimage",rec);
+   }
    void testReadWrite() {
-      const std::string name = "tmp.testimage";
+      //const std::string name = "tmp.testimage";
       CPPUNIT_ASSERT(itsImageAccessor);
       const casacore::IPosition shape(3,10,10,5);
       casacore::Array<float> arr(shape);
@@ -160,9 +170,93 @@ protected:
       return coords;
    }
 
+    casacore::Record create_dummy_record()
+    {
+        casacore::Record record;
+
+        // keyword EXPOSURE
+        record.define("EXPOSURE",1500);
+        record.setComment("EXPOSURE","Camera exposure");
+        record.define("KWORD1","Testing");
+
+        // Create a sub record to be converted to binary table
+        casacore::Record subrecord;
+
+        // add a colunm named "Col1" that contains 10 cells of Double
+        casacore::IPosition shape(1);
+        shape(0) = 10;
+        casacore::Array<casacore::Double> Col1Values(shape);
+        casacore::Array<casacore::Double>::iterator iterend(Col1Values.end());
+        int count = 1;
+        for (casacore::Array<double>::iterator iter=Col1Values.begin(); iter!=iterend; ++iter) {
+            *iter = count * 2.2;
+            count += 1;
+        }
+        subrecord.define("Col1",Col1Values);
+
+        // add a colunm named "Col2" that contains 10 cells of String
+        casacore::IPosition shapeCol2(1);
+        shapeCol2(0) = 10;
+        casacore::Array<casacore::String> Col2Values(shapeCol2);
+        casacore::Array<casacore::String>::iterator iterend2(Col2Values.end());
+        count = 1;
+        for (casacore::Array<casacore::String>::iterator iter=Col2Values.begin(); iter!=iterend2; ++iter) {
+            *iter = std::string("col2 string") + std::to_string(count);
+            //std::cout << *iter << std::endl;
+            count += 1;
+        }
+        subrecord.define("Col2",Col2Values);
+        casacore::IPosition shapeRA(1);
+        shapeRA(0) = 5;
+        casacore::Array<casacore::Float> raValues(shapeRA);
+        casacore::Array<casacore::Float>::iterator iterendRA(raValues.end());
+        count = 10;
+        for (casacore::Array<casacore::Float>::iterator iter=raValues.begin(); iter!=iterendRA; ++iter) {
+            *iter = count * 2.2;
+            count *= 10;
+        }
+        subrecord.define("RA",raValues);
+
+        casacore::IPosition shapeDec(1);
+        shapeDec(0) = 5;
+        casacore::Array<casacore::Int64> decValues(shapeDec);
+        casacore::Array<casacore::Int64>::iterator iterendDec(decValues.end());
+        count = 1;
+        for (casacore::Array<casacore::Int64>::iterator iter=decValues.begin(); iter!=iterendDec; ++iter) {
+            *iter = count*3 ;
+            count = count * -2 ;
+        }
+        subrecord.define("Dec",decValues);
+
+        // set up the unit for Col1 and Col2
+        std::vector<std::string> vUnit;
+        vUnit.push_back("Unit4Col1");
+        vUnit.push_back("Unit4Col2");
+        //vUnit.push_back("Unit4RACol");
+        //vUnit.push_back("Unit4DecCol");
+
+        casacore::IPosition shape2(1);
+        shape2(0) = 2;
+        casacore::Array<casacore::String> UnitValues(shape2);
+        casacore::Array<casacore::String>::iterator iterUnit(UnitValues.end());
+        count = 0;
+
+        for (casacore::Array<casacore::String>::iterator iter=UnitValues.begin(); iter!=iterUnit; ++iter) {
+            if ( count < vUnit.size() ) {
+                *iter = vUnit[count] ;
+            }
+            count += 1;
+        }
+        subrecord.define("Units",UnitValues);
+
+        record.defineRecord("Table",subrecord);
+
+        return record;
+    }
 private:
    /// @brief method to access image
    boost::shared_ptr<IImageAccess<casacore::Float> > itsImageAccessor;
+   std::string name = "";
 };
 
 } // namespace accessors

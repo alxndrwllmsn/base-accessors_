@@ -220,6 +220,7 @@ struct IImageAccess {
     /// @param[in] name image name
     /// @param[in] info record with information
     virtual void setInfo(const std::string &name, const casacore::RecordInterface & info) = 0;
+    virtual void getInfo(const std::string &name, const std::string& tableName, casacore::Record &info) = 0;
 
 };
 

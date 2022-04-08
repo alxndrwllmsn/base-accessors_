@@ -461,3 +461,33 @@ void CasaImageAccess<T>::addHistory(const std::string &name, const std::vector<s
         log << history << casacore::LogIO::POST;
     }
 }
+
+
+/// @brief set info for image that can vary by e.g., channel
+/// @details Add arbitrary info to the image as either keywords or a binary table
+/// @param[in] name image name
+/// @param[in] info record with information
+template <class T>
+void CasaImageAccess<T>::setInfo(const std::string &name, const casacore::RecordInterface & info)
+{
+    casacore::PagedImage<T> img(name);
+    // make a copy of the table record
+    casacore::TableRecord updateTableRecord = img.miscInfo();
+    // find the name of the info table.  this is the name field of the info sub record
+    std::string infoTableName = "notfound";
+    casacore::uInt subRecordFieldId = 0;
+    casacore::uInt nFields = info.nfields();
+    for(casacore::uInt f = 0; f < nFields; f++) {
+        std::string name = info.name(f);
+        casacore::DataType type = info.dataType(f);
+        if ( type == casacore::DataType::TpRecord ) {
+           infoTableName = name;
+            break; 
+        }
+    }
+        
+    // add the info to it
+    updateTableRecord.defineRecord(infoTableName,info);
+    // now set the updated record back to the image
+    img.setMiscInfo(updateTableRecord);
+}
