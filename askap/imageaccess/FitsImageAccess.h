@@ -221,6 +221,7 @@ struct FitsImageAccess : public IImageAccess<> {
         virtual void addHistory(const std::string &name, const std::vector<std::string> &historyLines) override;
 
         /// @brief Write what is in the info object to FITS binary table.
+        /// @param[in] name - name of the FITS file
         /// @param[in] info - In this case the info object is an instance of casacore::Record class.
         /// It is required that the info object confirms to the following requirements :
         /// (1) It is a top level record. The fields in the top level record can only have
@@ -242,6 +243,12 @@ struct FitsImageAccess : public IImageAccess<> {
         ///           It is used to specified the units of the table columns. e.g: the first element of this array
         ///           indicates the unit of the first column in the table and so on.
         virtual void setInfo(const std::string &name, const casacore::RecordInterface &info) override;
+
+        /// @brief this method gets the data in the FITS binary table and puts in the casacore::Record.
+        /// @param[in] name - name of the FITS file
+        /// param[in] info - casacore::Record to contain the data of the FITS table. The info record has one and
+        ///                  only one sub record which stores the FITS table columns' data and the table keywords
+        ///                  are held in the info's (Record)  names, values, and comments.
         virtual void getInfo(const std::string &name, const std::string& tableName, casacore::Record &info) override;
 
 

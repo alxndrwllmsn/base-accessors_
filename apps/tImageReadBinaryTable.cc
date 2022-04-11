@@ -91,6 +91,17 @@ public:
         itsImageAccessor->getInfo(itsName,"All",info);
         auto nfields = info.nfields();
         std::cout << info << std::endl;;
+        for(long i = 0; i < nfields; i++) {
+            ASKAPLOG_INFO_STR(logger, "field: " << info.name(i) << ", comment: " << info.comment(i));
+            if ( info.type(i) == casacore::TpRecord ) {
+                auto subRec = info.subRecord(i);
+                subRec.print(std::cout);
+                auto nfields2 = subRec.nfields();
+                for(long f = 0; f < nfields2; f++) {
+                    ASKAPLOG_INFO_STR(logger, "field: " << subRec.name(f) << ", comment: " << subRec.comment(f));
+                }
+            }
+        }
         ASKAPLOG_INFO_STR(logger, "nfields: " << nfields);
     }
  

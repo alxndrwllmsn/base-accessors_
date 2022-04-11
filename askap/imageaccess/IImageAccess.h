@@ -215,11 +215,15 @@ struct IImageAccess {
     /// @param[in] historyLines History comments to add
     virtual void addHistory(const std::string &name, const std::vector<std::string> &historyLines) = 0;
 
-    /// @brief set info for image that can vary by e.g., channel
-    /// @details Add arbitrary info to the image as either keywords or a binary table
+    /// @brief this method writes the information in the info object to the FITS binary table.
     /// @param[in] name image name
-    /// @param[in] info record with information
+    /// @param[in] info record to be written to the FITS binary table.
     virtual void setInfo(const std::string &name, const casacore::RecordInterface & info) = 0;
+
+    /// @brief this method reads the FITS binary table and stores it to the casacore::Record
+    /// @param[in] name image name
+    /// @param[in] tblName  FITS table name
+    /// @param[in] info record to contain the FITS binary data and keywords
     virtual void getInfo(const std::string &name, const std::string& tableName, casacore::Record &info) = 0;
 
 };

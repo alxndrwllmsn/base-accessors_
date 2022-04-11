@@ -112,6 +112,13 @@ class FITSImageRW {
         /// @see the description in FitsImageAccess::setInfo() for details.
         /// @param[in] the top level casacore::Record object.
         void setInfo(const casacore::RecordInterface &info);
+
+        /// @brief this method is the implementation of the interface FitsImageAccess::getInfo()
+        /// @see the description in FitsImageAccess::getInfo() for details.
+        /// @param[in] filename  name of the FITS file
+        /// @param[in] tbleName  name of the table in the FITS file. tbleName = "All" gets all the tables in
+        ///                      the FITS file.
+        /// @param[in] the top level casacore::Record object.
         void getInfo(const std::string& filename, const std::string& tblName,casacore::RecordInterface &info);
     private:
 
@@ -119,8 +126,6 @@ class FITSImageRW {
         ///        memory used is properly freed.
         struct CPointerWrapper 
         {
-            friend class FITSImageRW;
-
             explicit CPointerWrapper(unsigned int numColumns);
             ~CPointerWrapper();
 
@@ -140,7 +145,7 @@ class FITSImageRW {
 
         /// @brief a helper method to parse the casacore::Record and collect the keywords
         /// @param[in] info  a casacore::Record contains the keywords and table columns data
-        /// @param[out] tableKeyworda  a map of keywords with their vaues and comments (optional)
+        /// @param[out] tableKeyword  a map of keywords with their vaues and comments
         void getTableKeywords(const casacore::RecordInterface& info,
                               std::map<std::string,TableKeywordInfo>& tableKeywords);
 
@@ -162,6 +167,17 @@ class FITSImageRW {
         /// @param[in] info  keywords and table data kept in the casacore::Record
         void createTable(const casacore::RecordInterface &info);
 
+        /// @brief this method gets the FITS table column that contains string data.
+        /// param[in] fptr - fits file pointer. Must be opened before calling this method.
+        /// param[in] columnName - name of the column
+        /// param[in] columnNum - column number of the FITS table
+        /// param[in] frow - first row
+        /// param[in] felem - first element
+        /// param[in] nelem - number of road to read
+        /// param[in] strnull
+        /// param[in] anynull
+        /// param[in] status - status of the fits call
+        /// param[out] table - casacore::Record to store the FITS binary table data
         void getStringColumnType(fitsfile* fptr,const std::string& columnName,
                                  long columnNum,long frow,long felem,long nelem,
                                  char* strnull, int& anynull, int& status,
