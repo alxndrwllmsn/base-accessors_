@@ -67,7 +67,8 @@ public:
       name = "tmp.testaddtabletoimage";
       testReadWrite();
       
-      itsImageAccessor->setInfo("tmp.testimage",rec);
+      //itsImageAccessor->setInfo("tmp.testimage",rec);
+      itsImageAccessor->setInfo(name,rec);
    }
    void testReadWrite() {
       //const std::string name = "tmp.testimage";
