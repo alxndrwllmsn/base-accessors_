@@ -491,3 +491,10 @@ void CasaImageAccess<T>::setInfo(const std::string &name, const casacore::Record
     // now set the updated record back to the image
     img.setMiscInfo(updateTableRecord);
 }
+
+template <class T>
+void CasaImageAccess<T>::getInfo(const std::string &name, const std::string& tableName, casacore::Record &info)
+{
+    casacore::PagedImage<T> img(name);
+    info = img.miscInfo();
+}

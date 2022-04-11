@@ -162,17 +162,71 @@ class FITSImageRW {
         /// @param[in] info  keywords and table data kept in the casacore::Record
         void createTable(const casacore::RecordInterface &info);
 
+        void getStringColumnType(fitsfile* fptr,const std::string& columnName,
+                                 long columnNum,long frow,long felem,long nelem,
+                                 char* strnull, int& anynull, int& status,
+                                 char** stringArrayValues,casacore::Record& table);
+
+        /// @brief helper method. It copies FITS table data to casacore::Record
+        /// param[in] fptr - fits file pointer. Must be opened before calling this method.
+        /// param[in] nelem - number of road to read
+        /// param[in] numColumns - column to read
+        /// param[in] cPtrWrapper - wrapper class for c pointer
+        /// param[in] status - status of the fits call
+        /// param[out] table - casacore::Record to store the FITS binary table data
+        void copyFitsToCasa(fitsfile* fptr,long nelem, long numColumns,
+                            CPointerWrapper& cPtrWrapper,int& status,
+                            casacore::Record& table);
+
+        /// @brief copy the FITS binary table keywords to casacore:Record
+        /// param[in] fptr - fits file pointer. Must be opened before calling this method.
+        /// param[out] table - casacore::Record to store the FITS binary table keywords
+        /// param[in] status - status of the fits call
+        void copyTableExtKeywords(fitsfile* ptr, casacore::Record& table, int& status);
+
+        /// @brief extract a FITS record (i.e keyword name, keyword value and comment in a string)
+        /// param[in] record - FITS record consisting of keyword name, keyword value and comment in a string
+        /// param[out] keyword - FITS keyword name
+        /// param[out] value - FITS keyword value
+        /// param[out] comment - FITS keyword comment
+        void extractFitsRecord(const std::string& record, std::string& keyword,
+                               std::string& value, std::string& comment);
+
+        /// @brief a helper template method to copy table column data to casacore::Record
+        /// param[in] fptr - fits file pointer. Must be opened before calling this method.
+        /// param[in] columnName - name of the column
+        /// param[in] datatype - FITS column datatype e.g TSTRING, TINT and etc
+        /// param[in] columnNum - column number of the FITS table
+        /// param[in] frow - first row
+        /// param[in] felem - first element
+        /// param[in] nelem - number of road to read
+        /// param[in] strnull 
+        /// param[in] anynull
+        /// param[in] status - status of the fits call
+        /// param[out] table - casacore::Record to store the FITS binary table data
         template<typename T>
-        void addColToRecord(const std::string& columnName,
-                            long nelem, const T* data,
-                            casacore::Record& table) 
+        bool getColumnData(fitsfile* fptr,const std::string& columnName,int datatype,
+                           long columnNum,long frow,long felem,long nelem,
+                           char* strnull, int& anynull, int& status,
+                           casacore::Record& table)
         {
+            boost::shared_array<T> tArray {new T[nelem]};
+            fits_read_col(fptr,datatype,columnNum,frow,felem,nelem,strnull,
+                tArray.get(), &anynull, &status);
+
+            //this->addColToRecord<T>(columnName,nelem,tArray.get(),table);
+            bool r = (status == 0 ? true : false);
+
             casacore::Vector<T> casaVector(nelem);
+            const T* data = tArray.get();
             for (std::size_t index = 0; index < nelem; index++) {
                 casaVector[index] = data[index];
             }
             table.define(columnName,casaVector);
+
+            return r;
         }
+                                
 
         std::string name;
         casacore::IPosition shape;

@@ -78,19 +78,19 @@ public:
     void setup() 
     {
         LOFAR::ParameterSet parset;
-        //parset.add("imagetype","fits");
-        itsName = config().getString("name","testCreateFitsBinaryTable");
+        itsName = config().getString("name","");
         itsImageAccessor = imageAccessFactory(config());
     }
     void readTable()
     {
         casacore::Record info;
         ASKAPLOG_INFO_STR(logger, "itsName: " << itsName);
-        itsImageAccessor->getInfo(itsName,"",info);
+        if (itsName.rfind(".fits") == std::string::npos) {
+            itsName.append(".fits");
+        }
+        itsImageAccessor->getInfo(itsName,"All",info);
         auto nfields = info.nfields();
-        //for(int f = 0; f < nfields; f++) {
-            std::cout << info << std::endl;;
-        //}
+        std::cout << info << std::endl;;
         ASKAPLOG_INFO_STR(logger, "nfields: " << nfields);
     }
  
