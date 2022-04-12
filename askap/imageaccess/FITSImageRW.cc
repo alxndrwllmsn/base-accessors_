@@ -628,6 +628,37 @@ void FITSImageRW::setRestoringBeam(double maj, double min, double pa)
 
 }
 
+casacore::Vector<casacore::Quantity> FITSImageRW::getRestoringBeam() const
+{
+    ASKAPLOG_DEBUG_STR(FITSlogger, "Getting Beam info");
+    fitsfile *fptr;       /* pointer to the FITS file, defined in fitsio.h */
+    int status = 0;
+    const double radtodeg = 360. / (2 * M_PI);
+    char comment[1024];
+
+    if (fits_open_file(&fptr, this->name.c_str(), READONLY, &status)) {
+      printerror(status);
+    }
+    double bmaj = 0, bmin = 0, bpa = 0;
+    if (fits_read_key(fptr, TDOUBLE, "BMAJ", &bmaj, comment, &status)) {
+        ASKAPLOG_WARN_STR(FITSlogger, "FITSImageAccess:: Cannot find keyword BMAJ - fits_read_key returned status " << status);
+    } else if (fits_read_key(fptr, TDOUBLE, "BMIN", &bmin, comment, &status)) {
+        ASKAPLOG_WARN_STR(FITSlogger, "FITSImageAccess:: Cannot find keyword BMIN - fits_read_key returned status " << status);
+    } else if (fits_read_key(fptr, TDOUBLE, "BPA", &bpa, comment, &status)) {
+        ASKAPLOG_WARN_STR(FITSlogger, "FITSImageAccess:: Cannot find keyword BPA - fits_read_key returned status " << status);
+    }
+    status=0;
+    if (fits_close_file(fptr, &status)) {
+      printerror(status);
+    }
+
+    casacore::Vector<casacore::Quantity> beam(3);
+    beam(0) = casacore::Quantity(bmaj/radtodeg,"rad");
+    beam(1) = casacore::Quantity(bmin/radtodeg,"rad");
+    beam(2) = casacore::Quantity(bpa/radtodeg,"rad");
+    return beam;
+}
+
 void FITSImageRW::setRestoringBeam(const BeamList & beamlist)
 {
   ASKAPCHECK(!beamlist.empty(),"Called FITSImageRW::setRestoringBeam with empty beamlist");
@@ -735,8 +766,8 @@ void FITSImageRW::setInfoValidityCheck(const casacore::RecordInterface &info)
         if ( type == casacore::DataType::TpRecord ) {
             numSubRecord += 1;
             subRecordFieldId = f;
-        } else if ( type != casacore::DataType::TpDouble && 
-                    type != casacore::DataType::TpString && 
+        } else if ( type != casacore::DataType::TpDouble &&
+                    type != casacore::DataType::TpString &&
                     type != casacore::DataType::TpFloat &&
                     type != casacore::DataType::TpInt &&
                     type != casacore::DataType::TpInt64 &&
@@ -853,7 +884,7 @@ void FITSImageRW::createTable(const casacore::RecordInterface &info)
     const casacore::RecordInterface& table = info.asRecord(subRecordFieldId);
 
     nFields = table.nfields(); // this is the number of columns in the table
-    
+
     // the subRecord has nfield but we know one of them is a "Units" field
     // which is not part of the table columns
     const casacore::uInt numCol = nFields - 1;
@@ -940,7 +971,7 @@ void FITSImageRW::createTable(const casacore::RecordInterface &info)
     int status = 0;
     std::vector<long>::iterator maxIter = std::max_element(rows.begin(),rows.end());
     long maxRow = *maxIter;
-    
+
     if (fits_open_file(&fptr, this->name.c_str(), READWRITE, &status))
         printerror(status);
 
@@ -972,7 +1003,7 @@ void FITSImageRW::createTable(const casacore::RecordInterface &info)
 void FITSImageRW::writeTableColumns(fitsfile *fptr, const casacore::RecordInterface &table)
 {
     auto nFields = table.nfields();
-    
+
 
     int status = 0;
     long firstrow = 1;
@@ -980,7 +1011,7 @@ void FITSImageRW::writeTableColumns(fitsfile *fptr, const casacore::RecordInterf
     for(int f = 0; f < nFields; f++) {
         // Write the actual data to the binary table rows and columns
         casacore::String name = table.name(f);
-        // Ignore the "Units"field 
+        // Ignore the "Units"field
         if ( name == "Units" ) continue;
 
         casacore::DataType type = table.dataType(f);

@@ -131,7 +131,15 @@ casacore::Vector<casacore::Quantum<double> > FitsImageAccess::beamInfo(const std
     std::string fullname = name + ".fits";
     casacore::FITSImage img(fullname);
     casacore::ImageInfo ii = img.imageInfo();
-    return ii.restoringBeam().toVector();
+    if (img.imageInfo().hasMultipleBeams()) {
+      // read the fits beam keywords - casa doesn't allow separate ref beam with beam table
+      connect(name);
+      ASKAPLOG_DEBUG_STR(logger,"FITSImageAccess::beamInfo return beam from fits keywords");
+      return itsFITSImage->getRestoringBeam();
+    } else {
+      ASKAPLOG_DEBUG_STR(logger,"FITSImageAccess::beamInfo return beam from imageInfo");
+      return ii.restoringBeam().toVector();
+    }
 }
 
 /// @brief obtain beam info
@@ -208,7 +216,7 @@ std::pair<std::string, std::string> FitsImageAccess::getMetadataKeyword(const st
 /// @brief connect accessor to an existing image
 /// @details Instantiates the private FITSImageRW shared pointer.
 /// @param[in] name image name
-void FitsImageAccess::connect(const std::string &name)
+void FitsImageAccess::connect(const std::string &name) const
 {
     std::string fullname = name + ".fits";
     itsFITSImage.reset(new FITSImageRW(fullname));

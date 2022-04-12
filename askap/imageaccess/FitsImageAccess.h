@@ -55,7 +55,7 @@ struct FitsImageAccess : public IImageAccess<> {
         /// @brief connect accessor to an existing image
         /// @details Instantiates the private FITSImageRW shared pointer.
         /// @param[in] name image name
-        void connect(const std::string &name);
+        void connect(const std::string &name) const;
 
         //////////////////
         // Reading methods
@@ -252,7 +252,7 @@ struct FitsImageAccess : public IImageAccess<> {
         virtual void setInfo(const std::string &name, const casacore::RecordInterface &info) override;
 
     private:
-        boost::shared_ptr<FITSImageRW> itsFITSImage;
+        mutable boost::shared_ptr<FITSImageRW> itsFITSImage;
 
 };
 

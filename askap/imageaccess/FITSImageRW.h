@@ -100,6 +100,8 @@ class FITSImageRW {
 
         void setRestoringBeam(double, double, double);
         void setRestoringBeam(const BeamList& beamlist);
+        casacore::Vector<casacore::Quantity> getRestoringBeam() const;
+
         void addHistory(const std::string &history);
         void addHistory(const std::vector<std::string> &historyLines);
 
@@ -123,7 +125,7 @@ class FITSImageRW {
 
         /// @brief this structure wraps the c pointers required by cfitsio library to ensure
         ///        memory used is properly freed.
-        struct CPointerWrapper 
+        struct CPointerWrapper
         {
             explicit CPointerWrapper(unsigned int numColumns);
             ~CPointerWrapper();
@@ -149,7 +151,7 @@ class FITSImageRW {
                               std::map<std::string,TableKeywordInfo>& tableKeywords);
 
         /// @brief a helper method to write the keywords to FITS binary table
-        /// @param[in] fptr  FITS file pointer. The file must be opened for writting before calling this 
+        /// @param[in] fptr  FITS file pointer. The file must be opened for writting before calling this
         ///                  method. It does not close the file pointer after the call
         /// @param[in] tableKeywords  a map of FITS keywords to be written to the FITS table
         void writeTableKeywords(fitsfile* fptr, std::map<std::string,TableKeywordInfo>& tableKeywords);
@@ -161,7 +163,7 @@ class FITSImageRW {
         ///                  The Record (table) must confirm to the format outlined in theFitsImageAccess:: setInfo() method.
         void writeTableColumns(fitsfile* fptr,  const casacore::RecordInterface &table);
 
-        /// @brief this method creates and writes the keywords and table data stored in the casacore::Record 
+        /// @brief this method creates and writes the keywords and table data stored in the casacore::Record
         ///        to the FITS binary table.
         /// @param[in] info  keywords and table data kept in the casacore::Record
         void createTable(const casacore::RecordInterface &info);
@@ -215,7 +217,7 @@ class FITSImageRW {
         /// param[in] frow - first row
         /// param[in] felem - first element
         /// param[in] nelem - number of road to read
-        /// param[in] strnull 
+        /// param[in] strnull
         /// param[in] anynull
         /// param[in] status - status of the fits call
         /// param[out] table - casacore::Record to store the FITS binary table data
@@ -241,7 +243,7 @@ class FITSImageRW {
 
             return r;
         }
-                                
+
 
         std::string name;
         casacore::IPosition shape;
