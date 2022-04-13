@@ -82,6 +82,14 @@ struct IImageAccess {
     virtual casacore::Array<T> read(const std::string &name, const casacore::IPosition &blc,
                                     const casacore::IPosition &trc) const = 0;
 
+    /// @brief this method reads the table(s) in the image and stores it to the casacore::Record
+    /// @param[in] name image name
+    /// @param[in] tblName  table name. tbleName = "All" gets all the tables in the image file.
+    /// @param[in] info - casacore::Record to contain the data of an image table. The info record has
+    ///                   sub record(s) which store the table columns' data and the table's keywords
+    ///                   are held in the info's (Record)  names, values, and comments.
+    virtual void getInfo(const std::string &name, const std::string& tableName, casacore::Record &info) = 0;
+
     /// @brief obtain coordinate system info
     /// @param[in] name image name
     /// @return coordinate system object
@@ -215,16 +223,10 @@ struct IImageAccess {
     /// @param[in] historyLines History comments to add
     virtual void addHistory(const std::string &name, const std::vector<std::string> &historyLines) = 0;
 
-    /// @brief this method writes the information in the info object to the FITS binary table.
+    /// @brief this method writes the information in the info object to a table in the image.
     /// @param[in] name image name
-    /// @param[in] info record to be written to the FITS binary table.
+    /// @param[in] info - record to be written to the table.
     virtual void setInfo(const std::string &name, const casacore::RecordInterface & info) = 0;
-
-    /// @brief this method reads the FITS binary table and stores it to the casacore::Record
-    /// @param[in] name image name
-    /// @param[in] tblName  FITS table name
-    /// @param[in] info record to contain the FITS binary data and keywords
-    virtual void getInfo(const std::string &name, const std::string& tableName, casacore::Record &info) = 0;
 
 };
 

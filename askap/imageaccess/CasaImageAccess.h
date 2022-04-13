@@ -91,6 +91,13 @@ struct CasaImageAccess : public IImageAccess<T> {
     /// @return units string
     virtual std::string getUnits(const std::string &name) const;
 
+    /// @brief this methods retrieves the table(s) in the image and stores them in the casacore::Record
+    /// @param[in] name - image name
+    /// @param[in] tblName - name of the table to retrieve the data. if tblName = "All" then retrieve all
+    ///                      the tables in the image
+    /// @param[out] info - casacore::Record to contain the tables' data.
+    virtual void getInfo(const std::string &name, const std::string& tableName, casacore::Record &info) override;
+
     /// @brief Get a particular keyword from the image metadata (A.K.A header)
     /// @details This reads a given keyword from the image metadata.
     /// @param[in] name Image name
@@ -215,7 +222,6 @@ struct CasaImageAccess : public IImageAccess<T> {
     /// @param[in] name image name
     /// @param[in] info record with information
     virtual void setInfo(const std::string &name, const casacore::RecordInterface & info) override;
-    virtual void getInfo(const std::string &name, const std::string& tableName, casacore::Record &info) override;
 };
 
 

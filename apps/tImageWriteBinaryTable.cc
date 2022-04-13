@@ -84,7 +84,7 @@ public:
         itsName = config().getString("name","testCreateFitsBinaryTable");
         itsImageAccessor = imageAccessFactory(config());
     }
-    casacore::Record create_dummy_record()
+    casacore::Record create_dummy_record(const std::string& recName)
     {
         casacore::Record record;
 
@@ -163,7 +163,7 @@ public:
         }
         subrecord.define("Units",UnitValues);
 
-        record.defineRecord("Table",subrecord);
+        record.defineRecord(recName,subrecord);
 
         return record;
     }
@@ -206,8 +206,10 @@ public:
 
         itsImageAccessor->create(itsName, shape, coordsys);
 
-        casacore::Record info = create_dummy_record();
+        casacore::Record info = create_dummy_record("Table1");
+        casacore::Record info2 = create_dummy_record("Table2");
         itsImageAccessor->setInfo(itsName,info);
+        itsImageAccessor->setInfo(itsName,info2);
         
     }
  

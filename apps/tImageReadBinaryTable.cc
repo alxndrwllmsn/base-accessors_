@@ -77,7 +77,6 @@ public:
 
     void setup() 
     {
-        LOFAR::ParameterSet parset;
         itsName = config().getString("name","");
         itsImageAccessor = imageAccessFactory(config());
     }
@@ -90,7 +89,7 @@ public:
         }
         itsImageAccessor->getInfo(itsName,"All",info);
         auto nfields = info.nfields();
-        std::cout << info << std::endl;;
+        //std::cout << info << std::endl;;
         for(long i = 0; i < nfields; i++) {
             ASKAPLOG_INFO_STR(logger, "field: " << info.name(i) << ", comment: " << info.comment(i));
             if ( info.type(i) == casacore::TpRecord ) {
@@ -98,13 +97,13 @@ public:
                 subRec.print(std::cout);
                 auto nfields2 = subRec.nfields();
                 for(long f = 0; f < nfields2; f++) {
-                    ASKAPLOG_INFO_STR(logger, "field: " << subRec.name(f) << ", comment: " << subRec.comment(f));
+                    // ASKAPLOG_INFO_STR(logger, "field: " << subRec.name(f) << ", comment: " << subRec.comment(f));
                 }
             }
         }
         ASKAPLOG_INFO_STR(logger, "nfields: " << nfields);
     }
- 
+
    virtual int run(int argc, char* argv[])
    {
      try {

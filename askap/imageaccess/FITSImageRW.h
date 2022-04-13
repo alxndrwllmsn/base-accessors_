@@ -40,7 +40,6 @@
 #include <Common/ParameterSet.h>
 #include <askap/imageaccess/IImageAccess.h>
 
-#include <sstream>
 #include <tuple>
 #include <map>
 #include "boost/scoped_ptr.hpp"

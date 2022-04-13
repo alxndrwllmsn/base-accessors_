@@ -47,7 +47,6 @@
 
 #include <fitsio.h>
 #include <iostream>
-#include <fstream>
 
 ASKAP_LOGGER(FITSlogger, ".FITSImageRW");
 
@@ -745,9 +744,7 @@ void FITSImageRW::setInfoValidityCheck(const casacore::RecordInterface &info)
             // check the datatypes of the info object itself.
             // fields that are not subrecord are treated as table keywords and they can only
             // have the following types: string, double, float and int
-            std::stringstream ss;
-            ss << "field (table keyword) " << name << " has incorrect datatype. Supported datatype are: TpString, TpDouble, TpFloat, TpInt, TpInt64 and TpUInt.";
-            ASKAPLOG_INFO_STR(FITSlogger,ss.str());
+            ASKAPLOG_INFO_STR(FITSlogger,"field (table keyword) " << name << " has incorrect datatype. Supported datatype are: TpString, TpDouble, TpFloat, TpInt, TpInt64 and TpUInt.");
             ASKAPASSERT(false);
         }
     }
@@ -777,8 +774,7 @@ void FITSImageRW::setInfoValidityCheck(const casacore::RecordInterface &info)
              type != casacore::DataType::TpArrayInt64 &&
              type != casacore::DataType::TpArrayUInt ) {
              std::stringstream ss;
-             ss << "field " << name << " has incorrect datatype. Supported datatype are: TpArrayDouble,  TpArrayString, TpAarrayFloat, TpArrayInt, TpArrayUInt and TpArrayInt64.";
-             ASKAPLOG_INFO_STR(FITSlogger,ss.str());
+             ASKAPLOG_INFO_STR(FITSlogger,"field " << name << " has incorrect datatype. Supported datatype are: TpArrayDouble,  TpArrayString, TpAarrayFloat, TpArrayInt, TpArrayUInt and TpArrayInt64.");
              ASKAPASSERT(false);
         }
     }

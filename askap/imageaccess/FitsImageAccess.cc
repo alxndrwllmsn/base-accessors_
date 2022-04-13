@@ -43,7 +43,6 @@
 #include <askap/imageaccess/FitsImageAccess.h>
 
 #include <fitsio.h>
-#include <sstream>
 #include <tuple>
 #include <map>
 

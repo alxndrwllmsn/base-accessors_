@@ -43,7 +43,6 @@
 
 #include <Common/ParameterSet.h>
 
-
 namespace askap {
 
 namespace accessors {
@@ -51,8 +50,9 @@ namespace accessors {
 class CasaImageAccessTest : public CppUnit::TestFixture
 {
    CPPUNIT_TEST_SUITE(CasaImageAccessTest);
-//   CPPUNIT_TEST(testReadWrite);
+   CPPUNIT_TEST(testReadWrite);
    CPPUNIT_TEST(testWriteTable);
+//   CPPUNIT_TEST(testReadTable);
    CPPUNIT_TEST_SUITE_END();
 public:
    void setUp() {
@@ -63,12 +63,19 @@ public:
    }
 
    void testWriteTable() {
-      auto rec = create_dummy_record();
+      auto rec = create_dummy_record("table 1");
       name = "tmp.testaddtabletoimage";
       testReadWrite();
       
       //itsImageAccessor->setInfo("tmp.testimage",rec);
       itsImageAccessor->setInfo(name,rec);
+      auto rec2 = create_dummy_record("table 2");
+      itsImageAccessor->setInfo(name,rec2);
+   }
+   void testReadTable() {
+      name = "tmp.testaddtabletoimage";
+      casacore::Record rec;
+      itsImageAccessor->getInfo(name,"table 2",rec);
    }
    void testReadWrite() {
       //const std::string name = "tmp.testimage";
@@ -171,7 +178,7 @@ protected:
       return coords;
    }
 
-    casacore::Record create_dummy_record()
+    casacore::Record create_dummy_record(const std::string& tblName)
     {
         casacore::Record record;
 
@@ -250,7 +257,7 @@ protected:
         }
         subrecord.define("Units",UnitValues);
 
-        record.defineRecord("Table",subrecord);
+        record.defineRecord(tblName,subrecord);
 
         return record;
     }

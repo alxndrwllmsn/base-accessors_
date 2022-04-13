@@ -105,6 +105,13 @@ struct FitsImageAccess : public IImageAccess<> {
         /// @return units string
         virtual std::string getUnits(const std::string &name) const;
 
+        /// @brief this method gets the data in the FITS binary table and puts in the casacore::Record.
+        /// @param[in] name - name of the FITS file
+        /// param[in] info - casacore::Record to contain the data of the FITS table. The info record has
+        ///                  sub record(s) which stores the FITS table columns' data and the table keywords
+        ///                  are held in the info's (Record)  names, values, and comments.
+        virtual void getInfo(const std::string &name, const std::string& tableName, casacore::Record &info) override;
+
         /// @brief Get a particular keyword from the image metadata (A.K.A header)
         /// @details This reads a given keyword to the image metadata.
         /// @param[in] name Image name
@@ -243,14 +250,6 @@ struct FitsImageAccess : public IImageAccess<> {
         ///           It is used to specified the units of the table columns. e.g: the first element of this array
         ///           indicates the unit of the first column in the table and so on.
         virtual void setInfo(const std::string &name, const casacore::RecordInterface &info) override;
-
-        /// @brief this method gets the data in the FITS binary table and puts in the casacore::Record.
-        /// @param[in] name - name of the FITS file
-        /// param[in] info - casacore::Record to contain the data of the FITS table. The info record has one and
-        ///                  only one sub record which stores the FITS table columns' data and the table keywords
-        ///                  are held in the info's (Record)  names, values, and comments.
-        virtual void getInfo(const std::string &name, const std::string& tableName, casacore::Record &info) override;
-
 
     private:
         boost::shared_ptr<FITSImageRW> itsFITSImage;

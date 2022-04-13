@@ -464,7 +464,7 @@ void CasaImageAccess<T>::addHistory(const std::string &name, const std::vector<s
 
 
 /// @brief set info for image that can vary by e.g., channel
-/// @details Add arbitrary info to the image as either keywords or a binary table
+/// @details Add arbitrary info to the image as either keywords or a table
 /// @param[in] name image name
 /// @param[in] info record with information
 template <class T>
@@ -492,9 +492,32 @@ void CasaImageAccess<T>::setInfo(const std::string &name, const casacore::Record
     img.setMiscInfo(updateTableRecord);
 }
 
+/// @brief this methods retrieves the table(s) in the image and stores them in the casacore::Record
+/// @param[in] name - image name
+/// @param[in] tblName - name of the table to retrieve the data. if tblName = "All" then retrieve all
+///                      the tables in the image
+/// @param[out] info - casacore::Record to contain the tables' data.
 template <class T>
 void CasaImageAccess<T>::getInfo(const std::string &name, const std::string& tableName, casacore::Record &info)
 {
     casacore::PagedImage<T> img(name);
-    info = img.miscInfo();
+
+    //casacore::TableRecord tableRecord = img.miscInfo().toRecord();
+    casacore::Record tableRecord = img.miscInfo().toRecord();
+    casacore::uInt nFields = tableRecord.nfields();
+    for(casacore::uInt f = 0; f < nFields; f++) {
+        std::string name = tableRecord.name(f);
+        casacore::DataType type = tableRecord.dataType(f);
+        // we know tables are stored as sub records in the image
+        if ( type == casacore::DataType::TpRecord ) {
+            if ( (tableName != name) && (tableName != "All") ) {
+                // tableName is not the same as current sub record's name
+                // AND table is not "All", process the next field
+                continue;
+            } 
+            // add the sub record which is a table data in this case to
+            // the info object
+            info.defineRecord(name,tableRecord.asRecord(f));
+        }
+    }
 }
