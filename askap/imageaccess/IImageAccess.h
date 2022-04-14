@@ -39,6 +39,7 @@
 #include <casacore/casa/Arrays/Array.h>
 #include <casacore/coordinates/Coordinates/CoordinateSystem.h>
 #include <casacore/casa/Quanta/Quantum.h>
+#include <casacore/casa/Containers/RecordInterface.h>
 #include <askap/askapparallel/AskapParallel.h>
 #include <Common/ParameterSet.h>
 
@@ -80,6 +81,14 @@ struct IImageAccess {
     /// @return array with pixels for the selection only
     virtual casacore::Array<T> read(const std::string &name, const casacore::IPosition &blc,
                                     const casacore::IPosition &trc) const = 0;
+
+    /// @brief this method reads the table(s) in the image and stores it to the casacore::Record
+    /// @param[in] name image name
+    /// @param[in] tblName  table name. tbleName = "All" gets all the tables in the image file.
+    /// @param[in] info - casacore::Record to contain the data of an image table. The info record has
+    ///                   sub record(s) which store the table columns' data and the table's keywords
+    ///                   are held in the info's (Record)  names, values, and comments.
+    virtual void getInfo(const std::string &name, const std::string& tableName, casacore::Record &info) = 0;
 
     /// @brief obtain coordinate system info
     /// @param[in] name image name
@@ -213,6 +222,11 @@ struct IImageAccess {
     /// @param[in] name Image name
     /// @param[in] historyLines History comments to add
     virtual void addHistory(const std::string &name, const std::vector<std::string> &historyLines) = 0;
+
+    /// @brief this method writes the information in the info object to a table in the image.
+    /// @param[in] name image name
+    /// @param[in] info - record to be written to the table.
+    virtual void setInfo(const std::string &name, const casacore::RecordInterface & info) = 0;
 
 };
 
