@@ -64,12 +64,12 @@ struct FitsImageAccess : public IImageAccess<> {
         /// @brief obtain the shape
         /// @param[in] name image name
         /// @return full shape of the given image
-        virtual casacore::IPosition shape(const std::string &name) const;
+        virtual casacore::IPosition shape(const std::string &name) const override;
 
         /// @brief read full image
         /// @param[in] name image name
         /// @return array with pixels
-        virtual casacore::Array<float> read(const std::string &name) const;
+        virtual casacore::Array<float> read(const std::string &name) const override;
 
         /// @brief read part of the image
         /// @param[in] name image name
@@ -77,33 +77,33 @@ struct FitsImageAccess : public IImageAccess<> {
         /// @param[in] trc top right corner of the selection
         /// @return array with pixels for the selection only
         virtual casacore::Array<float> read(const std::string &name, const casacore::IPosition &blc,
-                                        const casacore::IPosition &trc) const;
+                                        const casacore::IPosition &trc) const override;
 
         /// @brief obtain coordinate system info
         /// @param[in] name image name
         /// @return coordinate system object
-        virtual casacore::CoordinateSystem coordSys(const std::string &name) const;
+        virtual casacore::CoordinateSystem coordSys(const std::string &name) const override;
 
         /// @brief obtain coordinate system info for part of an image
         /// @param[in] name image name
         /// @return coordinate system object
         virtual casacore::CoordinateSystem coordSysSlice(const std::string &name, const casacore::IPosition &blc,
-                const casacore::IPosition &trc) const;
+                const casacore::IPosition &trc) const override;
 
         /// @brief obtain beam info
         /// @param[in] name image name
         /// @return beam info vector
-        virtual casacore::Vector<casacore::Quantum<double> > beamInfo(const std::string &name) const;
+        virtual casacore::Vector<casacore::Quantum<double> > beamInfo(const std::string &name) const override;
 
         /// @brief obtain beam info
         /// @param[in] name image name
         /// @return beam info list
-        virtual BeamList beamList(const std::string &name) const;
+        virtual BeamList beamList(const std::string &name) const override;
 
         /// @brief obtain pixel units
         /// @param[in] name image name
         /// @return units string
-        virtual std::string getUnits(const std::string &name) const;
+        virtual std::string getUnits(const std::string &name) const override;
 
         /// @brief this method gets the data in the FITS binary table and puts in the casacore::Record.
         /// @param[in] name - name of the FITS file
@@ -117,7 +117,7 @@ struct FitsImageAccess : public IImageAccess<> {
         /// @param[in] name Image name
         /// @param[in] keyword The name of the metadata keyword
         /// @return pair of strings - keyword value and comment
-        virtual std::pair<std::string, std::string> getMetadataKeyword(const std::string &name, const std::string &keyword) const;
+        virtual std::pair<std::string, std::string> getMetadataKeyword(const std::string &name, const std::string &keyword) const override;
 
         //////////////////
         // Writing methods
@@ -131,19 +131,19 @@ struct FitsImageAccess : public IImageAccess<> {
         /// @param[in] shape full shape of the image
         /// @param[in] csys coordinate system of the full image
         virtual void create(const std::string &name, const casacore::IPosition &shape,
-                            const casacore::CoordinateSystem &csys);
+                            const casacore::CoordinateSystem &csys) override;
 
         /// @brief write full image
         /// @param[in] name image name
         /// @param[in] arr array with pixels
-        virtual void write(const std::string &name, const casacore::Array<float> &arr);
+        virtual void write(const std::string &name, const casacore::Array<float> &arr) override;
 
         /// @brief write a slice of an image
         /// @param[in] name image name
         /// @param[in] arr array with pixels
         /// @param[in] where bottom left corner where to put the slice to (trc is deduced from the array shape)
         virtual void write(const std::string &name, const casacore::Array<float> &arr,
-                           const casacore::IPosition &where);
+                           const casacore::IPosition &where) override;
 
         /// @brief write full image and mask
         /// @param[in] name image name
@@ -158,25 +158,25 @@ struct FitsImageAccess : public IImageAccess<> {
         /// @param[in] mask array with mask
         /// @param[in] where bottom left corner where to put the slice to (trc is deduced from the array shape)
         virtual void write(const std::string &name, const casacore::Array<float> &arr,
-                           const casacore::Array<bool> &mask, const casacore::IPosition &where);
+                           const casacore::Array<bool> &mask, const casacore::IPosition &where) override;
 
         /// @brief write a slice of an image mask
         /// @param[in] name image name
         /// @param[in] arr array with pixels
         /// @param[in] where bottom left corner where to put the slice to (trc is deduced from the array shape)
         virtual void writeMask(const std::string &name, const casacore::Array<bool> &mask,
-                               const casacore::IPosition &where);
+                               const casacore::IPosition &where) override;
 
         /// @brief write a slice of an image mask
         /// @param[in] name image name
         /// @param[in] arr array with pixels
 
-        virtual void writeMask(const std::string &name, const casacore::Array<bool> &mask);
+        virtual void writeMask(const std::string &name, const casacore::Array<bool> &mask) override;
         /// @brief set brightness units of the image
         /// @details
         /// @param[in] name image name
         /// @param[in] units string describing brightness units of the image (e.g. "Jy/beam")
-        virtual void setUnits(const std::string &name, const std::string &units);
+        virtual void setUnits(const std::string &name, const std::string &units) override;
 
         /// @brief set restoring beam info
         /// @details For the restored image we want to carry size and orientation of the restoring beam
@@ -185,20 +185,20 @@ struct FitsImageAccess : public IImageAccess<> {
         /// @param[in] maj major axis in radians
         /// @param[in] min minor axis in radians
         /// @param[in] pa position angle in radians
-        virtual void setBeamInfo(const std::string &name, double maj, double min, double pa);
+        virtual void setBeamInfo(const std::string &name, double maj, double min, double pa) override;
 
         /// @brief set restoring beam info for all channels
         /// @details For the restored image we want to carry size and orientation of the restoring beam
         /// with the image. This method allows to assign this info.
         /// @param[in] name image name
         /// @param[in] beamlist The list of beams
-        virtual void setBeamInfo(const std::string &name, const BeamList & beamlist);
+        virtual void setBeamInfo(const std::string &name, const BeamList & beamlist) override;
 
         /// @brief apply mask to image
         /// @details Deteails depend upon the implemenation - CASA images will have the pixel mask assigned
         /// but FITS images will have it applied to the pixels ... which is an irreversible process
         /// @param[in] name image name
-        virtual void makeDefaultMask(const std::string &name);
+        virtual void makeDefaultMask(const std::string &name) override;
 
         /// @brief Set a particular keyword for the metadata (A.K.A header)
         /// @details This adds a given keyword to the image metadata.
@@ -207,19 +207,13 @@ struct FitsImageAccess : public IImageAccess<> {
         /// @param[in] value The value for the keyword, in string format
         /// @param[in] desc A description of the keyword
         virtual void setMetadataKeyword(const std::string &name, const std::string &keyword,
-                                        const std::string value, const std::string &desc = "");
+                                        const std::string value, const std::string &desc = "") override;
 
         /// @brief Set the keywords for the metadata (A.K.A header)
         /// @details This adds keywords to the image metadata.
         /// @param[in] name Image name
         /// @param[in] keywords A parset with keyword entries (KEYWORD = ["keyword value","keyword description","STRING"])
-        virtual void setMetadataKeywords(const std::string &name, const LOFAR::ParameterSet &keywords);
-
-        /// @brief Add a HISTORY message to the image metadata
-        /// @details Adds a string detailing the history of the image
-        /// @param[in] name Image name
-        /// @param[in] history History comment to add
-        virtual void addHistory(const std::string &name, const std::string &history);
+        virtual void setMetadataKeywords(const std::string &name, const LOFAR::ParameterSet &keywords) override;
 
         /// @brief Add HISTORY messages to the image metadata
         /// @details Adds a list of strings detailing the history of the image

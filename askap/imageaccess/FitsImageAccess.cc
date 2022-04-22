@@ -203,7 +203,7 @@ std::pair<std::string, std::string> FitsImageAccess::getMetadataKeyword(const st
     status=0;
 
     if (fits_read_key(fptr, TSTRING, keyword.c_str(), value, comment,  &status))
-        ASKAPLOG_WARN_STR(logger, "FITSImageAccess:: Cannot find keyword " << keyword << " - fits_read_key returned status " << status);
+        ASKAPLOG_DEBUG_STR(logger, "FITSImageAccess:: Cannot find keyword " << keyword << " - fits_read_key returned status " << status);
     status=0;
     if (fits_close_file(fptr, &status))
         ASKAPCHECK(status == 0, "FITSImageAccess:: Error on closing file, status="<<status);
@@ -218,8 +218,8 @@ std::pair<std::string, std::string> FitsImageAccess::getMetadataKeyword(const st
 /// @param[in] name image name
 void FitsImageAccess::connect(const std::string &name) const
 {
-    std::string fullname = name + ".fits";
-    itsFITSImage.reset(new FITSImageRW(fullname));
+    //std::string fullname = name + ".fits";
+    itsFITSImage.reset(new FITSImageRW(name));
 }
 
 // writing methods
@@ -434,17 +434,6 @@ void FitsImageAccess::setMetadataKeywords(const std::string &name, const LOFAR::
     itsFITSImage->setHeader(keywords);
 }
 
-
-/// @brief Add a HISTORY message to the image metadata
-/// @details Adds a string detailing the history of the image
-/// @param[in] name Image name
-/// @param[in] history History comment to add
-void FitsImageAccess::addHistory(const std::string &name, const std::string &history)
-{
-    connect(name);
-    itsFITSImage->addHistory(history);
-}
-
 /// @brief Add HISTORY messages to the image metadata
 /// @details Adds a list of strings detailing the history of the image
 /// @param[in] name Image name
@@ -462,5 +451,6 @@ void FitsImageAccess::setInfo(const std::string &name, const casacore::RecordInt
 }
 void FitsImageAccess::getInfo(const std::string &name, const std::string& tableName, casacore::Record &info)
 {
-    itsFITSImage->getInfo(name,tableName,info);
+    connect(name);
+    itsFITSImage->getInfo(tableName,info);
 }

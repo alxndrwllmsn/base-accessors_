@@ -102,7 +102,6 @@ class FITSImageRW {
         void setRestoringBeam(const BeamList& beamlist);
         casacore::Vector<casacore::Quantity> getRestoringBeam() const;
 
-        void addHistory(const std::string &history);
         void addHistory(const std::vector<std::string> &historyLines);
 
         // write into a FITS image
@@ -116,11 +115,10 @@ class FITSImageRW {
 
         /// @brief this method is the implementation of the interface FitsImageAccess::getInfo()
         /// @see the description in FitsImageAccess::getInfo() for details.
-        /// @param[in] filename  name of the FITS file
         /// @param[in] tbleName  name of the table in the FITS file. tbleName = "All" gets all the tables in
         ///                      the FITS file.
         /// @param[in] the top level casacore::Record object.
-        void getInfo(const std::string& filename, const std::string& tblName,casacore::RecordInterface &info);
+        void getInfo(const std::string& tblName, casacore::RecordInterface &info) const;
     private:
 
         /// @brief this structure wraps the c pointers required by cfitsio library to ensure
@@ -140,21 +138,11 @@ class FITSImageRW {
         /// @param[in] info  the casacore::Record object to be validated.
         void setInfoValidityCheck(const casacore::RecordInterface &info);
 
-        using TableKeywordInfo = std::tuple<std::string, // keyword name
-                                            std::string, // keyword value
-                                            std::string>; // keyword comment
-
-        /// @brief a helper method to parse the casacore::Record and collect the keywords
-        /// @param[in] info  a casacore::Record contains the keywords and table columns data
-        /// @param[out] tableKeyword  a map of keywords with their vaues and comments
-        void getTableKeywords(const casacore::RecordInterface& info,
-                              std::map<std::string,TableKeywordInfo>& tableKeywords);
-
         /// @brief a helper method to write the keywords to FITS binary table
         /// @param[in] fptr  FITS file pointer. The file must be opened for writting before calling this
         ///                  method. It does not close the file pointer after the call
-        /// @param[in] tableKeywords  a map of FITS keywords to be written to the FITS table
-        void writeTableKeywords(fitsfile* fptr, std::map<std::string,TableKeywordInfo>& tableKeywords);
+        /// @param[in] info  a casacore::Record contains the keywords and table columns data
+        void writeTableKeywords(fitsfile* fptr, const casacore::RecordInterface& info);
 
         /// @brief a helper method to write the casacore::Record to the FITS binary table columns.
         /// @param[in] fptr  FITS file pointer. The file must be opened for writting before calling this
@@ -182,7 +170,7 @@ class FITSImageRW {
         void getStringColumnType(fitsfile* fptr,const std::string& columnName,
                                  long columnNum,long frow,long felem,long nelem,
                                  char* strnull, int& anynull, int& status,
-                                 char** stringArrayValues,casacore::Record& table);
+                                 char** stringArrayValues,casacore::Record& table) const;
 
         /// @brief helper method. It copies FITS table data to casacore::Record
         /// param[in] fptr - fits file pointer. Must be opened before calling this method.
@@ -193,13 +181,13 @@ class FITSImageRW {
         /// param[out] table - casacore::Record to store the FITS binary table data
         void copyFitsToCasa(fitsfile* fptr,long nelem, long numColumns,
                             CPointerWrapper& cPtrWrapper,int& status,
-                            casacore::Record& table);
+                            casacore::Record& table) const;
 
         /// @brief copy the FITS binary table keywords to casacore:Record
         /// param[in] fptr - fits file pointer. Must be opened before calling this method.
         /// param[out] table - casacore::Record to store the FITS binary table keywords
         /// param[in] status - status of the fits call
-        void copyTableExtKeywords(fitsfile* ptr, casacore::Record& table, int& status);
+        void copyTableExtKeywords(fitsfile* ptr, casacore::Record& table, int& status) const;
 
         /// @brief extract a FITS record (i.e keyword name, keyword value and comment in a string)
         /// param[in] record - FITS record consisting of keyword name, keyword value and comment in a string
@@ -207,7 +195,7 @@ class FITSImageRW {
         /// param[out] value - FITS keyword value
         /// param[out] comment - FITS keyword comment
         void extractFitsRecord(const std::string& record, std::string& keyword,
-                               std::string& value, std::string& comment);
+                               std::string& value, std::string& comment) const;
 
         /// @brief a helper template method to copy table column data to casacore::Record
         /// param[in] fptr - fits file pointer. Must be opened before calling this method.
@@ -225,7 +213,7 @@ class FITSImageRW {
         bool getColumnData(fitsfile* fptr,const std::string& columnName,int datatype,
                            long columnNum,long frow,long felem,long nelem,
                            char* strnull, int& anynull, int& status,
-                           casacore::Record& table)
+                           casacore::Record& table) const
         {
             boost::shared_array<T> tArray {new T[nelem]};
             fits_read_col(fptr,datatype,columnNum,frow,felem,nelem,strnull,

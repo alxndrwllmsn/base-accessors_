@@ -152,7 +152,11 @@ casacore::Vector<casacore::Quantum<double> > CasaImageAccess<T>::beamInfo(const 
 {
     casacore::PagedImage<T> img(name);
     casacore::ImageInfo ii = img.imageInfo();
-    return ii.restoringBeam().toVector();
+    if (!img.imageInfo().hasMultipleBeams()) {
+      return ii.restoringBeam().toVector();
+    } else {
+      return casacore::Vector<casacore::Quantum<double>>();
+    }
 }
 
 /// @brief get restoring beam info
@@ -198,7 +202,7 @@ std::pair<std::string, std::string> CasaImageAccess<T>::getMetadataKeyword(const
         value = miscinfo.asString(keyword);
         comment = miscinfo.comment(keyword);
     } else {
-        ASKAPLOG_WARN_STR(casaImAccessLogger, "Keyword " << keyword << " is not defined in metadata for image " << name);
+        ASKAPLOG_DEBUG_STR(casaImAccessLogger, "Keyword " << keyword << " is not defined in metadata for image " << name);
     }
     return std::pair<std::string,std::string>(value,comment);
 
@@ -434,21 +438,6 @@ void CasaImageAccess<T>::setMetadataKeywords(const std::string &name, const LOFA
     img.setMiscInfo(miscinfo);
 }
 
-
-/// @brief Add a HISTORY message to the image metadata
-/// @details Adds a string detailing the history of the image
-/// @param[in] name Image name
-/// @param[in] history History comment to add
-template <class T>
-void CasaImageAccess<T>::addHistory(const std::string &name, const std::string &history)
-{
-
-    casacore::PagedImage<T> img(name);
-    casacore::LogIO log = img.logSink();
-    log << history << casacore::LogIO::POST;
-
-}
-
 /// @brief Add HISTORY messages to the image metadata
 /// @details Adds a list of strings detailing the history of the image
 /// @param[in] name Image name
@@ -484,10 +473,10 @@ void CasaImageAccess<T>::setInfo(const std::string &name, const casacore::Record
         casacore::DataType type = info.dataType(f);
         if ( type == casacore::DataType::TpRecord ) {
            infoTableName = name;
-            break; 
+            break;
         }
     }
-        
+
     // add the info to it
     updateTableRecord.defineRecord(infoTableName,info);
     // now set the updated record back to the image
@@ -516,7 +505,7 @@ void CasaImageAccess<T>::getInfo(const std::string &name, const std::string& tab
                 // tableName is not the same as current sub record's name
                 // AND table is not "All", process the next field
                 continue;
-            } 
+            }
             // add the sub record which is a table data in this case to
             // the info object
             info.defineRecord(name,tableRecord.asRecord(f));
