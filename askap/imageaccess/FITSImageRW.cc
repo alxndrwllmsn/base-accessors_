@@ -884,36 +884,36 @@ void FITSImageRW::createTable(const casacore::RecordInterface &info)
                 table.get(f,stringArr);
                 rows.emplace_back(stringArr.capacity());
                 // assume that the column that has string value has max 20 character
-                cPointerWrapper.itsTForm[f] = new char[sizeof(char)*3];
-                std::fill_n(cPointerWrapper.itsTForm[f],'\0',3);
+                cPointerWrapper.itsTForm[f] = new char[sizeof(char)*4];
+                std::fill_n(cPointerWrapper.itsTForm[f],'\0',4);
                 std::copy_n("20a",3,cPointerWrapper.itsTForm[f]);
             } else if ( type == casacore::DataType::TpArrayFloat ) {
                 casacore::Array<float> floatArr;
                 table.get(f,floatArr);
                 rows.emplace_back(floatArr.capacity());
-                cPointerWrapper.itsTForm[f] = new char[sizeof(char)*2];
-                std::fill_n(cPointerWrapper.itsTForm[f],'\0',2);
+                cPointerWrapper.itsTForm[f] = new char[sizeof(char)*3];
+                std::fill_n(cPointerWrapper.itsTForm[f],'\0',3);
                 std::copy_n("1E",2,cPointerWrapper.itsTForm[f]);
             } else if ( type == casacore::DataType::TpArrayInt ) {
                 casacore::Array<int> intArr;
                 table.get(f,intArr);
                 rows.emplace_back(intArr.capacity());
-                cPointerWrapper.itsTForm[f] = new char[sizeof(char)*2];
-                std::fill_n(cPointerWrapper.itsTForm[f],'\0',2);
+                cPointerWrapper.itsTForm[f] = new char[sizeof(char)*3];
+                std::fill_n(cPointerWrapper.itsTForm[f],'\0',3);
                 std::copy_n("1J",2,cPointerWrapper.itsTForm[f]);
             } else if ( type == casacore::DataType::TpArrayUInt ) {
                 casacore::Array<unsigned int> uintArr;
                 table.get(f,uintArr);
                 rows.emplace_back(uintArr.capacity());
-                cPointerWrapper.itsTForm[f] = new char[sizeof(char)*2];
-                std::fill_n(cPointerWrapper.itsTForm[f],'\0',2);
+                cPointerWrapper.itsTForm[f] = new char[sizeof(char)*3];
+                std::fill_n(cPointerWrapper.itsTForm[f],'\0',3);
                 std::copy_n("1V",2,cPointerWrapper.itsTForm[f]);
             } else if ( type == casacore::DataType::TpArrayInt64 ) {
                 casacore::Array<long long> int64Arr;
                 table.get(f,int64Arr);
                 rows.emplace_back(int64Arr.capacity());
-                cPointerWrapper.itsTForm[f] = new char[sizeof(char)*2];
-                std::fill_n(cPointerWrapper.itsTForm[f],'\0',2);
+                cPointerWrapper.itsTForm[f] = new char[sizeof(char)*3];
+                std::fill_n(cPointerWrapper.itsTForm[f],'\0',3);
                 std::copy_n("1K",2,cPointerWrapper.itsTForm[f]);
             }
         } else {
