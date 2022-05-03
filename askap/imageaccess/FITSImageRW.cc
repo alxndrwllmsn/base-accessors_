@@ -836,44 +836,56 @@ void FITSImageRW::createTable(const casacore::RecordInterface &info)
                 rows.emplace_back(doubleArr.capacity());
 
                 cPointerWrapper.itsTForm[f] = new char[sizeof(char)*3];
-                std::fill_n(cPointerWrapper.itsTForm[f],3,'\0');
-                std::copy_n("1D",2,cPointerWrapper.itsTForm[f]);
+                //std::fill_n(cPointerWrapper.itsTForm[f],3,'\0');
+                //std::copy_n("1D",2,cPointerWrapper.itsTForm[f]);
+                std::memset(cPointerWrapper.itsTForm[f],3,'\0');
+                std::memcpy(cPointerWrapper.itsTForm[f],"1D",2);
             } else if ( type == casacore::DataType::TpArrayString ) {
                 casacore::Array<casacore::String> stringArr;
                 table.get(f,stringArr);
                 rows.emplace_back(stringArr.capacity());
                 // assume that the column that has string value has max 20 character
                 cPointerWrapper.itsTForm[f] = new char[sizeof(char)*4];
-                std::fill_n(cPointerWrapper.itsTForm[f],'\0',4);
-                std::copy_n("20a",3,cPointerWrapper.itsTForm[f]);
+                //std::fill_n(cPointerWrapper.itsTForm[f],'\0',4);
+                //std::copy_n("20a",3,cPointerWrapper.itsTForm[f]);
+                std::memset(cPointerWrapper.itsTForm[f],'\0',4);
+                std::memcpy(cPointerWrapper.itsTForm[f],"20a",3);
             } else if ( type == casacore::DataType::TpArrayFloat ) {
                 casacore::Array<float> floatArr;
                 table.get(f,floatArr);
                 rows.emplace_back(floatArr.capacity());
                 cPointerWrapper.itsTForm[f] = new char[sizeof(char)*3];
-                std::fill_n(cPointerWrapper.itsTForm[f],'\0',3);
-                std::copy_n("1E",2,cPointerWrapper.itsTForm[f]);
+                //std::fill_n(cPointerWrapper.itsTForm[f],'\0',3);
+                //std::copy_n("1E",2,cPointerWrapper.itsTForm[f]);
+                std::memset(cPointerWrapper.itsTForm[f],'\0',3);
+                std::memcpy(cPointerWrapper.itsTForm[f],"1E",2);
             } else if ( type == casacore::DataType::TpArrayInt ) {
                 casacore::Array<int> intArr;
                 table.get(f,intArr);
                 rows.emplace_back(intArr.capacity());
                 cPointerWrapper.itsTForm[f] = new char[sizeof(char)*3];
-                std::fill_n(cPointerWrapper.itsTForm[f],'\0',3);
-                std::copy_n("1J",2,cPointerWrapper.itsTForm[f]);
+                //std::fill_n(cPointerWrapper.itsTForm[f],'\0',3);
+                //std::copy_n("1J",2,cPointerWrapper.itsTForm[f]);
+                std::memset(cPointerWrapper.itsTForm[f],'\0',3);
+                std::memcpy(cPointerWrapper.itsTForm[f],"1J",2);
             } else if ( type == casacore::DataType::TpArrayUInt ) {
                 casacore::Array<unsigned int> uintArr;
                 table.get(f,uintArr);
                 rows.emplace_back(uintArr.capacity());
                 cPointerWrapper.itsTForm[f] = new char[sizeof(char)*3];
-                std::fill_n(cPointerWrapper.itsTForm[f],'\0',3);
-                std::copy_n("1V",2,cPointerWrapper.itsTForm[f]);
+                //std::fill_n(cPointerWrapper.itsTForm[f],'\0',3);
+                //std::copy_n("1V",2,cPointerWrapper.itsTForm[f]);
+                std::memset(cPointerWrapper.itsTForm[f],'\0',3);
+                std::memcpy(cPointerWrapper.itsTForm[f],"1V",2);
             } else if ( type == casacore::DataType::TpArrayInt64 ) {
                 casacore::Array<long long> int64Arr;
                 table.get(f,int64Arr);
                 rows.emplace_back(int64Arr.capacity());
                 cPointerWrapper.itsTForm[f] = new char[sizeof(char)*3];
-                std::fill_n(cPointerWrapper.itsTForm[f],'\0',3);
-                std::copy_n("1K",2,cPointerWrapper.itsTForm[f]);
+                //std::fill_n(cPointerWrapper.itsTForm[f],'\0',3);
+                //std::copy_n("1K",2,cPointerWrapper.itsTForm[f]);
+                std::memset(cPointerWrapper.itsTForm[f],'\0',3);
+                std::memcpy(cPointerWrapper.itsTForm[f],"1K",2);
             }
         } else {
             // this is a Units field. We expects an array of strings i.e the first unit
@@ -886,8 +898,10 @@ void FITSImageRW::createTable(const casacore::RecordInterface &info)
                 //cPointerWrapper.itsUnits = new char* [sizeof(char*) * numUnits];
                 for (int i = 0; i < numUnits; i++) {
                     cPointerWrapper.itsUnits[i] = new char[sizeof(char) * (v[i].length())];
-                    std::fill_n(cPointerWrapper.itsUnits[i],'\0',v[i].length());
-                    std::copy_n(v[i].data(),v[i].length(),cPointerWrapper.itsUnits[i]);
+                    //std::fill_n(cPointerWrapper.itsUnits[i],'\0',v[i].length());
+                    //std::copy_n(v[i].data(),v[i].length(),cPointerWrapper.itsUnits[i]);
+                    std::memset(cPointerWrapper.itsUnits[i],'\0',1 + v[i].length());
+                    std::memcpy(cPointerWrapper.itsUnits[i],v[i].data(),v[i].length());
                 }
             }
         }
