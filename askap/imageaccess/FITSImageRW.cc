@@ -824,9 +824,11 @@ void FITSImageRW::createTable(const casacore::RecordInterface &info)
         casacore::String name = table.name(f); // column name
         casacore::DataType type = table.dataType(f); // column datatype
         if ( name != "Units" ) {
-            cPointerWrapper.itsTType[f] = new char[sizeof(char)*name.length()];
-            std::fill_n(cPointerWrapper.itsTType[f],'\0',name.length());
-            std::copy_n(name.data(),name.length(),cPointerWrapper.itsTType[f]);
+            cPointerWrapper.itsTType[f] = new char[sizeof(char)*name.length() + 1];
+            //std::fill_n(cPointerWrapper.itsTType[f],'\0',name.length());
+            //std::copy_n(name.data(),name.length(),cPointerWrapper.itsTType[f]);
+            std::memset(cPointerWrapper.itsTType[f],'\0',name.length() + 1);
+            std::memcpy(cPointerWrapper.itsTType[f],name.data(),name.length());
             // these fields are transformed into fits binary table columns
             // so we have to work out the tfrom and ttype for them
             if ( type == casacore::DataType::TpArrayDouble ) {
