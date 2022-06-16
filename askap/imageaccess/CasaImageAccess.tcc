@@ -152,8 +152,31 @@ casacore::Vector<casacore::Quantum<double> > CasaImageAccess<T>::beamInfo(const 
 {
     casacore::PagedImage<T> img(name);
     casacore::ImageInfo ii = img.imageInfo();
-    return ii.restoringBeam().toVector();
+    if (!img.imageInfo().hasMultipleBeams()) {
+      return ii.restoringBeam().toVector();
+    } else {
+      return casacore::Vector<casacore::Quantum<double>>();
+    }
 }
+
+/// @brief get restoring beam info
+/// @param[in] name image name
+/// @return beamlist  list of beams, beamlist will be empty if image only has a single beam
+template <class T>
+BeamList CasaImageAccess<T>::beamList(const std::string &name) const
+{
+    casacore::PagedImage<T> img(name);
+    casacore::ImageInfo ii = img.imageInfo();
+    BeamList bl;
+    if (img.imageInfo().hasMultipleBeams()) {
+      for (int chan = 0; chan < ii.nChannels(); chan++) {
+        casacore::GaussianBeam gb = ii.restoringBeam(chan,0);
+        bl[chan] = gb.toVector();
+      }
+    }
+    return bl;
+}
+
 template <class T>
 std::string CasaImageAccess<T>::getUnits(const std::string &name) const
 {
@@ -166,20 +189,22 @@ std::string CasaImageAccess<T>::getUnits(const std::string &name) const
 /// @details This reads a given keyword to the image metadata.
 /// @param[in] name Image name
 /// @param[in] keyword The name of the metadata keyword
+/// @return pair of strings - keyword value and comment
 template <class T>
-std::string CasaImageAccess<T>::getMetadataKeyword(const std::string &name,
-        const std::string &keyword) const
+std::pair<std::string, std::string> CasaImageAccess<T>::getMetadataKeyword(const std::string &name, const std::string &keyword) const
 {
 
     casacore::PagedImage<T> img(name);
     casacore::TableRecord miscinfo = img.miscInfo();
     std::string value = "";
+    std::string comment = "";
     if (miscinfo.isDefined(keyword)) {
         value = miscinfo.asString(keyword);
+        comment = miscinfo.comment(keyword);
     } else {
-        ASKAPLOG_WARN_STR(casaImAccessLogger, "Keyword " << keyword << " is not defined in metadata for image " << name);
+        ASKAPLOG_DEBUG_STR(casaImAccessLogger, "Keyword " << keyword << " is not defined in metadata for image " << name);
     }
-    return value;
+    return std::pair<std::string,std::string>(value,comment);
 
 }
 
@@ -311,6 +336,24 @@ void CasaImageAccess<T>::setBeamInfo(const std::string &name, double maj, double
     img.setImageInfo(ii);
 }
 
+/// @brief set restoring beam info
+/// @details For the restored image we want to carry size and orientation of the restoring beam
+/// with the image. This method allows to assign this info for all channels
+/// @param[in] name image name
+/// @param[in] beamlist  list of beams
+template <class T>
+void CasaImageAccess<T>::setBeamInfo(const std::string &name, const BeamList & beamlist)
+{
+    casacore::PagedImage<T> img(name);
+    casacore::ImageInfo ii = img.imageInfo();
+    ii.setAllBeams(beamlist.size(),1,casacore::GaussianBeam());
+    for (const auto& beam : beamlist) {
+      ASKAPDEBUGASSERT(beam.second.size()==3);
+      ii.setBeam(beam.first,0,beam.second[0],beam.second[1],beam.second[2]);
+    }
+    img.setImageInfo(ii);
+}
+
 /// @brief apply mask to image
 /// @details Deteails depend upon the implemenation - CASA images will have the pixel mask assigned
 /// but FITS images will have it applied to the pixels ... which is an irreversible process
@@ -349,16 +392,123 @@ void CasaImageAccess<T>::setMetadataKeyword(const std::string &name, const std::
 
 }
 
-/// @brief Add a HISTORY message to the image metadata
-/// @details Adds a string detailing the history of the image
-/// @param[in] name Image name
-/// @param[in] history History comment to add
 template <class T>
-void CasaImageAccess<T>::addHistory(const std::string &name, const std::string &history)
+void CasaImageAccess<T>::setMetadataKeywords(const std::string &name, const LOFAR::ParameterSet &keywords)
+{
+    casacore::PagedImage<T> img(name);
+    casacore::TableRecord miscinfo = img.miscInfo();
+    // Note: we could sort through the keywords here and pick out ones that need to go in places
+    // other than miscInfo to be more compatible with casacore
+    for (auto &elem : keywords) {
+      const string keyword = elem.first;
+      const std::vector<string> valanddesc = elem.second.getStringVector();
+      if (valanddesc.size() > 0) {
+        const string value = valanddesc[0];
+        const string desc = (valanddesc.size() > 1 ? valanddesc[1] : "");
+
+        const string type = (valanddesc.size() > 2 ? toUpper(valanddesc[2]) : "STRING");
+        if (type == "INT") {
+          try {
+            const int intVal = std::stoi(value);
+            miscinfo.define(keyword, intVal);
+            miscinfo.setComment(keyword, desc);
+          } catch (const std::invalid_argument&) {
+            ASKAPLOG_WARN_STR(casaImAccessLogger, "Invalid int value for header keyword "<<keyword<<" : "<<value);
+          } catch (const std::out_of_range&) {
+            ASKAPLOG_WARN_STR(casaImAccessLogger, "Out of range int value for header keyword "<<keyword<<" : "<<value);
+          }
+        } else if (type == "DOUBLE") {
+          try {
+            const double doubleVal = std::stod(value);
+            miscinfo.define(keyword, doubleVal);
+            miscinfo.setComment(keyword, desc);
+          } catch (const std::invalid_argument&) {
+            ASKAPLOG_WARN_STR(casaImAccessLogger, "Invalid double value for header keyword "<<keyword<<" : "<<value);
+          } catch (const std::out_of_range&) {
+            ASKAPLOG_WARN_STR(casaImAccessLogger, "Out of range double value for header keyword "<<keyword<<" : "<<value);
+          }
+        } else if (type == "STRING") {
+          miscinfo.define(keyword, value);
+          miscinfo.setComment(keyword, desc);
+        } else {
+          ASKAPLOG_WARN_STR(casaImAccessLogger, "Invalid type for header keyword "<<keyword<<" : "<<type);
+        }
+      }
+    }
+    img.setMiscInfo(miscinfo);
+}
+
+/// @brief Add HISTORY messages to the image metadata
+/// @details Adds a list of strings detailing the history of the image
+/// @param[in] name Image name
+/// @param[in] historyLines History comments to add
+template <class T>
+void CasaImageAccess<T>::addHistory(const std::string &name, const std::vector<std::string> &historyLines)
 {
 
     casacore::PagedImage<T> img(name);
     casacore::LogIO log = img.logSink();
-    log << history << casacore::LogIO::POST;
+    for (const auto& history : historyLines) {
+        log << history << casacore::LogIO::POST;
+    }
+}
 
+
+/// @brief set info for image that can vary by e.g., channel
+/// @details Add arbitrary info to the image as either keywords or a table
+/// @param[in] name image name
+/// @param[in] info record with information
+template <class T>
+void CasaImageAccess<T>::setInfo(const std::string &name, const casacore::RecordInterface & info)
+{
+    casacore::PagedImage<T> img(name);
+    // make a copy of the table record
+    casacore::TableRecord updateTableRecord = img.miscInfo();
+    // find the name of the info table.  this is the name field of the info sub record
+    std::string infoTableName = "notfound";
+    casacore::uInt subRecordFieldId = 0;
+    casacore::uInt nFields = info.nfields();
+    for(casacore::uInt f = 0; f < nFields; f++) {
+        std::string name = info.name(f);
+        casacore::DataType type = info.dataType(f);
+        if ( type == casacore::DataType::TpRecord ) {
+           infoTableName = name;
+            break;
+        }
+    }
+
+    // add the info to it
+    updateTableRecord.defineRecord(infoTableName,info);
+    // now set the updated record back to the image
+    img.setMiscInfo(updateTableRecord);
+}
+
+/// @brief this methods retrieves the table(s) in the image and stores them in the casacore::Record
+/// @param[in] name - image name
+/// @param[in] tblName - name of the table to retrieve the data. if tblName = "All" then retrieve all
+///                      the tables in the image
+/// @param[out] info - casacore::Record to contain the tables' data.
+template <class T>
+void CasaImageAccess<T>::getInfo(const std::string &name, const std::string& tableName, casacore::Record &info)
+{
+    casacore::PagedImage<T> img(name);
+
+    //casacore::TableRecord tableRecord = img.miscInfo().toRecord();
+    casacore::Record tableRecord = img.miscInfo().toRecord();
+    casacore::uInt nFields = tableRecord.nfields();
+    for(casacore::uInt f = 0; f < nFields; f++) {
+        std::string name = tableRecord.name(f);
+        casacore::DataType type = tableRecord.dataType(f);
+        // we know tables are stored as sub records in the image
+        if ( type == casacore::DataType::TpRecord ) {
+            if ( (tableName != name) && (tableName != "All") ) {
+                // tableName is not the same as current sub record's name
+                // AND table is not "All", process the next field
+                continue;
+            }
+            // add the sub record which is a table data in this case to
+            // the info object
+            info.defineRecord(name,tableRecord.asRecord(f));
+        }
+    }
 }

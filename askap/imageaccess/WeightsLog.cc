@@ -44,7 +44,7 @@
 #include <Blob/BlobIStream.h>
 #include <Blob/BlobOStream.h>
 
-// Local package includeas
+// Local package includes
 #include <askap/imageaccess/CasaImageAccess.h>
 ASKAP_LOGGER(logger, ".WeightsLog");
 
@@ -84,15 +84,7 @@ void WeightsLog::write()
 {
     if (itsFilename != "") {
 
-        bool valid = true;
-        std::map<unsigned int, float>::iterator Weights = itsWeightsList.begin();
-        for (; Weights != itsWeightsList.end(); Weights++) {
-              if (Weights->second < 0) {
-                valid = false;
-                break;
-              }
-        }
-        if (valid) {
+        if (valid()) {
 
           std::ofstream fout(itsFilename.c_str());
           fout << "#Channel Weight\n";
@@ -112,6 +104,42 @@ void WeightsLog::write()
                           "WeightsLog cannot write the log, as no filename has been specified");
     }
 }
+
+casacore::Record WeightsLog::toRecord()
+{
+    casacore::Record record;
+
+    if (valid()) {
+
+      const int n = itsWeightsList.size();
+      // We want columns for channel and weight
+      casacore::Vector<casacore::Int> colChan(n);
+      casacore::Vector<casacore::Float> colWt(n);
+      //std::map<unsigned int, float>::iterator wl = itsWeightsList.begin();
+      int i = 0;
+      for (auto wl = itsWeightsList.begin(); wl != itsWeightsList.end(); wl++, i++) {
+          colChan[i] = wl->first;
+          colWt[i] = wl->second;
+      }
+      casacore::Record subRecord;
+
+      subRecord.define("CHAN",colChan);
+      subRecord.define("WEIGHT",colWt);
+      casacore::Vector<casacore::String> units(2);
+      units(0) = "";
+      units(1) = "";
+      subRecord.define("Units",units);
+      record.defineRecord("WEIGHTS",subRecord);
+      record.define("NCHAN",n);
+      record.setComment("NCHAN","Number of channels");
+    } else {
+      ASKAPLOG_WARN_STR(logger,
+                        "WeightsLog cannot write the log, as the weights are invalid");
+    }
+    return record;
+}
+
+
 
 void WeightsLog::read()
 {
@@ -212,6 +240,17 @@ void WeightsLog::gather(askapparallel::AskapParallel &comms, int rankToGather, b
 
     }
 
+}
+
+bool WeightsLog::valid() const {
+    bool valid = true;
+    for (const auto& wl : itsWeightsList) {
+        if (wl.second < 0) {
+            valid = false;
+            break;
+        }
+    }
+    return valid;
 }
 
 

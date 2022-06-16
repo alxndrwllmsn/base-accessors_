@@ -1,10 +1,9 @@
 # GitLab CI script for base-accessors
 
-#image: registry.gitlab.com/askapsdp/all_yandasoft:1.1.x-latest
 #image: registry.gitlab.com/askapsdp/yandasoft_image/all_yandasoft:1.1.x-latest
+#image: registry.gitlab.com/askapsdp/yandasoft_image/yandasoft
 #image: csirocass/yandabase:casacore3.4-mpich
 image: csirocass/yandasoft:casacore0572d931d-mpich
-
 
 .common: {tags: [azure]}
 
@@ -20,20 +19,14 @@ build:
   before_script:
     - apt update && apt install -y g++ git cmake
     - ln -s /usr/lib/x86_64-linux-gnu/ /usr/lib64
-    - eval $(ssh-agent -s)
-    - echo "$GITLAB_SSH_KEY" | tr -d '\r' | ssh-add -
-    - mkdir -p ~/.ssh
-    - chmod 700 ~/.ssh
-    - ssh-keyscan -p 7999 bitbucket.csiro.au >> ~/.ssh/known_hosts
-    - chmod 644 ~/.ssh/known_hosts
   script:
     - n_cpus=`grep '^processor' /proc/cpuinfo  | wc -l`
-    - cmake -C .gitlab-ci.cmake.in -DCMAKE_INSTALL_PREFIX=./_install -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="-coverage" -DCMAKE_EXE_LINKER_FLAGS="-coverage" -B _build -S .
+    - cmake -C .gitlab-ci.cmake.in -DASKAPSDP_GIT_URL="https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.com/ASKAPSDP/" -DCMAKE_INSTALL_PREFIX=./_install -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="-coverage" -DCMAKE_EXE_LINKER_FLAGS="-coverage" -B _build -S .
     - cmake --build _build --target install -j $n_cpus
   artifacts:
     paths:
       - _build
-      - askap-cmake
+      - _install
 
 test:
   extends: .common
@@ -47,6 +40,7 @@ test:
     TEST_DATASET_PATH: ${CI_PROJECT_DIR}/_build/testdataset.ms
   script:
     - cd _build
+#    - tar -xjf /askap/data/measdata.tar.bz2
     - tar -xjf ../measdata.tar.bz2
     - "echo 'measures.directory: '${PWD}'/data' > ${CASARCFILES}"
     - cat $CASARCFILES

@@ -2,9 +2,9 @@
 /// @brief Basic interface to access an image
 /// @details This interface class is somewhat analogous to casacore::ImageInterface. But it has
 /// only methods we need for accessors and allow more functionality to access a part of the image.
-/// In the future we can benefit from using this minimalistic interface because it should be 
+/// In the future we can benefit from using this minimalistic interface because it should be
 /// relatively easy to do parallel operations on the same image or even distributed storage.
-///  
+///
 ///
 /// @copyright (c) 2007 CSIRO
 /// Australia Telescope National Facility (ATNF)
@@ -44,4 +44,3 @@ IImageAccess<T>::~IImageAccess<T>() {}
 } // namespace accessors
 
 } // namespace askap
-

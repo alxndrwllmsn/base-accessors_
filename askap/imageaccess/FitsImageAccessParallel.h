@@ -32,6 +32,7 @@
 #define ASKAP_ACCESSORS_FITS_IMAGE_ACCESS_PARALLEL_H
 
 #include <boost/shared_ptr.hpp>
+#include <boost/shared_array.hpp>
 
 #include <mpi.h>
 #include <askap/askapparallel/MPIComms.h>
@@ -61,7 +62,7 @@ class FitsImageAccessParallel : public FitsImageAccess {
         /// @brief read full image distributed by rank
         /// @param[in] name image name
         /// @return array with pixels
-        virtual casacore::Array<float> read(const std::string &name) const;
+        virtual casacore::Array<float> read(const std::string &name) const override;
 
         /// @brief read part of the image
         /// @param[in] name image name
@@ -69,7 +70,7 @@ class FitsImageAccessParallel : public FitsImageAccess {
         /// @param[in] trc top right corner of the selection
         /// @return array with pixels for the selection only
         virtual casacore::Array<float> read(const std::string &name, const casacore::IPosition &blc,
-                                            const casacore::IPosition &trc) const;
+                                            const casacore::IPosition &trc) const override;
 
 
         /// @brief read part of the image - collective MPI read
@@ -78,19 +79,19 @@ class FitsImageAccessParallel : public FitsImageAccess {
         /// @param[in] nsub, number of subarrays
         /// @param[in] sub, subarray number (0<=sub<nsub)
         /// @return array with pixels for the section of the image read
-        casacore::Array<float> read_all(const std::string &name, int iax,
+        casacore::Array<float> readAll(const std::string &name, int iax,
                                         int nsub=1, int sub=0) const;
 
         /// @brief write full image across ranks
         /// @param[in] name image name
-        virtual void write(const std::string &name, const casacore::Array<float> &arr);
+        virtual void write(const std::string &name, const casacore::Array<float> &arr) override;
 
         /// @brief write a slice of an image
         /// @param[in] name image name
         /// @param[in] arr array with pixels
         /// @param[in] where bottom left corner where to put the slice to (trc is deduced from the array shape)
         virtual void write(const std::string &name, const casacore::Array<float> &arr,
-                           const casacore::IPosition &where);
+                           const casacore::IPosition &where) override;
 
         /// @brief write a slice of an image and mask
         /// @param[in] name image name
@@ -98,7 +99,7 @@ class FitsImageAccessParallel : public FitsImageAccess {
         /// @param[in] mask array with mask
         /// @param[in] where bottom left corner where to put the slice to (trc is deduced from the array shape)
         virtual void write(const std::string &name, const casacore::Array<float> &arr,
-                           const casacore::Array<bool> &mask, const casacore::IPosition &where);
+                           const casacore::Array<bool> &mask, const casacore::IPosition &where) override;
 
 
         /// @brief write an image - collective MPI write.
@@ -108,13 +109,21 @@ class FitsImageAccessParallel : public FitsImageAccess {
         /// @param[in] iax, axis to distribute over: 0, 1 or 2 for x, y, z, i.e., yz planes, xz planes, xy planes
         /// @param[in] nsub, number of subarrays
         /// @param[in] sub, subarray number (0<=sub<nsub)
-        void write_all(const std::string &name, const casacore::Array<float> &arr, int iax,
+        void writeAll(const std::string &name, const casacore::Array<float> &arr, int iax,
                        int nsub=1, int sub=0) const;
 
         /// @brief copy the header of a fits image (i.e., copies the fits 'cards' preceeding the data)
         /// @param[in] infile, the input fits file
         /// @param[in] outfile, the output fits file (overwritten if it exists)
-        void copy_header(const casa::String &infile, const casa::String& outfile) const;
+        void copyHeader(const casa::String &infile, const casa::String& outfile) const;
+
+        /// @brief copy the header of a fits image (i.e., copies the fits 'cards' preceeding the data)
+        ///        off the input file along with the image HISTORY keywords to the output file.
+        /// @param[in] infile, the input fits file
+        /// @param[in] outfile, the output fits file (overwritten if it exists)
+        /// @param[in] historyLines, image HISTORY keywords
+        void copyHeaderWithHistoryKW(const casa::String &infile, const casa::String& outfile,
+                          const std::vector<std::string>& historyLines) const;
 
     private:
         /// @brief check if we can do parallel I/O on the file
@@ -127,14 +136,53 @@ class FitsImageAccessParallel : public FitsImageAccess {
         int blctrcTosection(const casacore::IPosition & blc, const casacore::IPosition & trc) const;
 
         /// @brief determine image dimensions (up to 3 non degenerate axes) and headersize from file
-        void decode_header(const casa::String& infile, casa::IPosition& imageShape, casa::Long& headersize) const;
+        /// param[in]  infile filename
+        /// param[out] imageShape image dimension
+        /// param[out] headerSize the size in bytes of the header section (i.e the start of the
+        /// data section) of a fits file.
+        void decodeHeader(const casa::String& infile, casa::IPosition& imageShape, casa::Long& headersize) const;
 
         /// @brief add padding to the fits file to make it complient
-        void fits_padding(const casa::String& filename) const;
+        /// param[in]  filename   name of fits file
+        void fitsPadding(const casa::String& filename) const;
 
         /// @brief determine the file access pattern, offset to start reading or writing and the buffer shape needed
         void setFileAccess(const casa::String& fullname, casa::IPosition& bufshape,
             MPI_Offset& offset, MPI_Datatype&  filetype, casacore::Int iax, int nsub, int sub) const;
+
+        /// @brief copy the fits keywords (not including the END keyword) from the input fits file in the header array.
+        /// @param[in]  fullinfile fits input file
+        /// @param[out] header an array to store the keywords (minus the END keyword) of the input file
+        /// @param[out] shape image shape
+        /// @param[out] headersize  the size of the header (i.e the file offset to the start data section)
+        /// @param[out] spaceAfterEndKW  the number of bytes (keywrods) in the input fits file up to the
+        ///                              END keyword
+        bool copyHeaderFromFile(const std::string& fullinfile, boost::shared_array<char>& header,
+                                   casa::IPosition& shape, casa::Long& headersize,
+                                   long& spaceAfterEndKW) const;
+
+        /// @brief copy the user input history lines to the format the FITS expected
+        /// @param[in]  historyLines  a list of HISTORY keywords
+        /// @param[out] fitsHistoryLinesBuffer  an array of HISTORY keywords in FITS format
+        /// @param[out] fitsHistoryLinesBufferSize the size of the fitsHistoryLinesBuffer
+        bool formatHistoryLines(const std::vector<std::string>& historyLines,
+                                  boost::shared_array<char>& fitsHistoryLinesBuffer,
+                                  long& fitsHistoryLinesBufferSize) const;
+
+        /// @brief write the keywords of the fits input file plus the HISTORY keywords to the output fits file.
+        /// @param[in]  fulloutfile fits output file
+        /// @param[in] header an array of keywords (minus the END keyword) of the input file
+        /// @param[in] fitsHistoryLinesBuffer  an array of HISTORY keywords in FITS format
+        /// @param[in] headersize  the size of the header (i.e the file offset to the start data section)
+        /// @param[in] fitsHistoryLinesBufferSize the size of the fitsHistoryLinesBuffer
+        /// @param[in] spaceAfterEndKW  the number of bytes (keywrods) in the input fits file up to the
+        ///                             END keyword
+        bool writeHistoryKWToFile(const std::string& fulloutfile, const boost::shared_array<char>& header,
+                                  const boost::shared_array<char>& fitsHistoryLinesBuffer,
+                                  long headersize, long fitsHistoryLinesBufferSize, long spaceAfterEndKW) const;
+
+        static constexpr unsigned long KEYWORD_SIZE = 80; // number of bytes per keyword
+        static constexpr unsigned long KEYWORD_NAME_SIZE = 8; // number of bytes per keyword name
 
         askapparallel::AskapParallel& itsComms;
         uint itsAxis;

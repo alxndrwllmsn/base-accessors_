@@ -5,4 +5,6 @@ tmp.testparset
 tmpemptyfitsimage.fits
 tmpfitsimage.fits
 build
-askap-cmake
+_build
+install
+_install

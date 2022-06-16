@@ -30,9 +30,6 @@
 
 #include <askap_accessors.h>
 
-
-
-
 #include <askap/askap/AskapLogging.h>
 #include <casacore/casa/System/ProgressMeter.h>
 #include <casacore/images/Images/FITSImage.h>
@@ -46,6 +43,8 @@
 #include <askap/imageaccess/FitsImageAccess.h>
 
 #include <fitsio.h>
+#include <tuple>
+#include <map>
 
 ASKAP_LOGGER(logger, ".fitsImageAccessor");
 
@@ -132,8 +131,35 @@ casacore::Vector<casacore::Quantum<double> > FitsImageAccess::beamInfo(const std
     std::string fullname = name + ".fits";
     casacore::FITSImage img(fullname);
     casacore::ImageInfo ii = img.imageInfo();
-    return ii.restoringBeam().toVector();
+    if (img.imageInfo().hasMultipleBeams()) {
+      // read the fits beam keywords - casa doesn't allow separate ref beam with beam table
+      connect(name);
+      ASKAPLOG_DEBUG_STR(logger,"FITSImageAccess::beamInfo return beam from fits keywords");
+      return itsFITSImage->getRestoringBeam();
+    } else {
+      ASKAPLOG_DEBUG_STR(logger,"FITSImageAccess::beamInfo return beam from imageInfo");
+      return ii.restoringBeam().toVector();
+    }
 }
+
+/// @brief obtain beam info
+/// @param[in] name image name
+/// @return beam info list, beamlist will be empty if image only has a single beam
+BeamList FitsImageAccess::beamList(const std::string &name) const
+{
+    std::string fullname = name + ".fits";
+    casacore::FITSImage img(fullname);
+    casacore::ImageInfo ii = img.imageInfo();
+    BeamList bl;
+    if (img.imageInfo().hasMultipleBeams()) {
+      for (int chan = 0; chan < ii.nChannels(); chan++) {
+        casacore::GaussianBeam gb = ii.restoringBeam(chan,0);
+        bl[chan] = gb.toVector();
+      }
+    }
+    return bl;
+}
+
 
 /// @brief obtain pixel units
 /// @param[in] name image name
@@ -163,7 +189,8 @@ std::string FitsImageAccess::getUnits(const std::string &name) const
 /// @details This reads a given keyword to the image metadata.
 /// @param[in] name Image name
 /// @param[in] keyword The name of the metadata keyword
-std::string FitsImageAccess::getMetadataKeyword(const std::string &name, const std::string &keyword) const
+/// @return pair of strings - keyword value and comment
+std::pair<std::string, std::string> FitsImageAccess::getMetadataKeyword(const std::string &name, const std::string &keyword) const
 {
 
     fitsfile *fptr;       /* pointer to the FITS file, defined in fitsio.h */
@@ -176,22 +203,23 @@ std::string FitsImageAccess::getMetadataKeyword(const std::string &name, const s
     status=0;
 
     if (fits_read_key(fptr, TSTRING, keyword.c_str(), value, comment,  &status))
-        ASKAPLOG_WARN_STR(logger, "FITSImageAccess:: Cannot find keyword " << keyword << " - fits_read_key returned status " << status);
+        ASKAPLOG_DEBUG_STR(logger, "FITSImageAccess:: Cannot find keyword " << keyword << " - fits_read_key returned status " << status);
     status=0;
     if (fits_close_file(fptr, &status))
         ASKAPCHECK(status == 0, "FITSImageAccess:: Error on closing file, status="<<status);
 
     std::string valueStr(value);
-    return valueStr;
+    std::string commentStr(comment);
+    return std::pair<std::string,std::string>(valueStr,commentStr);
 }
 
 /// @brief connect accessor to an existing image
 /// @details Instantiates the private FITSImageRW shared pointer.
 /// @param[in] name image name
-void FitsImageAccess::connect(const std::string &name)
+void FitsImageAccess::connect(const std::string &name) const
 {
-    std::string fullname = name + ".fits";
-    itsFITSImage.reset(new FITSImageRW(fullname));
+    //std::string fullname = name + ".fits";
+    itsFITSImage.reset(new FITSImageRW(name));
 }
 
 // writing methods
@@ -356,11 +384,23 @@ void FitsImageAccess::setUnits(const std::string &name, const std::string &units
 /// @param[in] pa position angle in radians
 /// The values are stored in a FITS header - note the FITS standard requires degrees
 /// so these arguments are converted.
-
 void FitsImageAccess::setBeamInfo(const std::string &name, double maj, double min, double pa)
 {
     connect(name);
     itsFITSImage->setRestoringBeam(maj, min, pa);
+}
+
+/// @brief set restoring beam info for all channels
+/// @details For the restored image we want to carry size and orientation of the restoring beam
+/// with the image. This method allows to assign this info for all channels
+/// @param[in] name image name
+/// @param[in] beamlist list of beams
+/// The values are stored in a FITS binary table - note the FITS standard requires degrees
+/// so these arguments are converted.
+void FitsImageAccess::setBeamInfo(const std::string &name, const BeamList& beamlist)
+{
+    connect(name);
+    itsFITSImage->setRestoringBeam(beamlist);
 }
 
 /// @brief apply mask to image
@@ -388,12 +428,29 @@ void FitsImageAccess::setMetadataKeyword(const std::string &name, const std::str
     itsFITSImage->setHeader(keyword, value, desc);
 }
 
-/// @brief Add a HISTORY message to the image metadata
-/// @details Adds a string detailing the history of the image
-/// @param[in] name Image name
-/// @param[in] history History comment to add
-void FitsImageAccess::addHistory(const std::string &name, const std::string &history)
+void FitsImageAccess::setMetadataKeywords(const std::string &name, const LOFAR::ParameterSet &keywords)
 {
     connect(name);
-    itsFITSImage->addHistory(history);
+    itsFITSImage->setHeader(keywords);
+}
+
+/// @brief Add HISTORY messages to the image metadata
+/// @details Adds a list of strings detailing the history of the image
+/// @param[in] name Image name
+/// @param[in] historyLines History comments to add
+void FitsImageAccess::addHistory(const std::string &name, const std::vector<std::string> &historyLines)
+{
+    connect(name);
+    itsFITSImage->addHistory(historyLines);
+}
+
+void FitsImageAccess::setInfo(const std::string &name, const casacore::RecordInterface &info)
+{
+    connect(name);
+    itsFITSImage->setInfo(info);
+}
+void FitsImageAccess::getInfo(const std::string &name, const std::string& tableName, casacore::Record &info)
+{
+    connect(name);
+    itsFITSImage->getInfo(tableName,info);
 }
