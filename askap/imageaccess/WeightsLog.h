@@ -36,6 +36,7 @@
 // ASKAPsoft includes
 #include <askap/askapparallel/AskapParallel.h>
 #include <casacore/casa/Arrays/Vector.h>
+#include <casacore/casa/Containers/Record.h>
 #include <Common/ParameterSet.h>
 
 namespace askap {
