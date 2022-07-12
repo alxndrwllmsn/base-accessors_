@@ -4,4 +4,4 @@ set ( LOFAR_BLOB_TAG               release/1.3.0                               C
 set ( BASE_ASKAP_TAG               release/1.5.0                               CACHE  STRING    "base-askap version"               FORCE )
 set ( BASE_ASKAPPARRALLEL_TAG      release/1.3.0                               CACHE  STRING    "base-askapparrallel version"      FORCE )
 set ( BASE_IMAGEMATH_TAG           release/1.6.0                               CACHE  STRING    "base-imagemath version"           FORCE )
-set ( BASE_SCIMATH_TAG             release/1.6.0                               CACHE  STRING    "base-scimath version"             FORCE )
+set ( BASE_SCIMATH_TAG             release/1.7.0                               CACHE  STRING    "base-scimath version"             FORCE )
