@@ -119,7 +119,6 @@ DopplerConverter::operator()(const casacore::MRadialVelocity &vel) const
 /// velocity).
 casacore::MRadialVelocity::Types
 DopplerConverter::freqToVelType(casacore::MFrequency::Types type)
-                                throw(DataAccessLogicError)
 {
   switch(type) {
     case casacore::MFrequency::LSRK: return casacore::MRadialVelocity::LSRK;
@@ -143,7 +142,6 @@ DopplerConverter::freqToVelType(casacore::MFrequency::Types type)
 /// @return resulting frequency frame type
 casacore::MFrequency::Types
 DopplerConverter::velToFreqType(casacore::MRadialVelocity::Types type)
-                                             throw(DataAccessLogicError)
 {
   switch(type) {
     case casacore::MRadialVelocity::LSRK: return casacore::MFrequency::LSRK;

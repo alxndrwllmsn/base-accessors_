@@ -103,15 +103,13 @@ protected:
     /// MFrequency::REST (it doesn't make sense to always return zero
     /// velocity).
     static casacore::MRadialVelocity::Types
-        freqToVelType(casacore::MFrequency::Types type)
-	                throw(DataAccessLogicError);
+        freqToVelType(casacore::MFrequency::Types type);
 
     /// convert velocity frame type to frequency frame type
     /// @param[in] type velocity frame type to convert
     /// @return resulting frequency frame type
     static casacore::MFrequency::Types
-      velToFreqType(casacore::MRadialVelocity::Types type)
-                        throw(DataAccessLogicError);
+      velToFreqType(casacore::MRadialVelocity::Types type);
 		 
 private:
     /// doppler converters:
