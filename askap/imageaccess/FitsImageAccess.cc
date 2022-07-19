@@ -30,9 +30,6 @@
 
 #include <askap_accessors.h>
 
-
-
-
 #include <askap/askap/AskapLogging.h>
 #include <casacore/casa/System/ProgressMeter.h>
 #include <casacore/images/Images/FITSImage.h>
@@ -46,6 +43,8 @@
 #include <askap/imageaccess/FitsImageAccess.h>
 
 #include <fitsio.h>
+#include <tuple>
+#include <map>
 
 ASKAP_LOGGER(logger, ".fitsImageAccessor");
 
@@ -132,21 +131,31 @@ casacore::Vector<casacore::Quantum<double> > FitsImageAccess::beamInfo(const std
     std::string fullname = name + ".fits";
     casacore::FITSImage img(fullname);
     casacore::ImageInfo ii = img.imageInfo();
-    return ii.restoringBeam().toVector();
+    if (img.imageInfo().hasMultipleBeams()) {
+      // read the fits beam keywords - casa doesn't allow separate ref beam with beam table
+      connect(name);
+      ASKAPLOG_DEBUG_STR(logger,"FITSImageAccess::beamInfo return beam from fits keywords");
+      return itsFITSImage->getRestoringBeam();
+    } else {
+      ASKAPLOG_DEBUG_STR(logger,"FITSImageAccess::beamInfo return beam from imageInfo");
+      return ii.restoringBeam().toVector();
+    }
 }
 
 /// @brief obtain beam info
 /// @param[in] name image name
-/// @return beam info list
+/// @return beam info list, beamlist will be empty if image only has a single beam
 BeamList FitsImageAccess::beamList(const std::string &name) const
 {
     std::string fullname = name + ".fits";
     casacore::FITSImage img(fullname);
     casacore::ImageInfo ii = img.imageInfo();
     BeamList bl;
-    for (int chan = 0; chan < ii.nChannels(); chan++) {
-      casacore::GaussianBeam gb = ii.restoringBeam(chan,0);
-      bl[chan] = gb.toVector();
+    if (img.imageInfo().hasMultipleBeams()) {
+      for (int chan = 0; chan < ii.nChannels(); chan++) {
+        casacore::GaussianBeam gb = ii.restoringBeam(chan,0);
+        bl[chan] = gb.toVector();
+      }
     }
     return bl;
 }
@@ -194,7 +203,7 @@ std::pair<std::string, std::string> FitsImageAccess::getMetadataKeyword(const st
     status=0;
 
     if (fits_read_key(fptr, TSTRING, keyword.c_str(), value, comment,  &status))
-        ASKAPLOG_WARN_STR(logger, "FITSImageAccess:: Cannot find keyword " << keyword << " - fits_read_key returned status " << status);
+        ASKAPLOG_DEBUG_STR(logger, "FITSImageAccess:: Cannot find keyword " << keyword << " - fits_read_key returned status " << status);
     status=0;
     if (fits_close_file(fptr, &status))
         ASKAPCHECK(status == 0, "FITSImageAccess:: Error on closing file, status="<<status);
@@ -207,10 +216,10 @@ std::pair<std::string, std::string> FitsImageAccess::getMetadataKeyword(const st
 /// @brief connect accessor to an existing image
 /// @details Instantiates the private FITSImageRW shared pointer.
 /// @param[in] name image name
-void FitsImageAccess::connect(const std::string &name)
+void FitsImageAccess::connect(const std::string &name) const
 {
-    std::string fullname = name + ".fits";
-    itsFITSImage.reset(new FITSImageRW(fullname));
+    //std::string fullname = name + ".fits";
+    itsFITSImage.reset(new FITSImageRW(name));
 }
 
 // writing methods
@@ -425,17 +434,6 @@ void FitsImageAccess::setMetadataKeywords(const std::string &name, const LOFAR::
     itsFITSImage->setHeader(keywords);
 }
 
-
-/// @brief Add a HISTORY message to the image metadata
-/// @details Adds a string detailing the history of the image
-/// @param[in] name Image name
-/// @param[in] history History comment to add
-void FitsImageAccess::addHistory(const std::string &name, const std::string &history)
-{
-    connect(name);
-    itsFITSImage->addHistory(history);
-}
-
 /// @brief Add HISTORY messages to the image metadata
 /// @details Adds a list of strings detailing the history of the image
 /// @param[in] name Image name
@@ -444,4 +442,15 @@ void FitsImageAccess::addHistory(const std::string &name, const std::vector<std:
 {
     connect(name);
     itsFITSImage->addHistory(historyLines);
+}
+
+void FitsImageAccess::setInfo(const std::string &name, const casacore::RecordInterface &info)
+{
+    connect(name);
+    itsFITSImage->setInfo(info);
+}
+void FitsImageAccess::getInfo(const std::string &name, const std::string& tableName, casacore::Record &info)
+{
+    connect(name);
+    itsFITSImage->getInfo(tableName,info);
 }

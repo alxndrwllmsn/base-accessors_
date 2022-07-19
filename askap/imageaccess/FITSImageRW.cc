@@ -42,9 +42,11 @@
 #include <casacore/casa/Quanta/MVTime.h>
 #include <askap/imageaccess/FITSImageRW.h>
 
+#include <boost/shared_array.hpp>
+#include <boost/algorithm/string.hpp>
+
 #include <fitsio.h>
 #include <iostream>
-#include <fstream>
 
 ASKAP_LOGGER(FITSlogger, ".FITSImageRW");
 
@@ -67,11 +69,49 @@ void printerror(int status)
 
 using namespace askap;
 using namespace askap::accessors;
+FITSImageRW::CPointerWrapper::CPointerWrapper(unsigned int numColumns)
+    : itsNumColumns(numColumns),
+      itsTType  { new char* [sizeof(char*) * numColumns] },
+      itsTForm { new char* [sizeof(char*) * numColumns] },
+      itsUnits { new char* [sizeof(char*) * numColumns] }
+{
+    for ( unsigned int i = 0; i < itsNumColumns; i++ ) {
+        itsTType[i] = nullptr;
+        itsTForm[i] = nullptr;
+        itsUnits[i] = nullptr;
+    }
+}
 
+FITSImageRW::CPointerWrapper::~CPointerWrapper()
+{
+    for ( unsigned int i = 0; i < itsNumColumns; i++ ) {
+    {
+        if ( itsTType[i] != nullptr ) {
+            delete [] itsTType[i];
+        }
+        if ( itsTForm[i] != nullptr ) {
+            delete [] itsTForm[i];
+        }
+        if ( itsUnits[i] != nullptr )
+            delete [] itsUnits[i];
+        }
+    }
+
+    if ( itsTType != nullptr ) {
+        delete [] itsTType;
+    }
+    if ( itsTForm != nullptr ) {
+        delete [] itsTForm;
+    }
+    if ( itsUnits != nullptr ) {
+        delete [] itsUnits;
+    }
+}
+///////////////////////////////////////////////////
 FITSImageRW::FITSImageRW(const std::string &name)
 {
     std::string fullname = name + ".fits";
-    this->name = std::string(name.c_str());
+    this->name = std::string(fullname.c_str());
 }
 FITSImageRW::FITSImageRW()
 {
@@ -520,8 +560,7 @@ void FITSImageRW::setHeader(const LOFAR::ParameterSet & keywords)
         if (type == "INT") {
           try {
             int intVal = std::stoi(value);
-            if (fits_update_key(fptr, TINT, keyword.c_str(), &intVal,
-            desc.c_str(), &status)) {
+            if (fits_update_key(fptr, TINT, keyword.c_str(), &intVal, desc.c_str(), &status)) {
               printerror(status);
             }
           } catch (const std::invalid_argument&) {
@@ -532,8 +571,7 @@ void FITSImageRW::setHeader(const LOFAR::ParameterSet & keywords)
         } else if (type == "DOUBLE") {
           try {
             double doubleVal = std::stod(value);
-            if (fits_update_key(fptr, TDOUBLE, keyword.c_str(), &doubleVal,
-            desc.c_str(), &status)) {
+            if (fits_update_key(fptr, TDOUBLE, keyword.c_str(), &doubleVal, desc.c_str(), &status)) {
               printerror(status);
             }
           } catch (const std::invalid_argument&) {
@@ -542,8 +580,7 @@ void FITSImageRW::setHeader(const LOFAR::ParameterSet & keywords)
             ASKAPLOG_WARN_STR(FITSlogger, "Out of range double value for header keyword "<<keyword<<" : "<<value);
           }
         } else if (type == "STRING") {
-          if (fits_update_key(fptr, TSTRING, keyword.c_str(), (char *)value.c_str(),
-          desc.c_str(), &status)) {
+          if (fits_update_key(fptr, TSTRING, keyword.c_str(), (char *)value.c_str(), desc.c_str(), &status)) {
             printerror(status);
           }
         } else {
@@ -586,6 +623,37 @@ void FITSImageRW::setRestoringBeam(double maj, double min, double pa)
     if (fits_close_file(fptr, &status))
         printerror(status);
 
+}
+
+casacore::Vector<casacore::Quantity> FITSImageRW::getRestoringBeam() const
+{
+    ASKAPLOG_DEBUG_STR(FITSlogger, "Getting Beam info");
+    fitsfile *fptr;       /* pointer to the FITS file, defined in fitsio.h */
+    int status = 0;
+    const double radtodeg = 360. / (2 * M_PI);
+    char comment[1024];
+
+    if (fits_open_file(&fptr, this->name.c_str(), READONLY, &status)) {
+      printerror(status);
+    }
+    double bmaj = 0, bmin = 0, bpa = 0;
+    if (fits_read_key(fptr, TDOUBLE, "BMAJ", &bmaj, comment, &status)) {
+        ASKAPLOG_WARN_STR(FITSlogger, "FITSImageAccess:: Cannot find keyword BMAJ - fits_read_key returned status " << status);
+    } else if (fits_read_key(fptr, TDOUBLE, "BMIN", &bmin, comment, &status)) {
+        ASKAPLOG_WARN_STR(FITSlogger, "FITSImageAccess:: Cannot find keyword BMIN - fits_read_key returned status " << status);
+    } else if (fits_read_key(fptr, TDOUBLE, "BPA", &bpa, comment, &status)) {
+        ASKAPLOG_WARN_STR(FITSlogger, "FITSImageAccess:: Cannot find keyword BPA - fits_read_key returned status " << status);
+    }
+    status=0;
+    if (fits_close_file(fptr, &status)) {
+      printerror(status);
+    }
+
+    casacore::Vector<casacore::Quantity> beam(3);
+    beam(0) = casacore::Quantity(bmaj/radtodeg,"rad");
+    beam(1) = casacore::Quantity(bmin/radtodeg,"rad");
+    beam(2) = casacore::Quantity(bpa/radtodeg,"rad");
+    return beam;
 }
 
 void FITSImageRW::setRestoringBeam(const BeamList & beamlist)
@@ -641,23 +709,6 @@ void FITSImageRW::setRestoringBeam(const BeamList & beamlist)
   }
 }
 
-void FITSImageRW::addHistory(const std::string &history)
-{
-
-    ASKAPLOG_INFO_STR(FITSlogger,"Adding HISTORY string: " << history);
-    fitsfile *fptr;       /* pointer to the FITS file, defined in fitsio.h */
-    int status = 0;
-    if ( fits_open_file(&fptr, this->name.c_str(), READWRITE, &status) )
-        printerror( status );
-
-    if ( fits_write_history(fptr, history.c_str(), &status) )
-        printerror( status );
-
-    if ( fits_close_file(fptr, &status) )
-        printerror( status );
-
-}
-
 void FITSImageRW::addHistory(const std::vector<std::string> &historyLines)
 {
     fitsfile *fptr;       /* pointer to the FITS file, defined in fitsio.h */
@@ -679,4 +730,552 @@ void FITSImageRW::addHistory(const std::vector<std::string> &historyLines)
 
 FITSImageRW::~FITSImageRW()
 {
+}
+
+
+/// @brief check the given info object confirms to the requirements specified in the setInfo() method
+/// @param[in] info  the casacore::Record object to be validated.
+void FITSImageRW::setInfoValidityCheck(const casacore::RecordInterface &info)
+{
+    casacore::uInt subRecordFieldId = 0;
+    int numSubRecord = 0;
+    casacore::uInt nFields = info.nfields();
+    for(casacore::uInt f = 0; f < nFields; f++) {
+        std::string name = info.name(f);
+        casacore::DataType type = info.dataType(f);
+        if ( type == casacore::DataType::TpRecord ) {
+            numSubRecord += 1;
+            subRecordFieldId = f;
+        } else if ( type != casacore::DataType::TpDouble &&
+                    type != casacore::DataType::TpString &&
+                    type != casacore::DataType::TpFloat &&
+                    type != casacore::DataType::TpInt &&
+                    type != casacore::DataType::TpInt64 &&
+                    type != casacore::DataType::TpUInt ) {
+            // check the datatypes of the info object itself.
+            // fields that are not subrecord are treated as table keywords and they can only
+            // have the following types: string, double, float and int
+            ASKAPLOG_WARN_STR(FITSlogger,"field (table keyword) " << name << " has incorrect datatype. Supported datatype are: TpString, TpDouble, TpFloat, TpInt, TpInt64 and TpUInt.");
+            ASKAPASSERT(false);
+        }
+    }
+    // info should have only one sub record
+    ASKAPCHECK(numSubRecord == 1, "info record should have one and only one sub record");
+
+    // check if the subrecord has a "Units" field name
+    bool foundUnitsField = false;
+    const casacore::RecordInterface& subRec = info.asRecord(subRecordFieldId);
+    nFields = subRec.nfields();
+    for(casacore::uInt f = 0; f < nFields; f++) {
+        if ( subRec.name(f) == "Units" ) {
+            foundUnitsField = true;
+            break;
+        }
+    }
+    ASKAPCHECK(foundUnitsField == true, "info's subrecord should contain a Units field name");
+
+    // check the fields have the only datatypes supported
+    for(casacore::uInt f = 0; f < nFields; f++) {
+        casacore::String name = subRec.name(f);
+        casacore::DataType type = subRec.dataType(f) ;
+        if ( type != casacore::DataType::TpArrayDouble &&
+             type != casacore::DataType::TpArrayString &&
+             type != casacore::DataType::TpArrayFloat &&
+             type != casacore::DataType::TpArrayInt &&
+             type != casacore::DataType::TpArrayInt64 &&
+             type != casacore::DataType::TpArrayUInt ) {
+             std::stringstream ss;
+             ASKAPLOG_WARN_STR(FITSlogger,"field " << name << " has incorrect datatype. Supported datatype are: TpArrayDouble,  TpArrayString, TpAarrayFloat, TpArrayInt, TpArrayUInt and TpArrayInt64.");
+             ASKAPASSERT(false);
+        }
+    }
+}
+
+/// @brief this method creates and writes the keywords and table data stored in the casacore::Record
+///        to the FITS binary table.
+/// @param[in] info  keywords and table data kept in the casacore::Record
+void FITSImageRW::createTable(const casacore::RecordInterface &info)
+{
+    // find the sub record. it is the table we want to create
+    casacore::uInt nFields = info.nfields();
+    casacore::uInt subRecordFieldId = 0;
+    std::string tableName = "";
+    for(int f = 0; f < nFields; f++) {
+        casacore::DataType type = info.dataType(f);
+        if ( type == casacore::DataType::TpRecord ) {
+            // subRec is a binary table. what should be here are columns info in the binary table
+            subRecordFieldId = f;
+            tableName = info.name(f);
+       }
+    }
+
+    const casacore::RecordInterface& table = info.asRecord(subRecordFieldId);
+
+    nFields = table.nfields(); // this is the number of columns in the table
+
+    // the subRecord has nfield but we know one of them is a "Units" field
+    // which is not part of the table columns
+    const casacore::uInt numCol = nFields - 1;
+    CPointerWrapper cPointerWrapper { numCol };
+
+    // store number of rows per column
+    std::vector<long>  rows;
+    for(int f = 0; f < nFields; f++) {
+        casacore::String name = table.name(f); // column name
+        casacore::DataType type = table.dataType(f); // column datatype
+        if ( name != "Units" ) {
+            cPointerWrapper.itsTType[f] = new char[sizeof(char)*name.length() + 1];
+            std::memset(cPointerWrapper.itsTType[f],'\0',name.length() + 1);
+            std::memcpy(cPointerWrapper.itsTType[f],name.data(),name.length());
+            // these fields are transformed into fits binary table columns
+            // so we have to work out the tfrom and ttype for them
+            if ( type == casacore::DataType::TpArrayDouble ) {
+                //std::cout << "column name: " << name << ", column type: TpArrayDouble" << std::endl;
+                casacore::Array<double> doubleArr;
+                table.get(f,doubleArr);
+                rows.emplace_back(doubleArr.capacity());
+
+                cPointerWrapper.itsTForm[f] = new char[sizeof(char)*3];
+                std::memset(cPointerWrapper.itsTForm[f],3,'\0');
+                std::memcpy(cPointerWrapper.itsTForm[f],"1D",2);
+            } else if ( type == casacore::DataType::TpArrayString ) {
+                casacore::Array<casacore::String> stringArr;
+                table.get(f,stringArr);
+                rows.emplace_back(stringArr.capacity());
+                // assume that the column that has string value has max 20 character
+                cPointerWrapper.itsTForm[f] = new char[sizeof(char)*4];
+                std::memset(cPointerWrapper.itsTForm[f],'\0',4);
+                std::memcpy(cPointerWrapper.itsTForm[f],"20a",3);
+            } else if ( type == casacore::DataType::TpArrayFloat ) {
+                casacore::Array<float> floatArr;
+                table.get(f,floatArr);
+                rows.emplace_back(floatArr.capacity());
+                cPointerWrapper.itsTForm[f] = new char[sizeof(char)*3];
+                std::memset(cPointerWrapper.itsTForm[f],'\0',3);
+                std::memcpy(cPointerWrapper.itsTForm[f],"1E",2);
+            } else if ( type == casacore::DataType::TpArrayInt ) {
+                casacore::Array<int> intArr;
+                table.get(f,intArr);
+                rows.emplace_back(intArr.capacity());
+                cPointerWrapper.itsTForm[f] = new char[sizeof(char)*3];
+                std::memset(cPointerWrapper.itsTForm[f],'\0',3);
+                std::memcpy(cPointerWrapper.itsTForm[f],"1J",2);
+            } else if ( type == casacore::DataType::TpArrayUInt ) {
+                casacore::Array<unsigned int> uintArr;
+                table.get(f,uintArr);
+                rows.emplace_back(uintArr.capacity());
+                cPointerWrapper.itsTForm[f] = new char[sizeof(char)*3];
+                std::memset(cPointerWrapper.itsTForm[f],'\0',3);
+                std::memcpy(cPointerWrapper.itsTForm[f],"1V",2);
+            } else if ( type == casacore::DataType::TpArrayInt64 ) {
+                casacore::Array<long long> int64Arr;
+                table.get(f,int64Arr);
+                rows.emplace_back(int64Arr.capacity());
+                cPointerWrapper.itsTForm[f] = new char[sizeof(char)*3];
+                std::memset(cPointerWrapper.itsTForm[f],'\0',3);
+                std::memcpy(cPointerWrapper.itsTForm[f],"1K",2);
+            }
+        } else {
+            // this is a Units field. We expects an array of strings i.e the first unit
+            // is the unit for column 1 and so on
+            if ( type == casacore::DataType::TpArrayString ) {
+                casacore::Array<casacore::String> stringArr;
+                table.get(f,stringArr);
+                auto numUnits = static_cast<int> (stringArr.capacity());
+                std::vector<casacore::String> v = stringArr.tovector();
+                //cPointerWrapper.itsUnits = new char* [sizeof(char*) * numUnits];
+                for (int i = 0; i < numUnits; i++) {
+                    cPointerWrapper.itsUnits[i] = new char[sizeof(char) * (v[i].length())];
+                    std::memset(cPointerWrapper.itsUnits[i],'\0',1 + v[i].length());
+                    std::memcpy(cPointerWrapper.itsUnits[i],v[i].data(),v[i].length());
+                }
+            }
+        }
+    }
+
+    ASKAPCHECK(rows.empty() == false, "FITSImageRW::createTable does not contain any rows of data");
+
+    fitsfile *fptr;
+    int status = 0;
+    std::vector<long>::iterator maxIter = std::max_element(rows.begin(),rows.end());
+    long maxRow = *maxIter;
+
+    if (fits_open_file(&fptr, this->name.c_str(), READWRITE, &status))
+        printerror(status);
+
+    auto t = cPointerWrapper.itsTType;
+    auto f = cPointerWrapper.itsTForm;
+    auto u = cPointerWrapper.itsUnits;
+    if ( fits_create_tbl( fptr, BINARY_TBL, 0, nFields - 1, t, f, u, tableName.c_str(), &status) )
+        printerror(status);
+
+    // write table keywords
+    writeTableKeywords(fptr,info);
+
+    // write the table columns
+    writeTableColumns(fptr,table);
+
+    if (fits_close_file(fptr, &status))
+        printerror(status);
+
+}
+
+/// @brief a helper method to write the casacore::Record to the FITS binary table columns.
+/// @param[in] fptr  FITS file pointer. The file must be opened for writting before calling this
+///                  method. It does not close the file pointer after the call.
+/// @param[in] table a casacore::Record contains the columns' data to be written FITS binary table.
+///                  The Record (table) must confirm to the format outlined in the
+///                  FitsImageAccess::setInfo() method.
+void FITSImageRW::writeTableColumns(fitsfile *fptr, const casacore::RecordInterface &table)
+{
+    auto nFields = table.nfields();
+
+
+    int status = 0;
+    long firstrow = 1;
+    long firstelem = 1;
+    for(int f = 0; f < nFields; f++) {
+        // Write the actual data to the binary table rows and columns
+        casacore::String name = table.name(f);
+        // Ignore the "Units"field
+        if ( name == "Units" ) continue;
+
+        casacore::DataType type = table.dataType(f);
+        if ( type == casacore::DataType::TpArrayDouble ) {
+            casacore::Array<double> doubleArr;
+            table.get(f,doubleArr);
+            long nrows = doubleArr.capacity();
+            fits_write_col(fptr, TDOUBLE, f+1, firstrow, firstelem, nrows, doubleArr.data(), &status);
+        } else if ( type == casacore::DataType::TpArrayFloat ) {
+            casacore::Array<float> floatArr;
+            table.get(f,floatArr);
+            long nrows = floatArr.capacity();
+            fits_write_col(fptr, TFLOAT, f+1, firstrow, firstelem, nrows, floatArr.data(), &status);
+        } else if ( type == casacore::DataType::TpArrayInt ) {
+            casacore::Array<int> intArr;
+            table.get(f,intArr);
+            long nrows = intArr.capacity();
+            fits_write_col(fptr, TINT, f+1, firstrow, firstelem, nrows, intArr.data(), &status);
+        } else if ( type == casacore::DataType::TpArrayUInt ) {
+            casacore::Array<unsigned int> uintArr;
+            table.get(f,uintArr);
+            long nrows = uintArr.capacity();
+            fits_write_col(fptr, TUINT, f+1, firstrow, firstelem, nrows, uintArr.data(), &status);
+        } else if ( type == casacore::DataType::TpArrayInt64 ) {
+            casacore::Array<long long> int64Arr;
+            table.get(f,int64Arr);
+            long nrows = int64Arr.capacity();
+            fits_write_col(fptr, TLONGLONG, f+1, firstrow, firstelem, nrows, int64Arr.data(), &status);
+        } else if ( type == casacore::DataType::TpArrayString ) {
+            casacore::Array<casacore::String> stringArr;
+            table.get(f,stringArr);
+            long nrows = stringArr.capacity();
+            std::vector<casacore::String> v = stringArr.tovector();
+            long frow = 1;
+            long felem = 1;
+            // write the data to the binary table column one cell at a time
+            for (long i = 0; i < nrows; i++) {
+                boost::shared_array<char> ptr {new char[sizeof(char) * (v[i].length() + 1)]};
+                std::fill_n(ptr.get(),v[i].length() + 1,'\0');
+                std::copy_n(v[i].data(),v[i].length(),ptr.get());
+                char* bptr[] = { ptr.get() };
+                if ( fits_write_col(fptr, TSTRING, f+1, frow, firstelem, 1, bptr, &status) ) {
+                    printerror(status);
+                }
+                frow += 1;
+            }
+        }
+    }
+}
+
+/// @brief a helper method to write the keywords to FITS binary table
+/// @param[in] fptr  FITS file pointer. The file must be opened for writting before calling this
+///                  method. It does not close the file pointer after the call
+/// @param[in] tableKeywords  a map of FITS keywords to be written to the FITS table
+void FITSImageRW::writeTableKeywords(fitsfile* fptr, const casacore::RecordInterface& info)
+{
+  casacore::uInt subRecordFieldId = 0;
+  std::string tableName = "";
+  const casacore::uInt nFields = info.nfields();
+  int status = 0;
+  for(casacore::uInt f = 0; f < nFields; f++) {
+      casacore::DataType type = info.dataType(f);
+      std::string name = info.name(f);
+      std::string comment = info.comment(f);
+      if ( type == casacore::DataType::TpRecord ) {
+          subRecordFieldId = f;
+          tableName = name;
+      } else if ( type == casacore::DataType::TpDouble ) {
+          double value = 0.0;
+          info.get(f,value);
+          fits_update_key(fptr, TDOUBLE, name.c_str(), &value, comment.c_str(), &status);
+      } else if ( type == casacore::DataType::TpFloat ) {
+          float value = 0.0;
+          info.get(f,value);
+          fits_update_key(fptr, TFLOAT, name.c_str(), &value, comment.c_str(), &status);
+      } else if ( type == casacore::DataType::TpInt ) {
+          int value = 0;
+          info.get(f,value);
+          fits_update_key(fptr, TINT, name.c_str(), &value, comment.c_str(), &status);
+      } else if ( type == casacore::DataType::TpString ) {
+          casacore::String value = "";
+          info.get(f,value);
+          fits_update_key(fptr, TSTRING, name.c_str(), (char *)value.c_str(), comment.c_str(), &status);
+      } else if ( type == casacore::DataType::TpUInt ) {
+          unsigned int value = 0;
+          info.get(f,value);
+          fits_update_key(fptr, TUINT, name.c_str(), &value, comment.c_str(), &status);
+      } else if ( type == casacore::DataType::TpInt64 ) {
+          long long value = 0;
+          info.get(f,value);
+          fits_update_key(fptr, TLONGLONG, name.c_str(), &value, comment.c_str(), &status);
+      }
+  }
+}
+
+/// @brief this method is the implementation of the interface FitsImageAccess::setInfo()
+/// @see the description in FitsImageAccess::setInfo() for details.
+/// @param[in] the top level casacore::Record object.
+void FITSImageRW::setInfo(const casacore::RecordInterface &info)
+{
+    setInfoValidityCheck(info);
+    createTable(info);
+}
+
+/// @brief this method is the implementation of the interface FitsImageAccess::getInfo()
+/// @see the description in FitsImageAccess::getInfo() for details.
+/// @param[in] tbleName  name of the table in the FITS file
+/// @param[in] the top level casacore::Record object.
+void FITSImageRW::getInfo(const std::string& tblName,casacore::RecordInterface &info) const
+{
+    ASKAPLOG_DEBUG_STR(FITSlogger, "FITSImageRW::getInfo. tblName: " << tblName);
+
+    fitsfile *fptr;
+    int hdunum = -1;
+    int hdutype = -1;
+    int status = 0;
+
+    if ( fits_open_file(&fptr,this->name.c_str(),READONLY,&status) )
+         printerror( status );
+
+    if ( fits_get_num_hdus(fptr,&hdunum,&status) )
+        printerror( status );
+
+    for (int hdu = 2; hdu <= hdunum; hdu++) {
+        casacore::Record table;
+
+        if ( fits_movabs_hdu(fptr, hdu, &hdutype, &status) )
+           printerror( status );
+
+        // read the table name
+        char tableNameKW[FLEN_VALUE];
+        char tableNameComment[FLEN_COMMENT];
+        if ( fits_read_key_str(fptr, "EXTNAME",tableNameKW,tableNameComment,&status) )
+            printerror( status );
+
+        std::string tableExtName = tableNameKW;
+        ASKAPLOG_DEBUG_STR(FITSlogger, "FITSImageRW::getInfo. tblName: " << tblName << ", tableExtName: " << tableExtName);
+        // check if we copy all the table or only get the table with name "tblName
+        if ( (tblName != "All") && (tblName != tableExtName) ) {
+            continue;
+        }
+
+        // copy table header
+        copyTableExtKeywords(fptr,table,status);
+
+        // read the number of columns
+        char tFields[FLEN_VALUE];
+        char comment[FLEN_COMMENT];
+        if ( fits_read_key_str(fptr, "TFIELDS",tFields,comment,&status) ){
+            printerror( status );
+        }
+        int numColumns = std::atoi(tFields);
+        CPointerWrapper cPtrWrapper(numColumns);
+        for (int i = 0; i < numColumns; i++) {
+            cPtrWrapper.itsTType[i] = new char [FLEN_VALUE]; // max label length = 69. defined in cfitsio
+            cPtrWrapper.itsTForm[i] = new char [FLEN_VALUE];
+        }
+        int nfound = -1;
+        // read the TFORMn to workout the datatype
+        if ( fits_read_keys_str(fptr, "TFORM", 1, numColumns, cPtrWrapper.itsTForm, &nfound, &status) ){
+            printerror( status );
+        }
+        // read the column names from the TTYPEn keywords
+        if ( fits_read_keys_str(fptr, "TTYPE", 1, numColumns, cPtrWrapper.itsTType, &nfound, &status) ){
+            printerror( status );
+        }
+        long nelem; // this is the number of rows to read
+        if ( fits_get_num_rows(fptr,&nelem,&status) ){
+            printerror( status );
+        }
+        ASKAPLOG_DEBUG_STR(FITSlogger, "FITSImageRW::getInfo. copyFitsToCasaa. hdu:  " << hdu
+                          << ". nelem: " << nelem << ". numColumns: " << numColumns);
+        casacore::Record sub;
+        copyFitsToCasa(fptr,nelem,numColumns,cPtrWrapper,status,sub);
+        table.defineRecord(tableExtName,sub);
+        info.defineRecord(tableExtName,table);
+    }
+    if (fits_close_file(fptr, &status)){
+        printerror(status);
+    }
+}
+
+/// @brief this method gets the FITS table column that contains string data.
+/// param[in] fptr - fits file pointer. Must be opened before calling this method.
+/// param[in] columnName - name of the column
+/// param[in] columnNum - column number of the FITS table
+/// param[in] frow - first row
+/// param[in] felem - first element
+/// param[in] nelem - number of road to read
+/// param[in] strnull
+/// param[in] anynull
+/// param[in] status - status of the fits call
+/// param[out] table - casacore::Record to store the FITS binary table data
+void FITSImageRW::getStringColumnType(fitsfile* fptr,const std::string& columnName,
+                                      long columnNum,long frow,long felem,long nelem,
+                                      char* strnull, int& anynull, int& status,
+                                      char** stringArrayValues,casacore::Record& table) const
+{
+    if (fits_read_col(fptr,TSTRING,columnNum,frow,felem,nelem,strnull,
+                      stringArrayValues, &anynull, &status))
+        printerror( status );
+
+    // copy the column data (arrayOfStringValues.itsTType) to casa array
+    casacore::IPosition shape(1);
+    shape(0) = nelem;
+    casacore::Array<casacore::String> casaStrArr(shape);
+    int index = 0;
+    casacore::Array<casacore::String>::iterator iterend(casaStrArr.end());
+    for (casacore::Array<casacore::String>::iterator iter=casaStrArr.begin();
+        iter!=iterend; ++iter) {
+        *iter = stringArrayValues[index];
+        index += 1;
+    }
+    table.define(columnName,casaStrArr);
+}
+
+/// @brief helper method. It copies FITS table data to casacore::Record
+/// param[in] fptr - fits file pointer. Must be opened before calling this method.
+/// param[in] nelem - number of road to read
+/// param[in] numColumns - column to read
+/// param[in] cPtrWrapper - wrapper class for c pointer
+/// param[in] status - status of the fits call
+/// param[out] table - casacore::Record to store the FITS binary table data
+void FITSImageRW::copyFitsToCasa(fitsfile* fptr,long nelem, long numColumns,
+                                 CPointerWrapper& cPtrWrapper, int& status,
+                                 casacore::Record& table) const
+{
+    for ( int i = 0; i < numColumns; i++ ) {
+        std::string columnType = cPtrWrapper.itsTForm[i];
+        std::string columnName = cPtrWrapper.itsTType[i];
+        long frow = 1;
+        long felem = 1;
+        int anynull;
+        char strnull[10];
+        std::copy_n(" ",10,strnull);
+        if ( columnType.find("A") != std::string::npos ) {
+            // convert to casacore string array
+            // read the column values
+            CPointerWrapper arrayOfStringValues(nelem);
+            for (int j = 0; j < nelem; j++) {
+                arrayOfStringValues.itsTType[j] = new char[FLEN_VALUE];
+            }
+            // here we use the CPointerWrapper.itsType pointer to store the
+            getStringColumnType(fptr,columnName,i+1,frow,felem,nelem,
+                                strnull, anynull,status,
+                                arrayOfStringValues.itsTType,
+                                table);
+        } else if ( columnType.find("E") != std::string::npos ) {
+            // convert to casacore float array
+            getColumnData<float>(fptr,columnName,TFLOAT,i+1,frow,felem,nelem,
+                                strnull, anynull,status, table);
+        } else if ( columnType.find("J") != std::string::npos ) {
+            // convert to casacore integer array
+            getColumnData<int>(fptr,columnName,TINT,i+1,frow,felem,nelem,
+                                strnull, anynull,status, table);
+        } else if ( columnType.find("V") != std::string::npos ) {
+            // convert to casacore unsigned integer array
+            getColumnData<unsigned int>(fptr,columnName,TUINT,i+1,frow,felem,nelem,
+                                    strnull, anynull,status, table);
+        } else if ( columnType.find("K") != std::string::npos ) {
+            // convert to casacore long array
+            getColumnData<long long>(fptr,columnName,TLONGLONG,i+1,frow,felem,nelem,
+                                    strnull, anynull,status, table);
+        } else if ( columnType.find("D") != std::string::npos ) {
+            // convert to casacore double array
+            getColumnData<double>(fptr,columnName,TDOUBLE,i+1,frow,felem,nelem,
+                                    strnull, anynull,status, table);
+        }
+        printerror(status);
+
+    }
+}
+
+/// @brief copy the FITS binary table keywords to casacore:Record
+/// param[in] fptr - fits file pointer. Must be opened before calling this method.
+/// param[out] table - casacore::Record to store the FITS binary table keywords
+/// param[in] status - status of the fits call
+void FITSImageRW::copyTableExtKeywords(fitsfile* fptr, casacore::Record& table, int& status) const
+{
+    char card[FLEN_CARD];   /* standard string lengths defined in fitsioc.h */
+
+
+    int nkeys, keypos;
+    if (fits_get_hdrpos(fptr, &nkeys, &keypos, &status))
+        printerror(status);
+
+    for (long jj = 1; jj <= nkeys; jj++)  {
+        if (fits_read_record(fptr, jj, card, &status))
+            printerror(status);
+
+        std::string keyword = "";
+        std::string value = "";
+        std::string comment = "";
+        extractFitsRecord(card,keyword,value,comment);
+        // filter out the FITS BINTABLE keywords
+        if (keyword.find("XTENSION")==std::string::npos &&
+          keyword.find("BITPIX")==std::string::npos &&
+          keyword.find("NAXIS")==std::string::npos &&
+          keyword.find("PCOUNT")==std::string::npos &&
+          keyword.find("GCOUNT")==std::string::npos &&
+          keyword.find("TFIELDS")==std::string::npos &&
+          keyword.find("TTYPE")==std::string::npos &&
+          keyword.find("TFORM")==std::string::npos &&
+          keyword.find("EXTNAME")==std::string::npos)
+        {
+            table.define(keyword,value);
+            if ( comment != "" ) {
+                table.setComment(keyword,comment);
+            }
+        }
+    }
+}
+
+/// @brief extract a FITS record (i.e keyword name, keyword value and comment in a string)
+/// param[in] record - FITS record consisting of keyword name, keyword value and comment in a string
+/// param[out] keyword - FITS keyword name
+/// param[out] value - FITS keyword value
+/// param[out] comment - FITS keyword comment
+void FITSImageRW::extractFitsRecord(const std::string& record, std::string& keyword,
+                                    std::string& value, std::string& comment) const
+{
+    std::vector<std::string> kws;
+    boost::split(kws, record, boost::is_any_of("="));
+    ASKAPCHECK(kws.size() == 2,"FITSImageRW::extractFitsRecord - invalid keyword record");
+    keyword = kws[0];
+    boost::trim(keyword);
+    std::vector<std::string> valcommentpair;
+    boost::split(valcommentpair,kws[1],boost::is_any_of("/"));
+    if ( valcommentpair.size() == 1 ) {
+        // no comment string
+        value = valcommentpair[0];
+        boost::trim(value);
+    } else if ( valcommentpair.size() == 2 ) {
+        value = valcommentpair[0];
+        boost::trim(value);
+        comment = valcommentpair[1];
+        boost::trim(comment);
+    } else {
+        ASKAPCHECK(false,"FITSImageRW::extractFitsRecord - invalid keyword record. value/comment fields");
+    }
 }

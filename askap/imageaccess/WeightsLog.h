@@ -98,7 +98,14 @@ class WeightsLog {
         /// zero is returned.
         float weight(const unsigned int channel);
 
+        /// @brief Return the weights as a record that can be written to an image
+        /// @return Record with channel and weight vectors
+        casacore::Record toRecord();
+
     protected:
+        /// @brief Return true if weightslist is valid
+        bool valid() const;
+
         /// @brief The disk file to be read from / written to
         std::string itsFilename;
 

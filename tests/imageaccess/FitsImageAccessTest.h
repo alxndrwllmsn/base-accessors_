@@ -41,7 +41,7 @@
 #include <casacore/coordinates/Coordinates/Projection.h>
 
 #include <casacore/coordinates/Coordinates/CoordinateSystem.h>
-
+#include <casacore/casa/Containers/Record.h>
 
 
 #include <boost/shared_ptr.hpp>
@@ -63,6 +63,7 @@ class FitsImageAccessTest : public CppUnit::TestFixture
    CPPUNIT_TEST(testReadWrite);
    CPPUNIT_TEST(testCreate);
    CPPUNIT_TEST(testAddHistory);
+   CPPUNIT_TEST(testCreateFitsBinaryTable);
    CPPUNIT_TEST_SUITE_END();
 public:
     void setUp() {
@@ -115,6 +116,109 @@ public:
         historyLines.push_back("History Line 1.");
         historyLines.push_back("History Line 2.");
         itsImageAccessor->addHistory(name, historyLines);
+    }
+    // helper method for testCreateFitsBinaryTable test
+    casacore::Record create_dummy_record()
+    {
+        casacore::Record record;
+
+        // keyword EXPOSURE
+        record.define("EXPOSURE",1500);
+        record.define("KWORD1","Testing");
+
+        // Create a sub record to be converted to binary table
+        casacore::Record subrecord;
+
+        // add a colunm named "Col1" that contains 10 cells of Double
+        casacore::IPosition shape(1);
+        shape(0) = 10;
+        casacore::Array<casacore::Double> Col1Values(shape);
+        casacore::Array<casacore::Double>::iterator iterend(Col1Values.end());
+        int count = 1;
+        for (casacore::Array<double>::iterator iter=Col1Values.begin(); iter!=iterend; ++iter) {
+            *iter = count * 2.2;
+            count += 1;
+        }
+        subrecord.define("Col1",Col1Values);
+
+        // add a colunm named "Col2" that contains 10 cells of String
+        casacore::IPosition shapeCol2(1);
+        shapeCol2(0) = 10;
+        casacore::Array<casacore::String> Col2Values(shapeCol2);
+        casacore::Array<casacore::String>::iterator iterend2(Col2Values.end());
+        count = 1;
+        for (casacore::Array<casacore::String>::iterator iter=Col2Values.begin(); iter!=iterend2; ++iter) {
+            *iter = std::string("col2 string") + std::to_string(count);
+            //std::cout << *iter << std::endl;
+            count += 1;
+        }
+        subrecord.define("Col2",Col2Values);
+
+        // set up the unit for Col1 and Col2
+        std::vector<std::string> vUnit;
+        vUnit.push_back("Unit4Col1");
+        vUnit.push_back("Unit4Col2");
+
+        casacore::IPosition shape2(1);
+        shape2(0) = 2;
+        casacore::Array<casacore::String> UnitValues(shape2);
+        casacore::Array<casacore::String>::iterator iterUnit(UnitValues.end());
+        count = 0;
+        for (casacore::Array<casacore::String>::iterator iter=UnitValues.begin(); iter!=iterUnit; ++iter) {
+            *iter = vUnit[count] ;
+            count += 1;
+        }
+        subrecord.define("Units",UnitValues);
+
+        record.defineRecord("Table",subrecord);
+
+        return record;
+    }
+     
+    void testCreateFitsBinaryTable() {
+        // Create FITS image
+        const std::string name = "testCreateFitsBinaryTable";
+
+        CPPUNIT_ASSERT(itsImageAccessor);
+        size_t ra=100, dec=100, spec=5;
+        const casacore::IPosition shape(3,ra,dec,spec);
+        casacore::Array<float> arr(shape);
+        arr.set(1.);
+        // Build a coordinate system for the image
+        casacore::Matrix<double> xform(2,2);                                    // 1
+        xform = 0.0; xform.diagonal() = 1.0;                          // 2
+        casacore::DirectionCoordinate radec(casacore::MDirection::J2000,                  // 3
+            casacore::Projection(casacore::Projection::SIN),        // 4
+            135*casacore::C::pi/180.0, 60*casacore::C::pi/180.0,    // 5
+            -1*casacore::C::pi/180.0, 1*casacore::C::pi/180,        // 6
+            xform,                              // 7
+            ra/2., dec/2.);                       // 8
+
+
+        casacore::Vector<casacore::String> units(2); units = "deg";                        //  9
+        radec.setWorldAxisUnits(units);
+
+        // Build a coordinate system for the spectral axis
+        // SpectralCoordinate
+        casacore::SpectralCoordinate spectral(casacore::MFrequency::TOPO,               // 27
+                    1400 * 1.0E+6,                  // 28
+                    20 * 1.0E+3,                    // 29
+                    0,                              // 30
+                    1420.40575 * 1.0E+6);           // 31
+        units.resize(1);
+        units = "MHz";
+        spectral.setWorldAxisUnits(units);
+
+        casacore::CoordinateSystem coordsys;
+        coordsys.addCoordinate(radec);
+        coordsys.addCoordinate(spectral);
+
+
+        itsImageAccessor->create(name, shape, coordsys);
+
+        casacore::Record info = create_dummy_record(); 
+        std::cout << "................................." << std::endl;
+        itsImageAccessor->setInfo(name,info);
     }
     void testCreate() {
         // Create FITS image
