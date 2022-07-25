@@ -58,7 +58,8 @@ class WeightsLog {
         /// Set the name of the beam log file
         void setFilename(const std::string& filename) {itsFilename = filename;};
 
-        std::string filename() {return itsFilename;};
+        /// @return the file name of the beam log file
+        std::string filename() const {return itsFilename;};
 
         /// @brief Write the weights information to the weights log
         /// @details The weights information for each channel is written
@@ -67,7 +68,7 @@ class WeightsLog {
         /// separated by a single space. The first line is a comment
         /// line (starting with a '#') that indicates what each column
         /// contains.
-        void write();
+        void write() const;
 
         /// @brief Read the weights information from a weights log
         /// @details The weights log file is opened and each channel's
@@ -90,17 +91,17 @@ class WeightsLog {
         std::map<unsigned int, float> weightslist() const {return itsWeightsList;};
 
         /// @brief Return the weights information
-        std::map<unsigned int, float> &weightslist() {return itsWeightsList;};
+        std::map<unsigned int, float>& weightslist() {return itsWeightsList;};
 
         /// @brief Return the weights for a given channel.
         /// @details Returns the weights stored for the requested channel. If
         /// the weights list does not have an entry for that channel,
         /// zero is returned.
-        float weight(const unsigned int channel);
+        float weight(const unsigned int channel) const;
 
         /// @brief Return the weights as a record that can be written to an image
         /// @return Record with channel and weight vectors
-        casacore::Record toRecord();
+        casacore::Record toRecord() const;
 
     protected:
         /// @brief Return true if weightslist is valid

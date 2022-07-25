@@ -69,18 +69,17 @@ WeightsLog::WeightsLog(const std::string &filename):
 {
 }
 
-float WeightsLog::weight(const unsigned int channel)
+float WeightsLog::weight(const unsigned int channel) const
 {
-    std::map<unsigned int, float>::iterator it = itsWeightsList.find(channel);
-    if (it != itsWeightsList.end()) {
-        return itsWeightsList[channel];
-    } else {
-        ASKAPLOG_WARN_STR(logger, "WeightsList has no Weights recorded for channel " << channel << ", returning zero Weights");
-        return 0;
-    }
+   std::map<unsigned int, float>::const_iterator it = itsWeightsList.find(channel);
+   if (it != itsWeightsList.end()) {
+       return it->second;
+   } 
+   ASKAPLOG_WARN_STR(logger, "WeightsList has no Weights recorded for channel " << channel << ", returning zero Weights");
+   return 0.f;
 }
 
-void WeightsLog::write()
+void WeightsLog::write() const
 {
     if (itsFilename != "") {
 
@@ -89,10 +88,9 @@ void WeightsLog::write()
           std::ofstream fout(itsFilename.c_str());
           fout << "#Channel Weight\n";
 
-          std::map<unsigned int, float>::iterator Weights = itsWeightsList.begin();
-          for (; Weights != itsWeightsList.end(); Weights++) {
-              fout << Weights->first << " "
-                   << Weights->second<< "\n";
+          for (std::map<unsigned int, float>::const_iterator weightsIt = itsWeightsList.begin(); weightsIt!= itsWeightsList.end(); ++weightsIt) {
+              fout << weightsIt->first << " "
+                   << weightsIt->second<< std::endl;
           }
         } else {
           ASKAPLOG_WARN_STR(logger,
@@ -105,7 +103,7 @@ void WeightsLog::write()
     }
 }
 
-casacore::Record WeightsLog::toRecord()
+casacore::Record WeightsLog::toRecord() const
 {
     casacore::Record record;
 
