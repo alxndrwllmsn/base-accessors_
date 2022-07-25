@@ -60,6 +60,9 @@ class WeightsLog {
 
         explicit WeightsLog(const std::string &filename = "");
 
+        // MV: default copy constructor and assignment operator seem to be fine for this class. I tried to make it noncopyable for clarity, but
+        // tests seem to rely on copy construction (perhaps, it is good to make them not to as it is not needed conceptually)
+
         /// Set the name of the beam log file
         void setFilename(const std::string& filename) {itsFilename = filename;};
 
