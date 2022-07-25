@@ -41,6 +41,8 @@
 namespace askap {
 namespace accessors {
 
+// MV: conceptually this class probably doesn't belong to accessors. Also this make accessors dependent on parallel stuff
+
 /// @brief Class to handle writing & reading of channel-level
 /// weights information for a spectral cube.
 /// @details This class wraps up the functionality required to
@@ -50,10 +52,13 @@ namespace accessors {
 
 class WeightsLog {
     public:
-        WeightsLog();
-        WeightsLog(const LOFAR::ParameterSet &parset);
-        WeightsLog(const std::string &filename);
-        virtual ~WeightsLog() {};
+   
+        // MV: it seems to me the design would be clearer if write/read methods get the file name as a parameter
+        // instead of keeping it as a member of this class
+
+        explicit WeightsLog(const LOFAR::ParameterSet &parset);
+
+        explicit WeightsLog(const std::string &filename = "");
 
         /// Set the name of the beam log file
         void setFilename(const std::string& filename) {itsFilename = filename;};
@@ -89,6 +94,8 @@ class WeightsLog {
 
         /// @brief Return the weights information
         std::map<unsigned int, float> weightslist() const {return itsWeightsList;};
+
+        /// MV: having non-const method returning a reference to data member is breaking encapsulation
 
         /// @brief Return the weights information
         std::map<unsigned int, float>& weightslist() {return itsWeightsList;};

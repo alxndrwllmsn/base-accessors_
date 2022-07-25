@@ -51,21 +51,13 @@ ASKAP_LOGGER(logger, ".WeightsLog");
 namespace askap {
 namespace accessors {
 
-WeightsLog::WeightsLog():
-    itsFilename(""),
-    itsWeightsList()
+WeightsLog::WeightsLog(const LOFAR::ParameterSet &parset) :
+    itsFilename(parset.getString("WeightsLog", ""))
 {
 }
 
-WeightsLog::WeightsLog(const LOFAR::ParameterSet &parset):
-    itsFilename(parset.getString("WeightsLog", "")),
-    itsWeightsList()
-{
-}
-
-WeightsLog::WeightsLog(const std::string &filename):
-    itsFilename(filename),
-    itsWeightsList()
+WeightsLog::WeightsLog(const std::string &filename) :
+    itsFilename(filename)
 {
 }
 
