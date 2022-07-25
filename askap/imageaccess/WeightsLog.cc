@@ -51,36 +51,27 @@ ASKAP_LOGGER(logger, ".WeightsLog");
 namespace askap {
 namespace accessors {
 
-WeightsLog::WeightsLog():
-    itsFilename(""),
-    itsWeightsList()
+WeightsLog::WeightsLog(const LOFAR::ParameterSet &parset) :
+    itsFilename(parset.getString("WeightsLog", ""))
 {
 }
 
-WeightsLog::WeightsLog(const LOFAR::ParameterSet &parset):
-    itsFilename(parset.getString("WeightsLog", "")),
-    itsWeightsList()
+WeightsLog::WeightsLog(const std::string &filename) :
+    itsFilename(filename)
 {
 }
 
-WeightsLog::WeightsLog(const std::string &filename):
-    itsFilename(filename),
-    itsWeightsList()
+float WeightsLog::weight(const unsigned int channel) const
 {
+   std::map<unsigned int, float>::const_iterator it = itsWeightsList.find(channel);
+   if (it != itsWeightsList.end()) {
+       return it->second;
+   } 
+   ASKAPLOG_WARN_STR(logger, "WeightsList has no Weights recorded for channel " << channel << ", returning zero Weights");
+   return 0.f;
 }
 
-float WeightsLog::weight(const unsigned int channel)
-{
-    std::map<unsigned int, float>::iterator it = itsWeightsList.find(channel);
-    if (it != itsWeightsList.end()) {
-        return itsWeightsList[channel];
-    } else {
-        ASKAPLOG_WARN_STR(logger, "WeightsList has no Weights recorded for channel " << channel << ", returning zero Weights");
-        return 0;
-    }
-}
-
-void WeightsLog::write()
+void WeightsLog::write() const
 {
     if (itsFilename != "") {
 
@@ -89,10 +80,9 @@ void WeightsLog::write()
           std::ofstream fout(itsFilename.c_str());
           fout << "#Channel Weight\n";
 
-          std::map<unsigned int, float>::iterator Weights = itsWeightsList.begin();
-          for (; Weights != itsWeightsList.end(); Weights++) {
-              fout << Weights->first << " "
-                   << Weights->second<< "\n";
+          for (std::map<unsigned int, float>::const_iterator weightsIt = itsWeightsList.begin(); weightsIt!= itsWeightsList.end(); ++weightsIt) {
+              fout << weightsIt->first << " "
+                   << weightsIt->second<< std::endl;
           }
         } else {
           ASKAPLOG_WARN_STR(logger,
@@ -105,7 +95,7 @@ void WeightsLog::write()
     }
 }
 
-casacore::Record WeightsLog::toRecord()
+casacore::Record WeightsLog::toRecord() const
 {
     casacore::Record record;
 
@@ -172,10 +162,7 @@ void WeightsLog::gather(askapparallel::AskapParallel &comms, int rankToGather, b
 
     if (comms.isParallel()) {
 
-        int minrank=0;
-        if (!includeMaster){
-            minrank=1;
-        }
+        const int minrank = includeMaster ? 0 : 1;
 
         if (comms.rank() != rankToGather) {
             // If we are here, the current rank does not do the gathering.
@@ -188,14 +175,13 @@ void WeightsLog::gather(askapparallel::AskapParallel &comms, int rankToGather, b
             LOFAR::BlobOBufString bob(bs);
             LOFAR::BlobOStream out(bob);
             out.putStart("gatherWeights", 1);
-            unsigned int size = itsWeightsList.size();
+            const unsigned int size = itsWeightsList.size();
             out << size;
             if (itsWeightsList.size() > 0) {
                 ASKAPLOG_DEBUG_STR(logger, "This has data, so sending Weights list of size " << size);
-                std::map<unsigned int, float>::iterator Weights = itsWeightsList.begin();
-                for (; Weights != itsWeightsList.end(); Weights++) {
-                    out << Weights->first
-                        << Weights->second;
+                for (std::map<unsigned int, float>::const_iterator weightsIt = itsWeightsList.begin(); weightsIt != itsWeightsList.end(); ++weightsIt) {
+                    out << weightsIt->first
+                        << weightsIt->second;
                 }
             }
             out.putEnd();
@@ -213,14 +199,15 @@ void WeightsLog::gather(askapparallel::AskapParallel &comms, int rankToGather, b
                     comms.receiveBlob(bs, rank);
                     LOFAR::BlobIBufString bib(bs);
                     LOFAR::BlobIStream in(bib);
-                    int version = in.getStart("gatherWeights");
+                    const int version = in.getStart("gatherWeights");
                     ASKAPASSERT(version == 1);
-                    unsigned int size, chan;
-                    float wt;
+                    unsigned int size;
                     in >> size;
                     if (size > 0) {
                         ASKAPLOG_DEBUG_STR(logger, "Has data - about to receive " << size << " channels");
                         for(unsigned int i=0;i<size;i++){
+                            unsigned int chan;
+                            float wt;
                             in >> chan >> wt;
                             if (wt > 0.) {
                                 itsWeightsList[chan] = wt;
@@ -231,7 +218,6 @@ void WeightsLog::gather(askapparallel::AskapParallel &comms, int rankToGather, b
                         ASKAPLOG_DEBUG_STR(logger, "No data from rank " << rank);
                     }
                     in.getEnd();
-
                 }
 
             }
