@@ -60,7 +60,9 @@ class FITSImageRW {
 
     public:
 
-        FITSImageRW();
+        /// @brief create Fits image accessor
+        /// @param[in] useFastAlloc use fast file allocation scheme if true
+        FITSImageRW(bool useFastAlloc = false);
 
         FITSImageRW(const std::string &name);
 
@@ -252,6 +254,7 @@ class FITSImageRW {
         bool history;
 
         casacore::FitsKeywordList theKeywordList;
+        bool itsFastAlloc;
 
 };
 }

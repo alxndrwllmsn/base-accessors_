@@ -238,7 +238,7 @@ void FitsImageAccess::create(const std::string &name, const casacore::IPosition 
     ASKAPLOG_INFO_STR(logger, "Creating a new FITS image " << name << " with the shape " << shape);
     casacore::String error;
 
-    itsFITSImage.reset(new FITSImageRW());
+    itsFITSImage.reset(new FITSImageRW(itsFastAlloc));
     if (!itsFITSImage->create(name, shape, csys)) {
         casacore::String error;
         error = casacore::String("Failed to create FITSFile");
