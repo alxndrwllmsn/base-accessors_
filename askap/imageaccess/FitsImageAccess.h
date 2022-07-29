@@ -57,6 +57,11 @@ struct FitsImageAccess : public IImageAccess<> {
         /// @param[in] name image name
         void connect(const std::string &name) const;
 
+        /// @brief use fast allocation of file
+        /// @details calculates file size and writes a zero at the end
+        /// @param[in] fast If true use fast allocation, default uses CFITSIO
+        inline void useFastAlloc(bool fast = false) { itsFastAlloc = fast;}
+
         //////////////////
         // Reading methods
         //////////////////
@@ -247,6 +252,7 @@ struct FitsImageAccess : public IImageAccess<> {
 
     private:
         mutable boost::shared_ptr<FITSImageRW> itsFITSImage;
+        bool itsFastAlloc;
 
 };
 

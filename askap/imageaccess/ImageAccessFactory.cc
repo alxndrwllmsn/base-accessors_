@@ -58,6 +58,8 @@ boost::shared_ptr<IImageAccess<casacore::Float> > askap::accessors::imageAccessF
        result = iaCASA;
    } else if (imageType == "fits"){
        boost::shared_ptr<FitsImageAccess> iaFITS(new FitsImageAccess());
+       const bool fast = (parset.getString("imagealloc","") == "fast");
+       iaFITS->useFastAlloc(fast);
        result = iaFITS;
   } else {
       throw AskapError(std::string("Unsupported image type ")+imageType+" has been requested");
@@ -90,6 +92,8 @@ boost::shared_ptr<IImageAccess<casacore::Float> > askap::accessors::imageAccessF
            result = iaFITS;
        } else {
            boost::shared_ptr<FitsImageAccess> iaFITS(new FitsImageAccess());
+           const bool fast = (parset.getString("imagealloc","") == "fast");
+           iaFITS->useFastAlloc(fast);
            result = iaFITS;
        }
    }
