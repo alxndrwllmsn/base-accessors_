@@ -62,7 +62,7 @@ class FITSImageRW {
 
         /// @brief create Fits image accessor
         /// @param[in] useFastAlloc use fast file allocation scheme if true
-        FITSImageRW(bool useFastAlloc = false);
+        explicit FITSImageRW(bool useFastAlloc = false);
 
         FITSImageRW(const std::string &name);
 

@@ -58,7 +58,7 @@ boost::shared_ptr<IImageAccess<casacore::Float> > askap::accessors::imageAccessF
        result = iaCASA;
    } else if (imageType == "fits"){
        boost::shared_ptr<FitsImageAccess> iaFITS(new FitsImageAccess());
-       bool fast = (parset.getString("imagealloc","") == "fast");
+       const bool fast = (parset.getString("imagealloc","") == "fast");
        iaFITS->useFastAlloc(fast);
        result = iaFITS;
   } else {
@@ -92,7 +92,7 @@ boost::shared_ptr<IImageAccess<casacore::Float> > askap::accessors::imageAccessF
            result = iaFITS;
        } else {
            boost::shared_ptr<FitsImageAccess> iaFITS(new FitsImageAccess());
-           bool fast = (parset.getString("imagealloc","") == "fast");
+           const bool fast = (parset.getString("imagealloc","") == "fast");
            iaFITS->useFastAlloc(fast);
            result = iaFITS;
        }

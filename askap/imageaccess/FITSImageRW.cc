@@ -323,7 +323,7 @@ bool FITSImageRW::create(const std::string &name, const casacore::IPosition &sha
     if (itsFastAlloc) {
         // allocate file - this should be quick
         long long pos = outfile.tellp();
-        pos += shape.product() * 4;
+        pos += shape.product() * sizeof(float);
         // add FITS padding
         if (pos % 2880) {
             pos += 2880 - (pos % 2880);
