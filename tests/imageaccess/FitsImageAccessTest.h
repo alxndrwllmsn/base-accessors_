@@ -60,8 +60,10 @@ namespace accessors {
 class FitsImageAccessTest : public CppUnit::TestFixture
 {
    CPPUNIT_TEST_SUITE(FitsImageAccessTest);
-   CPPUNIT_TEST(testReadWrite);
    CPPUNIT_TEST(testCreate);
+   CPPUNIT_TEST(testReadWrite);
+   CPPUNIT_TEST(testCreate2);
+   CPPUNIT_TEST(testReadWrite2);
    CPPUNIT_TEST(testAddHistory);
    CPPUNIT_TEST(testCreateFitsBinaryTable);
    CPPUNIT_TEST_SUITE_END();
@@ -174,7 +176,7 @@ public:
 
         return record;
     }
-     
+
     void testCreateFitsBinaryTable() {
         // Create FITS image
         const std::string name = "testCreateFitsBinaryTable";
@@ -216,9 +218,18 @@ public:
 
         itsImageAccessor->create(name, shape, coordsys);
 
-        casacore::Record info = create_dummy_record(); 
+        casacore::Record info = create_dummy_record();
         std::cout << "................................." << std::endl;
         itsImageAccessor->setInfo(name,info);
+    }
+
+    // try creating with fast allocation
+    void testCreate2() {
+        LOFAR::ParameterSet parset;
+        parset.add("imagetype","fits");
+        parset.add("imagealloc","fast");
+        itsImageAccessor = imageAccessFactory(parset);
+        testCreate();
     }
     void testCreate() {
         // Create FITS image
@@ -260,6 +271,15 @@ public:
 
 
         itsImageAccessor->create(name, shape, coordsys);
+    }
+
+    // try creating with fast allocation
+    void testReadWrite2() {
+        LOFAR::ParameterSet parset;
+        parset.add("imagetype","fits");
+        parset.add("imagealloc","fast");
+        itsImageAccessor = imageAccessFactory(parset);
+        testReadWrite();
     }
 
     void testReadWrite() {

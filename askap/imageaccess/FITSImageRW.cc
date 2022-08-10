@@ -113,7 +113,7 @@ FITSImageRW::FITSImageRW(const std::string &name)
     std::string fullname = name + ".fits";
     this->name = std::string(fullname.c_str());
 }
-FITSImageRW::FITSImageRW()
+FITSImageRW::FITSImageRW(bool useFastAlloc): itsFastAlloc(useFastAlloc)
 {
 
 }
@@ -318,8 +318,23 @@ bool FITSImageRW::create(const std::string &name, const casacore::IPosition &sha
         }
 
     }
-    // outfile << cards;
     ASKAPLOG_DEBUG_STR(FITSlogger, "All keywords added to file");
+
+    if (itsFastAlloc) {
+        // allocate file - this should be quick
+        long long pos = outfile.tellp();
+        pos += shape.product() * sizeof(float);
+        // add FITS padding
+        if (pos % 2880) {
+            pos += 2880 - (pos % 2880);
+        }
+        ASKAPLOG_DEBUG_STR(FITSlogger, "Allocating file of size "<<pos/1024/1024/1024<<" GB, shape = "<<shape);
+        // get ready to write to last byte in file
+        pos -= 1;
+        outfile.seekp(pos);
+        outfile.write ("\0",1);
+        ASKAPLOG_DEBUG_STR(FITSlogger, "Allocated file");
+    }
     try {
       outfile.close();
       ASKAPLOG_DEBUG_STR(FITSlogger, "Outfile closed");
@@ -328,8 +343,6 @@ bool FITSImageRW::create(const std::string &name, const casacore::IPosition &sha
       ASKAPLOG_WARN_STR(FITSlogger, "Failed to properly close outfile");
       return false;
     }
-
-
 
     return true;
 
@@ -1172,7 +1185,7 @@ void FITSImageRW::copyFitsToCasa(fitsfile* fptr,long nelem, long numColumns,
         long felem = 1;
         int anynull;
         char strnull[10];
-        std::copy_n(" ",10,strnull);
+        std::fill_n(strnull,10,' ');
         if ( columnType.find("A") != std::string::npos ) {
             // convert to casacore string array
             // read the column values

@@ -401,10 +401,10 @@ bool FitsImageAccessParallel::copyHeaderFromFile(const std::string& fullinfile,
 /// @param[in] fitsHistoryLinesBufferSize the size of the fitsHistoryLinesBuffer
 /// @param[in] spaceAfterEndKW  the number of bytes (keywrods) in the input fits file up to the
 ///                             END keyword
-bool FitsImageAccessParallel::writeHistoryKWToFile(const std::string& fulloutfile, 
+bool FitsImageAccessParallel::writeHistoryKWToFile(const std::string& fulloutfile,
                                                    const boost::shared_array<char>& header,
                                                    const boost::shared_array<char>& fitsHistoryLinesBuffer,
-                                                   long headersize, long fitsHistoryLinesBufferSize, 
+                                                   long headersize, long fitsHistoryLinesBufferSize,
                                                    long spaceAfterEndKW) const
 {
     using namespace std;
@@ -427,7 +427,7 @@ bool FitsImageAccessParallel::writeHistoryKWToFile(const std::string& fulloutfil
         ofile.close();
         // now the padding to make it a multiple of 2880 bytes.
         fitsPadding(fulloutfile);
-        result = true;     
+        result = true;
     }
     return result;
 }
@@ -437,7 +437,7 @@ bool FitsImageAccessParallel::writeHistoryKWToFile(const std::string& fulloutfil
 /// @param[in] infile, the input fits file
 /// @param[in] outfile, the output fits file (overwritten if it exists)
 /// @param[in] historyLines, image HISTORY keywords
-void FitsImageAccessParallel::copyHeaderWithHistoryKW(const casa::String &infile, 
+void FitsImageAccessParallel::copyHeaderWithHistoryKW(const casa::String &infile,
                                                          const casa::String& outfile,
                                                          const std::vector<std::string>& historyLines) const
 {
@@ -467,8 +467,8 @@ void FitsImageAccessParallel::copyHeaderWithHistoryKW(const casa::String &infile
         long spaceAfterEndKW = 0; // how many spaces after the END keyword
 
         if ( copyHeaderFromFile(fullinfile,header,shape,headersize,spaceAfterEndKW) ) {
-            writeHistoryKWToFile(fulloutfile,header,fitsHistoryLinesBuffer, 
-                                 headersize,fitsHistoryLinesBufferSize,spaceAfterEndKW);    
+            writeHistoryKWToFile(fulloutfile,header,fitsHistoryLinesBuffer,
+                                 headersize,fitsHistoryLinesBufferSize,spaceAfterEndKW);
         } else {
             ASKAPLOG_DEBUG_STR(logger,"copy_header_with_historykw: copyHeaderFromFile failed ");
         }
@@ -486,7 +486,7 @@ void FitsImageAccessParallel::setFileAccess(const casa::String& name,
     if (fullname.rfind(".fits") == std::string::npos) {
         fullname += ".fits";
     }
-    ASKAPLOG_INFO_STR(logger,"setFileAccess: name - " << name
+    ASKAPLOG_DEBUG_STR(logger,"setFileAccess: name - " << name
                         << ", fullname - " << fullname);
     // get header and data size, get image dimensions
     casa::IPosition imageShape;
@@ -540,7 +540,7 @@ void FitsImageAccessParallel::decodeHeader(const casa::String& infile, casa::IPo
     }
     LONGLONG headstart, datastart, dataend;
     fits_get_hduaddrll (infptr, &headstart, &datastart, &dataend, &status);
-    ASKAPLOG_INFO_STR(logger,"header starts at: "<<headstart<<" data start: "<<datastart<<" end: "<<dataend);
+    ASKAPLOG_DEBUG_STR(logger,"header starts at: "<<headstart<<" data start: "<<datastart<<" end: "<<dataend);
     headerSize = datastart;
     int naxis;
     long naxes[4];
@@ -565,7 +565,7 @@ void FitsImageAccessParallel::fitsPadding(const casa::String& filename) const
         fullinfile += ".fits";
     }
 
-    ASKAPLOG_INFO_STR(logger,"fits_padding: filename - " << filename
+    ASKAPLOG_DEBUG_STR(logger,"fits_padding: filename - " << filename
                         << ", fullinfile - " << fullinfile);
     std::ifstream infile(fullinfile, ios::binary | ios::ate);
     const size_t file_size = infile.tellg();
