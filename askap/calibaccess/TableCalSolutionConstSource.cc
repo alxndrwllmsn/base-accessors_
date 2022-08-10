@@ -55,7 +55,7 @@ TableCalSolutionConstSource::TableCalSolutionConstSource(const casacore::Table &
 TableCalSolutionConstSource::TableCalSolutionConstSource(const std::string &name) : 
         TableHolder(casacore::Table(name)) 
 {
-  ASKAPCHECK(table().nrow()>0, "The table "<<name<<" passed to TableCalSolutionConstSource is empty");
+  ASKAPCHECK(table().nrow()>0u, "The table "<<name<<" passed to TableCalSolutionConstSource is empty");
 }
 
 
@@ -65,7 +65,7 @@ long TableCalSolutionConstSource::mostRecentSolution() const
 {
   // derived classes may initialise the table for writing and, therefore, it could be empty by this point
   // despite the check in the constructor
-  return table().nrow() > 0 ? long(table().nrow()) - 1 : -1;
+  return table().nrow() > 0u ? static_cast<long>(table().nrow()) - 1 : -1;
 }
   
 /// @brief obtain solution ID for a given time
@@ -78,10 +78,10 @@ long TableCalSolutionConstSource::solutionID(const double time) const
 {
   ASKAPASSERT(table().nrow()>0);
   casacore::ROScalarMeasColumn<casacore::MEpoch> bufCol(table(),"TIME");
-  for (casacore::uInt row = table().nrow(); row > 0; --row) {
+  for (casacore::rownr_t row = table().nrow(); row > 0u; --row) {
        const double cTime = bufCol.convert(row - 1,casacore::MEpoch::UTC).get("s").getValue();
        if (time >= cTime) {
-           return long(row) - 1;
+           return static_cast<long>(row) - 1;
        }
   }
   ASKAPTHROW(AskapError, "Unable to find solution matching the time "<<time<<", the table doesn't go that far in the past");
@@ -97,7 +97,7 @@ long TableCalSolutionConstSource::solutionID(const double time) const
 /// @return shared pointer to an accessor object
 boost::shared_ptr<ICalSolutionConstAccessor> TableCalSolutionConstSource::roSolution(const long id) const
 {
-  ASKAPCHECK((id >= 0) && (long(table().nrow()) > id), "Requested solution id="<<id<<" is not in the table");
+  ASKAPCHECK((id >= 0) && (static_cast<long>(table().nrow()) > id), "Requested solution id="<<id<<" is not in the table");
   boost::shared_ptr<TableCalSolutionFiller> filler(new TableCalSolutionFiller(table(),id));
   ASKAPDEBUGASSERT(filler);
   boost::shared_ptr<MemCalSolutionAccessor> acc(new MemCalSolutionAccessor(filler,true));
@@ -117,6 +117,8 @@ bool TableCalSolutionConstSource::tableExists(const std::string &fname)
      casacore::Table testTab(fname,casacore::Table::Old);
      testTab.throwIfNull();
   } catch (const casacore::AipsError &) {
+     return false;
+  } catch (const std::exception &) {
      return false;
   }
   return true; 

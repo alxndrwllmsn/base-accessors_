@@ -69,7 +69,11 @@ void TableTimeStampSelector::updateTableExpression(casacore::TableExprNode &tex)
     }
   }
   catch(const casacore::AipsError &ae) {
-    ASKAPTHROW(DataAccessError, "casacore::AipsError is caught inside "
+    ASKAPTHROW(DataAccessError, "casacore::AipsError has been caught inside "
          "TableTimeStampSelector::updateTableExpression: "<<ae.what());
+  }
+  catch (const std::exception &ex) {
+    ASKAPTHROW(DataAccessError, "std::exception has been caught inside "
+         "TableTimeStampSelector::updateTableExpression: "<<ex.what());
   }
 }

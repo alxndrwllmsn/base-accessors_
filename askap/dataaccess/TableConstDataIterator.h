@@ -382,7 +382,7 @@ protected:
   /// where current data accessor starts.
   /// @return row number in itsCurrentItrertion corresponding to row 0 of the
   /// accessor at this iteration
-  inline casacore::uInt getCurrentTopRow() const throw() {return itsCurrentTopRow;}
+  inline casacore::rownr_t getCurrentTopRow() const throw() {return itsCurrentTopRow;}
   
   /// @brief obtain the name of the data column
   /// @details The visibility data can be taken not only from the DATA column,
@@ -428,7 +428,7 @@ private:
   casacore::Table itsCurrentIteration;
   /// current row in the itsCurrentIteration projected to the row 0
   /// of the data accessor
-  casacore::uInt itsCurrentTopRow;
+  casacore::rownr_t itsCurrentTopRow;
   /// number of rows in the current chunk
   casacore::uInt itsNumberOfRows;
   /// next two data members show the number of channels and

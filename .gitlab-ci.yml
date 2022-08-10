@@ -1,7 +1,9 @@
 # GitLab CI script for base-accessors
 
 #image: registry.gitlab.com/askapsdp/yandasoft_image/all_yandasoft:1.1.x-latest
-image: registry.gitlab.com/askapsdp/yandasoft_image/yandasoft
+#image: registry.gitlab.com/askapsdp/yandasoft_image/yandasoft
+#image: csirocass/yandabase:casacore3.4-mpich
+image: csirocass/yandasoft:casacore0572d931d-mpich
 
 .common: {tags: [azure]}
 
@@ -15,11 +17,11 @@ build:
   extends: .common
   stage: build
   before_script:
-    - apt update && apt install -y g++ git cmake
-    - ln -s /usr/lib/x86_64-linux-gnu/ /usr/lib64
+    - sudo apt update && sudo apt install -y g++ git cmake
+    - sudo ln -s /usr/lib/x86_64-linux-gnu/ /usr/lib64
   script:
     - n_cpus=`grep '^processor' /proc/cpuinfo  | wc -l`
-    - cmake -C /askap/config/askap.gitlab.cmake.in -DASKAPSDP_GIT_URL="https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.com/ASKAPSDP/" -DCMAKE_INSTALL_PREFIX=./_install -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="-coverage" -DCMAKE_EXE_LINKER_FLAGS="-coverage" -B _build -S .
+    - cmake -C .gitlab-ci.cmake.in -DASKAPSDP_GIT_URL="https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.com/ASKAPSDP/" -DCMAKE_INSTALL_PREFIX=./_install -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="-coverage" -DCMAKE_EXE_LINKER_FLAGS="-coverage" -B _build -S .
     - cmake --build _build --target install -j $n_cpus
   artifacts:
     paths:
@@ -32,7 +34,7 @@ test:
   dependencies:
     - build
   before_script:
-    - apt update && apt install -y cmake xsltproc
+    - sudo apt update && sudo apt install -y cmake xsltproc
   variables:
     CASARCFILES: ${CI_PROJECT_DIR}/_build/test_gitlab_casarc.cfg
     TEST_DATASET_PATH: ${CI_PROJECT_DIR}/_build/testdataset.ms
@@ -60,7 +62,7 @@ pages:
   dependencies:
     - test
   before_script:
-    - apt update && apt install -y gcovr curl doxygen graphviz
+    - sudo apt update && sudo apt install -y gcovr curl doxygen graphviz
   script:
     - mkdir -p public/build/reports
     - mkdir -p public/coverage
@@ -78,7 +80,7 @@ pages:
 success:
   stage: ci_status
   before_script:
-    - apt update && apt install -y curl
+    - sudo apt update && sudo apt install -y curl
   after_script:
     - ""
   script:
@@ -93,7 +95,7 @@ success:
 failure:
   stage: ci_status
   before_script:
-    - apt update && apt install -y curl
+    - sudo apt update && sudo apt install -y curl
   after_script:
     - ""
   script:

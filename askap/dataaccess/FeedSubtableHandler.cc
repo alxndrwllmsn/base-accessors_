@@ -216,7 +216,7 @@ void FeedSubtableHandler::fillCache(const casacore::MEpoch &time,
                 (table().col("TIME") + halfInterval >= dTime)) ||
                 (halfInterval == 0.));
   casacore::Table selection=table()(expression);
-  if (selection.nrow()==0) {
+  if (selection.nrow()==0u) {
       ASKAPTHROW(DataAccessError,
                  "FEED subtable is empty or feed data missing for "
                   <<time<<" and spectral window: "<<spWinID);
@@ -250,7 +250,7 @@ void FeedSubtableHandler::fillCache(const casacore::MEpoch &time,
   itsCachedSpWindow = spWinCol(0);
   // we will set this flag to false later, if a non-zero offset is found
   itsAllCachedOffsetsZero = true; 
-  for (casacore::uInt row=0; row<selection.nrow(); ++row) {
+  for (casacore::rownr_t row=0; row<selection.nrow(); ++row) {
        casacore::RigidVector<casacore::Double, 2> &cOffset = itsBeamOffsets[row];
        computeBeamOffset(rcptrOffsets(row),cOffset);
        if ((std::abs(cOffset(0)) > 1e-15) || (std::abs(cOffset(1)) > 1e-15)) {

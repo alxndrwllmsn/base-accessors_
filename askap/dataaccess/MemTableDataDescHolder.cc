@@ -55,7 +55,7 @@ MemTableDataDescHolder::MemTableDataDescHolder(const casacore::Table &ms)
   ROScalarColumn<Int> polID(dataDescrSubtable,"POLARIZATION_ID");
   ROScalarColumn<Int> spWinID(dataDescrSubtable,"SPECTRAL_WINDOW_ID");
   itsDataDescription.reserve(dataDescrSubtable.nrow());
-  for (uInt row=0;row<dataDescrSubtable.nrow();++row) {
+  for (casacore::rownr_t row=0;row<dataDescrSubtable.nrow();++row) {
        itsDataDescription.push_back(pair<int,int>(spWinID(row),polID(row)));
   }
 }

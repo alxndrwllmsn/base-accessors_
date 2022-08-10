@@ -112,14 +112,14 @@ long TableCalSolutionSource::newSolutionID(const double time) {
        casacore::TableMeasDesc<casacore::MEpoch> mepochCol(measVal, measRef);
        mepochCol.write(table());
    }
-   const casacore::uInt newRow = table().nrow();
+   const casacore::rownr_t newRow = table().nrow();
    table().addRow(1);
    ASKAPDEBUGASSERT(newRow < table().nrow());
    casacore::ScalarMeasColumn<casacore::MEpoch> bufCol(table(),"TIME");
    const casacore::Quantity qTime(time,"s");
    const casacore::MEpoch epoch(qTime,casacore::MEpoch::UTC);
    bufCol.put(newRow, epoch);
-   return long(newRow);
+   return static_cast<long>(newRow);
 }
   
 /// @brief obtain a writeable accessor for a given solution ID
@@ -130,7 +130,7 @@ long TableCalSolutionSource::newSolutionID(const double time) {
 /// @param[in] id solution ID to access
 /// @return shared pointer to an accessor object
 boost::shared_ptr<ICalSolutionAccessor> TableCalSolutionSource::rwSolution(const long id) const {
-   ASKAPCHECK((id >= 0) && (long(table().nrow()) > id), "Requested solution id="<<id<<" is not in the table");
+   ASKAPCHECK((id >= 0) && (static_cast<long>(table().nrow()) > id), "Requested solution id="<<id<<" is not in the table");
    boost::shared_ptr<TableCalSolutionFiller> filler(new TableCalSolutionFiller(table(),id,itsNAnt, 
           itsNBeam, itsNChan));
    ASKAPDEBUGASSERT(filler);
