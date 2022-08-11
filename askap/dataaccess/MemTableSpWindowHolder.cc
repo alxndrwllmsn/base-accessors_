@@ -80,8 +80,8 @@ MemTableSpWindowHolder::MemTableSpWindowHolder(const casacore::Table &ms)
   ROArrayColumn<Double> chanFreqCol(spWindowSubtable,"CHAN_FREQ");
   ASKAPDEBUGASSERT(measRefCol.nrow()==chanFreqCol.nrow());
   itsChanFreqs.resize(spWindowSubtable.nrow());
-  for (uInt row=0;row<spWindowSubtable.nrow();++row) {
-       ASKAPASSERT(chanFreqCol.ndim(row)==1);
+  for (casacore::rownr_t row=0;row<spWindowSubtable.nrow();++row) {
+       ASKAPASSERT(chanFreqCol.ndim(row)==1u);
        chanFreqCol.get(row,itsChanFreqs[row]); 
   }  
 }

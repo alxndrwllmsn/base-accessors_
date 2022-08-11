@@ -82,7 +82,7 @@ struct TableBufferManager : virtual public IBufferManager,
   virtual bool bufferExists(const std::string &name,
 			   casacore::uInt index) const;
 protected:
-  // templated methods to handle cubes of different types
+  // templated methods to handle cubes of different types + handling specialised row index type in casa tables
 
   /// @brief populate the cube with the data stored in the given table cell
   /// @details The method throws an exception if the requested table cell
@@ -92,7 +92,7 @@ protected:
   /// @param[in] index row number
   template<typename T>
   void readCube(casacore::Cube<T> &cube, const std::string &name,
-			    casacore::uInt index) const;
+			    casacore::rownr_t index) const;
   
   /// @brief write the cube back to the table
   /// @details The table cell is populated with values on the first write 
@@ -102,7 +102,7 @@ protected:
   /// @param[in] index row number
   template<typename T>
   void writeCube(const casacore::Cube<T> &cube, const std::string &name,
-			     casacore::uInt index) const;
+			     casacore::rownr_t index) const;
 
   /// @brief check whether a particular table cell exists
   /// @param[in] name a name of the table column to query
@@ -111,7 +111,7 @@ protected:
   /// @note template type defined the type of the data
   template<typename T>
   bool cellDefined(const std::string &name,
-			      casacore::uInt index) const;  			   
+			      casacore::rownr_t index) const;  			   
 };
 
 } // namespace accessors

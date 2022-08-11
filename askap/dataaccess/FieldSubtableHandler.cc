@@ -120,7 +120,7 @@ FieldSubtableHandler::getReferenceDir(casacore::uInt fieldID) const
 void FieldSubtableHandler::fillCacheWithCurrentIteration() const
 {
   casacore::Table curIt=itsIterator.table(); 
-  if (curIt.nrow()>1) {
+  if (curIt.nrow()>1u) {
       ASKAPTHROW(DataAccessError, "Multiple rows for the same TIME in the FIELD table "
           "(e.g. polynomial interpolation) are not yet supported");
   }
@@ -176,7 +176,7 @@ void FieldSubtableHandler::fillCacheOnDemand(const casacore::MEpoch &time) const
       ASKAPTHROW(DataAccessError, "An earlier time is requested ("<<time<<") than "
              "the FIELD table has data for");
   }
-  if ((table().nrow() == 1) || 
+  if ((table().nrow() == 1u) || 
       (dTime>=itsCachedStartTime && dTime<=itsCachedStopTime)) {      
       return;
   }

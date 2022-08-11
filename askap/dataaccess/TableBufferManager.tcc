@@ -32,6 +32,7 @@
 // CASA includes
 #include <casacore/tables/Tables/ArrayColumn.h>
 #include <casacore/tables/Tables/ArrColDesc.h>
+#include <casacore/tables/Tables/TableRecord.h>
 
 // own includes
 #include <askap/dataaccess/DataAccessError.h>
@@ -51,12 +52,12 @@ namespace accessors {
 /// @param[in] index row number
 template<typename T>
 void TableBufferManager::readCube(casa::Cube<T> &cube, const std::string &name,
-			    casa::uInt index) const
+			    casacore::rownr_t index) const
 { 
  ASKAPDEBUGASSERT(table().actualTableDesc().isColumn(name));
  ASKAPDEBUGASSERT(index<table().nrow());
  typename casa::ROArrayColumn<T> bufCol(table(),name);
- ASKAPASSERT(bufCol.ndim(index) == 3); // only cubes should be in buffers
+ ASKAPASSERT(bufCol.ndim(index) == 3u); // only cubes should be in buffers
  bufCol.get(index,cube,casa::True);
 }
 
@@ -68,7 +69,7 @@ void TableBufferManager::readCube(casa::Cube<T> &cube, const std::string &name,
 /// @param[in] index row number
 template<typename T>
 void TableBufferManager::writeCube(const casa::Cube<T> &cube, const std::string &name,
-			     casa::uInt index) const
+			     casacore::rownr_t index) const
 {  
   if (!table().actualTableDesc().isColumn(name)) {
       // create a brand new buffer
@@ -91,7 +92,7 @@ void TableBufferManager::writeCube(const casa::Cube<T> &cube, const std::string 
 /// @note template type defined the type of the data
 template<typename T>
 bool TableBufferManager::cellDefined(const std::string &name,
-			      casa::uInt index) const
+			      casacore::rownr_t index) const
 {
   if (!table().actualTableDesc().isColumn(name)) {
       // there is no such column at all
