@@ -38,6 +38,7 @@
 #include <vector>
 #include <fstream>
 #include <iomanip>
+#include <sstream>
 
 
 // ASKAPSoft includes
@@ -51,13 +52,11 @@
 
 #include <casacore/casa/Arrays/Vector.h>
 #include <casacore/casa/Arrays/IPosition.h>
-#include <casacore/casa/Arrays/Matrix.h>
+#include <casacore/casa/Arrays/Array.h>
 
 #include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
 #include <casacore/coordinates/Coordinates/SpectralCoordinate.h>
 #include <casacore/coordinates/Coordinates/StokesCoordinate.h>
-
-#include <casacore/coordinates/Coordinates/Projection.h>
 
 #include <askap/scimath/utils/PolConverter.h>
 #include <casacore/coordinates/Coordinates/CoordinateSystem.h>
@@ -136,7 +135,8 @@ class ExtractSliceApp : public askap::Application {
                 const double ra = convertQuantity(direction[0],"rad");
                 const double dec = convertQuantity(direction[1],"rad");
                 const casacore::MVDirection radec(ra,dec);
-                dc.toPixel(pixel, casacore::MDirection(radec, casacore::MDirection::J2000));
+                const bool success = dc.toPixel(pixel, casacore::MDirection(radec, casacore::MDirection::J2000));
+                ASKAPCHECK(success, "Failed to convert direction "<<direction<<" to pixel space, error = "<<dc.errorMessage());
              }
              ASKAPCHECK(pixel.nelements() == 2u, "Expected 2 elements in the pixel vector, you have "<<pixel);
              const casacore::Int x = static_cast<casacore::Int>(pixel[0]);
@@ -151,11 +151,27 @@ class ExtractSliceApp : public askap::Application {
                ASKAPLOG_INFO_STR(logger, "       - outside the bounds of the image");
              }
         }
-        itsHeader = "# slice from "+itsName+"\n#columns are channel, freq., value(s)";
+        std::ostringstream os;
+        os << "# slice from " << itsName <<std::endl;
+        os << "# (cube with shape: "<<itsShape<<")"<<std::endl;
+        os <<"# slice columns are channel, freq. or velocity, value(s)"<<std::endl;
+        if (itsPolAxisIndex >= 0) {
+            const casacore::StokesCoordinate pc = cs.stokesCoordinate();
+            casacore::Vector<casacore::Stokes::StokesTypes> stokesVec(itsShape[itsPolAxisIndex]);
+            for (casacore::Int pol = 0; pol < itsShape[itsPolAxisIndex]; ++pol) {
+                 const bool success = pc.toWorld(stokesVec[pol], pol);
+                 ASKAPCHECK(success, "Unable to convert polarisation index into physical label for plane "<<pol);
+            }
+            
+            os <<"# polarisation axis (dimension "<<itsPolAxisIndex + 1<<"): " << scimath::PolConverter::toString(stokesVec) << std::endl;
+        }
+        itsHeader = os.str();
    }
 
    /// @brief actual extraction
    void extractSlices() {
+        const casacore::CoordinateSystem cs = itsImageAccessor->coordSys(itsName);
+        const casacore::SpectralCoordinate sc = cs.spectralCoordinate();
         for (auto ci : itsSlices) {
              ASKAPLOG_INFO_STR(logger, "Exporting "<<ci.first);
              casacore::IPosition trc(ci.second);
@@ -163,13 +179,25 @@ class ExtractSliceApp : public askap::Application {
                  trc[itsPolAxisIndex] = itsShape[itsPolAxisIndex] - 1;
              }
              trc[itsSpcAxisIndex] = itsShape[itsSpcAxisIndex] - 1;
-             casacore::Matrix<casacore::Float> data = itsImageAccessor->read(itsName, ci.second, trc);
-             std::ofstream os(itsPrefix + ci.first);
-             os<<itsHeader<<std::endl;
+             casacore::Array<casacore::Float> data = itsImageAccessor->read(itsName, ci.second, trc);
+             const casacore::IPosition sliceShape = data.shape();
+             std::ofstream os(itsPrefix + ci.first + ".dat");
+             os<<itsHeader;
              os<<"# extracted from "<<ci.second<<" to "<<trc<<std::endl;
              for (casacore::Int chan = 0; chan < itsShape[itsSpcAxisIndex]; ++chan) {
-                  const casacore::Vector<casacore::Float> dataVec = ((itsPolAxisIndex < 0) || (itsPolAxisIndex > itsSpcAxisIndex)) ? data.row(chan) : data.column(chan);
-                  os<<chan<<" vel. to be extracted ";
+                  casacore::IPosition sliceStart(sliceShape.nelements(),0);
+                  sliceStart[itsSpcAxisIndex] = chan;
+                  casacore::IPosition sliceEnd(sliceStart);
+                  if (itsPolAxisIndex >= 0) {
+                      sliceEnd[itsPolAxisIndex] = sliceShape[itsPolAxisIndex] - 1;
+                  }
+
+                  casacore::Array<casacore::Float> slice = data(sliceStart, sliceEnd);
+                  const casacore::Vector<casacore::Float> dataVec = slice.reform(casacore::IPosition(1, slice.nelements()));
+                  casacore::Double freqOrVel = -1.;
+                  const bool success = sc.toWorld(freqOrVel, static_cast<casacore::Double>(chan));
+                  ASKAPCHECK(success, "Unable to convert channel index "<<chan<<" to the physical units for "<<ci.first<<", error = "<<sc.errorMessage());
+                  os<<chan<<" "<<std::setprecision(15)<<freqOrVel<<" ";
                   for (size_t elem = 0; elem < dataVec.nelements(); ++elem) {
                        os<<" "<<std::setprecision(15)<<dataVec[elem];
                   }
