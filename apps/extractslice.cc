@@ -39,6 +39,7 @@
 #include <fstream>
 #include <iomanip>
 #include <sstream>
+#include <cmath>
 
 
 // ASKAPSoft includes
@@ -197,9 +198,14 @@ class ExtractSliceApp : public askap::Application {
                   casacore::Double freqOrVel = -1.;
                   const bool success = sc.toWorld(freqOrVel, static_cast<casacore::Double>(chan));
                   ASKAPCHECK(success, "Unable to convert channel index "<<chan<<" to the physical units for "<<ci.first<<", error = "<<sc.errorMessage());
+                  ASKAPCHECK(!std::isnan(freqOrVel), "Encountered NaN after frequency conversion for channel = "<<chan<<" for "<<ci.first);
                   os<<chan<<" "<<std::setprecision(15)<<freqOrVel<<" ";
                   for (size_t elem = 0; elem < dataVec.nelements(); ++elem) {
-                       os<<" "<<std::setprecision(15)<<dataVec[elem];
+                       if (std::isnan(dataVec[elem])) {
+                           os<<" flagged";
+                       } else {
+                           os<<" "<<std::setprecision(15)<<dataVec[elem];
+                       }
                   }
                   os<<std::endl;
              } 
@@ -248,12 +254,9 @@ public:
         ASKAPCHECK(itsName != "", "Cube name is not supposed to be empty");
         // name prefix for the output slices
         itsPrefix = config().getString("prefix","");
-        // parameters used to setup the image accessor (just copy the full complexity from another app, although for serial access we don't need it)
+        // parameters used to setup the image accessor 
         const std::string mode = config().getString("mode",comms.isParallel() ? "parallel" : "serial");
-        bool collective = config().getString("imageaccess","individual") == "collective";
-        bool contiguous = config().getString("imageaccess.order","distributed") == "contiguous";
         // enforce contiguous access for collective IO
-        contiguous |= collective;
         ASKAPCHECK(mode == "parallel" || mode == "serial", "Unsupported mode '"<<mode<<"', it should be either parallel or serial");
         if (mode == "serial") {
             ASKAPLOG_INFO_STR(logger, "Using image accessor factory in the serial mode");
