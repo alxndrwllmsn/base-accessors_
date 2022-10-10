@@ -207,10 +207,10 @@ class ExtractSliceApp : public askap::Application {
 
            // now prepare actual displacements for the second scatter call with the actual data
            for (size_t i = 0, sum = 0; i<lengths.size(); ++i) {
-                ASKAPCHECK(sum < bs.size(), "Blob string length for rank "<<i<<" exceeds the bounds of the whole blob string");
                 tempDisplacements[i] = static_cast<int>(sum);
                 const int thisRankLength = lengths[i];
                 ASKAPCHECK(thisRankLength >= 0, "Blob string length for rank "<<i<<" is negative");
+                ASKAPCHECK(sum < bs.size() || (thisRankLength == 0 && sum == bs.size()), "Blob string length for rank "<<i<<" exceeds the bounds of the whole blob string");
                 sum += static_cast<size_t>(thisRankLength);
            }
    
@@ -254,7 +254,7 @@ class ExtractSliceApp : public askap::Application {
            if (names.size() > slicesPerRank * comms.nProcs()) {
                ++slicesPerRank;
            }
-           ASKAPLOG_INFO_STR(logger, "Distribution pattern will have (about) "<<slicesPerRank<<" slices per rank");
+           ASKAPLOG_DEBUG_STR(logger, "Distribution pattern will have (about) "<<slicesPerRank<<" slice(s) per rank");
 
            std::vector<int> lengths(comms.nProcs(), 0);
 
@@ -263,10 +263,15 @@ class ExtractSliceApp : public askap::Application {
            LOFAR::BlobOStream out(bob);
            for (size_t rank = 0, index = 0; rank < comms.nProcs(); ++rank) {
                 const size_t sizeBefore = bs.size();
-                if (index < names.size()) {
-                    out.putStart("SliceParametersForRank"+utility::toString(rank), formatId);
-                    const uint32_t nSlicesThisMsg = index + slicesPerRank <= names.size() ? slicesPerRank : names.size() - index;
-                    out << nSlicesThisMsg;
+                out.putStart("SliceParametersForRank"+utility::toString(rank), formatId);
+                const uint32_t nSlicesThisMsg = index + slicesPerRank <= names.size() ? slicesPerRank : names.size() - index;
+                out << nSlicesThisMsg;
+                if (nSlicesThisMsg > 0) {
+                    // MV: a bit of technical debt, it would be neater to do a proper broadcast of the fixed info instead of copying it to each message
+                    // (i.e. we have duplication of number of ranks times). But saves writing the same packing/unpacking into blob string for the broadcast
+                    // although unlike for scatter, we do have appropriate broadcast method in MPIComms
+                    out << itsShape << itsPolAxisIndex << itsSpcAxisIndex;
+                    //
                     for (size_t cnt = 0; cnt < nSlicesThisMsg; ++cnt, ++index) {
                          ASKAPDEBUGASSERT(index < names.size());
                          const std::string curName = names[index];
@@ -278,8 +283,8 @@ class ExtractSliceApp : public askap::Application {
                              itsSlices.erase(ci);
                          }
                     }
-                    out.putEnd();
                 }
+                out.putEnd();
                 lengths[rank] = bs.size() - sizeBefore;
            }
            scatterBlob(comms, bs, lengths);
@@ -297,13 +302,22 @@ class ExtractSliceApp : public askap::Application {
            ASKAPASSERT(version == formatId);
            uint32_t nSlicesThisMsg = 0;
            in >> nSlicesThisMsg;
-           ASKAPLOG_INFO_STR(logger, "Extracting "<<nSlicesThisMsg<<" slices from blob");
-           for (size_t cnt = 0; cnt < nSlicesThisMsg; ++cnt) {
-                std::string name;
-                casacore::IPosition where;
-                in >> name >> where;
-                ASKAPCHECK(itsSlices.find(name) == itsSlices.end(), "Duplicate slice "<<name<<" encountered");
-                itsSlices[name] = where;
+           if (nSlicesThisMsg > 0) {
+               // MV: a bit of technical debt, it would be neater to do a proper broadcast of the fixed info instead of copying it to each message
+               // (i.e. we have duplication of number of ranks times). But saves writing the same packing/unpacking into blob string for the broadcast
+               // although unlike for scatter, we do have appropriate broadcast method in MPIComms
+               in >> itsShape >> itsPolAxisIndex >> itsSpcAxisIndex;
+               //
+               ASKAPLOG_DEBUG_STR(logger, "Extracting "<<nSlicesThisMsg<<" slices from blob");
+               for (size_t cnt = 0; cnt < nSlicesThisMsg; ++cnt) {
+                    std::string name;
+                    casacore::IPosition where;
+                    in >> name >> where;
+                    ASKAPCHECK(itsSlices.find(name) == itsSlices.end(), "Duplicate slice "<<name<<" encountered");
+                    itsSlices[name] = where;
+               }
+           } else {
+               ASKAPLOG_DEBUG_STR(logger, "No job for this rank");
            }
            in.getEnd();
        }
@@ -421,7 +435,7 @@ public:
 
         timer.mark();
         // the following will work for the serial case too if done under MPI and will just cause a single iteration over slices
-        extractSlices();
+        extractSlices(); 
         ASKAPLOG_INFO_STR(logger, "Completed extraction in "<<timer.real()<<" seconds");
         comms.barrier();
         stats.logSummary();
