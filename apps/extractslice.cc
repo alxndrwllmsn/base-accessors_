@@ -62,6 +62,17 @@
 #include <askap/scimath/utils/PolConverter.h>
 #include <casacore/coordinates/Coordinates/CoordinateSystem.h>
 
+// LOFAR for communications
+#include <Blob/BlobString.h>
+#include <Blob/BlobIBufString.h>
+#include <Blob/BlobOBufString.h>
+#include <Blob/BlobIStream.h>
+#include <Blob/BlobOStream.h>
+#include "Blob/BlobAipsIO.h"
+#include <Blob/BlobSTL.h>
+#include "utils/CasaBlobUtils.h"
+
+
 
 ASKAP_LOGGER(logger, ".extractslice");
 
@@ -168,6 +179,136 @@ class ExtractSliceApp : public askap::Application {
         }
         itsHeader = os.str();
    }
+   
+   /// @brief helper method to perform MPI scatter operation on a complex type
+   /// @details It essentially scatters the blob across all available ranks according
+   /// to the per-rank length vector. 
+   /// @param[in] comms communication object
+   /// @param[in] blob blob string object to scatter (modified on all ranks, rank 0 will have its portion)
+   /// @param[in] lengths vector of lengths, one per rank need to be defined on the master rank (always zero)
+   /// @note Technical debt: we should move this method to AskapParallel/MPIComms, 
+   /// this way it will have access to the active communicator (instead of using the world one),
+   /// as well as provide better encapsulation of MPI calls / similar interface to other methods.
+   static void scatterBlob(askap::askapparallel::AskapParallel &comms, LOFAR::BlobString &bs, const std::vector<int> &lengths = std::vector<int>()) {
+       #ifdef HAVE_MPI
+       if (comms.isMaster()) {
+           ASKAPCHECK(lengths.size() == comms.nProcs(), "scatterBlob received "<<lengths.size()<<" lengths, but we have "<<comms.nProcs()<<" ranks");
+           ASKAPCHECK(lengths.size() > 1, "Expect at least two ranks in this section of the code");
+           ASKAPCHECK(bs.size() > 0, "Empty string is passed to scatterBlob");
+           const std::vector<int> tempCounts(lengths.size(), 1);
+           std::vector<int> tempDisplacements(lengths.size(), 0);
+           for (size_t i = 0; i<lengths.size(); ++i) {
+                tempDisplacements[i] = static_cast<int>(i);
+           }
+
+           // scattering individual lengths first
+           const int status = MPI_Scatterv(lengths.data(), tempCounts.data(), tempDisplacements.data(), MPI_INT, MPI_IN_PLACE, 1, MPI_INT, 0, MPI_COMM_WORLD);
+           ASKAPCHECK(status == MPI_SUCCESS, "Failed to scatter per-rank lengths, error = "<<status);
+
+           // now prepare actual displacements for the second scatter call with the actual data
+           for (size_t i = 0, sum = 0; i<lengths.size(); ++i) {
+                ASKAPCHECK(sum < bs.size(), "Blob string length for rank "<<i<<" exceeds the bounds of the whole blob string");
+                tempDisplacements[i] = static_cast<int>(sum);
+                const int thisRankLength = lengths[i];
+                ASKAPCHECK(thisRankLength >= 0, "Blob string length for rank "<<i<<" is negative");
+                sum += static_cast<size_t>(thisRankLength);
+           }
+   
+           // scattering the actual data
+           const int status1 = MPI_Scatterv(bs.data(), lengths.data(), tempDisplacements.data(), MPI_BYTE, MPI_IN_PLACE, lengths[0], MPI_BYTE, 0, MPI_COMM_WORLD);
+           ASKAPCHECK(status1 == MPI_SUCCESS, "Failed to scatter per-rank lengths, error = "<<status1);
+           
+       } else {
+           // first, receive the length to deal with on this particular rank
+           int length = -1;
+           const int status = MPI_Scatterv(NULL, NULL, NULL, MPI_INT, &length, 1, MPI_INT, 0, MPI_COMM_WORLD);
+           ASKAPCHECK(status == MPI_SUCCESS, "Failed to receive scattered per-rank lengths, error = "<<status);
+ 
+           ASKAPCHECK(length >= 0, "Message length is supposed to be non-negative");
+           bs.resize(length);
+
+           const int status1 = MPI_Scatterv(NULL, NULL, NULL, MPI_BYTE, bs.data(), length, MPI_BYTE, 0, MPI_COMM_WORLD);
+           ASKAPCHECK(status1 == MPI_SUCCESS, "Failed to receive scattered per-rank lengths, error = "<<status1);
+       }    
+       #else 
+       ASKAPTHROW(AskapError, "scatterBlob has been called, but the code appears to be built without MPI");
+       #endif
+   }
+
+   /// @brief distribute slices across the whole rank space
+   /// @details This method assumes that itsSlices has been initialised on rank 0 and
+   /// is empty on all other ranks. Upon completion, itsSlices on each rank will contain
+   /// only own share of the elements. This method shouldn't be called in the serial mode.
+   /// @param[in] comms communication object
+   void distributeSlices(askap::askapparallel::AskapParallel &comms) {
+       ASKAPDEBUGASSERT(comms.isParallel());
+       const int formatId = 0;
+       if (comms.isMaster()) {
+           std::vector<std::string> names;
+           names.reserve(itsSlices.size());
+           for (auto ci : itsSlices) {
+                names.push_back(ci.first);
+           }
+           ASKAPDEBUGASSERT(comms.nProcs() > 0u);
+           size_t slicesPerRank = names.size() < comms.nProcs() ? 1u : names.size() / comms.nProcs();
+           if (names.size() > slicesPerRank * comms.nProcs()) {
+               ++slicesPerRank;
+           }
+           ASKAPLOG_INFO_STR(logger, "Distribution pattern will have (about) "<<slicesPerRank<<" slices per rank");
+
+           std::vector<int> lengths(comms.nProcs(), 0);
+
+           LOFAR::BlobString bs;
+           LOFAR::BlobOBufString bob(bs);
+           LOFAR::BlobOStream out(bob);
+           for (size_t rank = 0, index = 0; rank < comms.nProcs(); ++rank) {
+                const size_t sizeBefore = bs.size();
+                if (index < names.size()) {
+                    out.putStart("SliceParametersForRank"+utility::toString(rank), formatId);
+                    const uint32_t nSlicesThisMsg = index + slicesPerRank <= names.size() ? slicesPerRank : names.size() - index;
+                    out << nSlicesThisMsg;
+                    for (size_t cnt = 0; cnt < nSlicesThisMsg; ++cnt, ++index) {
+                         ASKAPDEBUGASSERT(index < names.size());
+                         const std::string curName = names[index];
+                         std::map<std::string, casacore::IPosition>::const_iterator ci = itsSlices.find(curName);
+                         ASKAPDEBUGASSERT(ci != itsSlices.end());
+                         out << curName<<ci->second;
+                         if (rank != 0) {
+                             // basically, remove jobs sent to other ranks
+                             itsSlices.erase(ci);
+                         }
+                    }
+                    out.putEnd();
+                }
+                lengths[rank] = bs.size() - sizeBefore;
+           }
+           scatterBlob(comms, bs, lengths);
+       } else {
+           ASKAPCHECK(itsSlices.size() == 0u, "Expected an empty slices buffer on the worker ranks");
+
+           LOFAR::BlobString bs;
+
+           // receive its blob string
+           scatterBlob(comms, bs);
+
+           LOFAR::BlobIBufString bib(bs);
+           LOFAR::BlobIStream in(bib);
+           const int version=in.getStart("SliceParametersForRank"+utility::toString(comms.rank()));
+           ASKAPASSERT(version == formatId);
+           uint32_t nSlicesThisMsg = 0;
+           in >> nSlicesThisMsg;
+           ASKAPLOG_INFO_STR(logger, "Extracting "<<nSlicesThisMsg<<" slices from blob");
+           for (size_t cnt = 0; cnt < nSlicesThisMsg; ++cnt) {
+                std::string name;
+                casacore::IPosition where;
+                in >> name >> where;
+                ASKAPCHECK(itsSlices.find(name) == itsSlices.end(), "Duplicate slice "<<name<<" encountered");
+                itsSlices[name] = where;
+           }
+           in.getEnd();
+       }
+   }
+
 
    /// @brief actual extraction
    void extractSlices() {
@@ -254,9 +395,8 @@ public:
         ASKAPCHECK(itsName != "", "Cube name is not supposed to be empty");
         // name prefix for the output slices
         itsPrefix = config().getString("prefix","");
-        // parameters used to setup the image accessor 
+        // parameter used to setup the image accessor 
         const std::string mode = config().getString("mode",comms.isParallel() ? "parallel" : "serial");
-        // enforce contiguous access for collective IO
         ASKAPCHECK(mode == "parallel" || mode == "serial", "Unsupported mode '"<<mode<<"', it should be either parallel or serial");
         if (mode == "serial") {
             ASKAPLOG_INFO_STR(logger, "Using image accessor factory in the serial mode");
@@ -275,7 +415,7 @@ public:
         if (comms.isParallel()) {
             ASKAPLOG_INFO_STR(logger, "Distributing the job across "<<comms.nProcs()<<" ranks");
             timer.mark();
-            // logic is to be written here
+            distributeSlices(comms);
             ASKAPLOG_INFO_STR(logger, "Job distribution completed in "<<timer.real()<<" seconds, this rank has "<<itsSlices.size()<<" slices to extract");
         }
 
