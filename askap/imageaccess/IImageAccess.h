@@ -82,6 +82,21 @@ struct IImageAccess {
     virtual casacore::Array<T> read(const std::string &name, const casacore::IPosition &blc,
                                     const casacore::IPosition &trc) const = 0;
 
+
+    /// @brief read the mask for the full image
+    /// @param[in] name image name
+    /// @return bool array with mask values - 1=good, 0=bad
+    virtual casacore::LogicalArray readMask(const std::string &name) const = 0;
+
+    /// @brief read the mask for part of the image
+    /// @param[in] name image name
+    /// @param[in] blc bottom left corner of the selection
+    /// @param[in] trc top right corner of the selection
+    /// @return bool array with mask values - 1=good, 0=bad
+    virtual casacore::LogicalArray readMask(const std::string &name, const casacore::IPosition &blc,
+                                    const casacore::IPosition &trc) const = 0;
+
+
     /// @brief obtain coordinate system info
     /// @param[in] name image name
     /// @return coordinate system object
