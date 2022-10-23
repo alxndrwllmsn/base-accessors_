@@ -102,6 +102,16 @@ casacore::Array<float> FitsImageAccess::read(const std::string &name, const casa
     return buffer;
 }
 
+/// @brief Determine whether an image has a mask
+/// @param[in] nam image name
+/// @return True if image has a mask, False if not.
+bool FitsImageAccess::isMasked(const std::string &name) const
+{
+    // We can always make a mask for a FITS image - masked pixels have
+    // NaN as their value
+    return true
+}
+
 /// @brief read the mask for the full image
 /// @param[in] name image name
 /// @return bool array with mask values - 1=good, 0=bad

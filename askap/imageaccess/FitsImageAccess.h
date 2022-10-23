@@ -84,6 +84,11 @@ struct FitsImageAccess : public IImageAccess<> {
         virtual casacore::Array<float> read(const std::string &name, const casacore::IPosition &blc,
                                         const casacore::IPosition &trc) const override;
     
+    /// @brief Determine whether an image has a mask
+    /// @param[in] nam image name
+    /// @return True if image has a mask, False if not.
+    virtual bool isMasked(const std::string &name) const override;
+
     /// @brief read the mask for the full image
     /// @param[in] name image name
     /// @return bool array with mask values - 1=good, 0=bad

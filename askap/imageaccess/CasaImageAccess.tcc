@@ -123,6 +123,18 @@ casacore::Array<T> CasaImageAccess<T>::read(const std::string &name, const casac
     }
 }
 
+/// @brief Determine whether an image has a mask
+/// @param[in] nam image name
+/// @return True if image has a mask, False if not.
+template <class T>
+bool CasaImageAccess<T>::isMasked(const std::string &name) const
+{
+
+    casacore::PagedImage<T> img(name);
+    return img.hasPixelMask();
+
+}
+
 /// @brief read the mask for the full image
 /// @param[in] name image name
 /// @return bool array with mask values - 1=good, 0=bad
