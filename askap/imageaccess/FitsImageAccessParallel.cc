@@ -129,7 +129,7 @@ bool FitsImageAccessParallel::isMasked(const std::string &name) const
 {
     // We can always make a mask for a FITS image - masked pixels have
     // NaN as their value
-    return true
+    return true;
 }
 
 /// @brief read the mask for the full image
