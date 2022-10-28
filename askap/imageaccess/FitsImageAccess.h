@@ -83,6 +83,24 @@ struct FitsImageAccess : public IImageAccess<> {
         /// @return array with pixels for the selection only
         virtual casacore::Array<float> read(const std::string &name, const casacore::IPosition &blc,
                                         const casacore::IPosition &trc) const override;
+    
+    /// @brief Determine whether an image has a mask
+    /// @param[in] nam image name
+    /// @return True if image has a mask, False if not.
+    virtual bool isMasked(const std::string &name) const override;
+
+    /// @brief read the mask for the full image
+    /// @param[in] name image name
+    /// @return bool array with mask values - 1=good, 0=bad
+    virtual casacore::LogicalArray readMask(const std::string &name) const override;
+
+    /// @brief read the mask for part of the image
+    /// @param[in] name image name
+    /// @param[in] blc bottom left corner of the selection
+    /// @param[in] trc top right corner of the selection
+    /// @return bool array with mask values - 1=good, 0=bad
+    virtual casacore::LogicalArray readMask(const std::string &name, const casacore::IPosition &blc,
+                                    const casacore::IPosition &trc) const override;
 
         /// @brief obtain coordinate system info
         /// @param[in] name image name
