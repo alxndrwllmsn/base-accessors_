@@ -206,11 +206,11 @@ bool FITSImageRW::create(const std::string &name, const casacore::IPosition &sha
     header.define("bzero", b_zero);
     ASKAPLOG_DEBUG_STR(FITSlogger, "BSCALE");
 
-    header.define("COMMENT1", ""); // inserts spaces
     // I should FITS-ize the units
 
     header.define("BUNIT", "Jy");
     header.setComment("BUNIT", "Brightness (pixel) unit");
+    header.define("BTYPE", "Intensity");
     //
     ASKAPLOG_DEBUG_STR(FITSlogger, "BUNIT");
     casacore::IPosition shapeCopy = shape;
@@ -279,6 +279,11 @@ bool FITSImageRW::create(const std::string &name, const casacore::IPosition &sha
     // //
 
     header.define("ORIGIN", "ASKAPsoft");
+    header.define("TELECOP","ASKAP");
+    header.define("PROJECT", "");
+    header.define("SBID", "");
+    header.define("DURATION", "");
+
 
     theKeywordList = casacore::FITSKeywordUtil::makeKeywordList(primHead, casacore::True);
 
@@ -288,6 +293,25 @@ bool FITSImageRW::create(const std::string &name, const casacore::IPosition &sha
     if (! ok) {
         error = "Error creating initial FITS header";
         return false;
+    }
+
+    // count how many keywords we have, if close to filling a block (36 keywords),
+    // add enough comments to allocate another block to allow for expansion without block inserts (very slow)
+    int nkey = theKeywordList.toString().size()/80;
+    ASKAPLOG_DEBUG_STR(FITSlogger, "#keywords "<<nkey);
+    if (nkey%36 > 27) {
+        casacore::Record header2;
+        for (int i = 0; i < 36-(nkey%36); i++) {
+            std::ostringstream comment;
+            comment <<"COMMENT"<<i;
+            ASKAPLOG_DEBUG_STR(FITSlogger, "Adding keyword "<<comment.str());
+            header2.define(comment.str(), " / ");
+        }
+        ok = casacore::FITSKeywordUtil::addKeywords(theKeywordList, header2);
+        if (! ok) {
+            error = "Error adding comments to FITS header";
+            return false;
+        }
     }
 
 
@@ -614,6 +638,7 @@ void FITSImageRW::setRestoringBeam(double maj, double min, double pa)
     fitsfile *fptr;       /* pointer to the FITS file, defined in fitsio.h */
     int status = 0;
     double radtodeg = 360. / (2 * M_PI);
+
     if (fits_open_file(&fptr, this->name.c_str(), READWRITE, &status))
         printerror(status);
 

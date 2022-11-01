@@ -6,6 +6,7 @@ tTableCalSolution
 tImageWrite
 tImageWriteBinaryTable
 tImageReadBinaryTable
+extractslice
 )
 
 

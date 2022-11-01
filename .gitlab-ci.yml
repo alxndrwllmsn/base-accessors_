@@ -1,9 +1,6 @@
 # GitLab CI script for base-accessors
 
-#image: registry.gitlab.com/askapsdp/yandasoft_image/all_yandasoft:1.1.x-latest
-#image: registry.gitlab.com/askapsdp/yandasoft_image/yandasoft
-#image: csirocass/yandabase:casacore3.4-mpich
-image: csirocass/yandasoft:casacore0572d931d-mpich
+image: registry.gitlab.com/askapsdp/yandasoft_image/yandasoft:casacore3.5.0-mpich
 
 .common: {tags: [azure]}
 
@@ -22,7 +19,7 @@ build:
   script:
     - n_cpus=`grep '^processor' /proc/cpuinfo  | wc -l`
     - cmake -C .gitlab-ci.cmake.in -DASKAPSDP_GIT_URL="https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.com/ASKAPSDP/" -DCMAKE_INSTALL_PREFIX=./_install -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="-coverage" -DCMAKE_EXE_LINKER_FLAGS="-coverage" -B _build -S .
-    - cmake --build _build --target install -j $n_cpus
+    - sudo cmake --build _build --target install -j $n_cpus
   artifacts:
     paths:
       - _build

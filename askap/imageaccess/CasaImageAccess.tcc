@@ -123,6 +123,55 @@ casacore::Array<T> CasaImageAccess<T>::read(const std::string &name, const casac
     }
 }
 
+/// @brief Determine whether an image has a mask
+/// @param[in] nam image name
+/// @return True if image has a mask, False if not.
+template <class T>
+bool CasaImageAccess<T>::isMasked(const std::string &name) const
+{
+
+    casacore::PagedImage<T> img(name);
+    return img.hasPixelMask();
+
+}
+
+/// @brief read the mask for the full image
+/// @param[in] name image name
+/// @return bool array with mask values - 1=good, 0=bad
+template <class T>
+casacore::LogicalArray CasaImageAccess<T>::readMask(const std::string &name) const
+{
+
+    casacore::PagedImage<T> img(name);
+    if (img.hasPixelMask()) {
+        return img.getMask();
+    } else {
+        casacore::LogicalArray mask(img.shape(),true);
+        return mask;
+    }
+
+}
+
+/// @brief read the mask for part of the image
+/// @param[in] name image name
+/// @param[in] blc bottom left corner of the selection
+/// @param[in] trc top right corner of the selection
+/// @return bool array with mask values - 1=good, 0=bad
+template <class T>
+casacore::LogicalArray CasaImageAccess<T>::readMask(const std::string &name, const casacore::IPosition &blc,
+                                                    const casacore::IPosition &trc) const
+{
+    casacore::PagedImage<T> img(name);
+    const casacore::Slicer slicer(blc, trc, casacore::Slicer::endIsLast);
+    if (img.hasPixelMask()) {
+        return img.getMaskSlice(slicer);
+    } else {
+        casacore::LogicalArray mask(slicer.length(),true);
+        return mask;
+    }
+
+}
+
 /// @brief obtain coordinate system info
 /// @param[in] name image name
 /// @return coordinate system object
