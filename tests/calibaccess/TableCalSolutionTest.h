@@ -129,6 +129,10 @@ public:
        CPPUNIT_ASSERT_EQUAL(3l, newID);
        acc = css->rwSolution(newID);
        acc->setBPLeakage(JonesIndex(1u,1u),JonesDTerm(casacore::Complex(0.1,-0.2),true,casacore::Complex(-0.1,-0.1),true),1u);
+       CPPUNIT_ASSERT_EQUAL(css->solutionIDBefore(180.0).first, newID);
+       CPPUNIT_ASSERT_EQUAL(css->solutionIDAfter(120.0).first, newID);
+       CPPUNIT_ASSERT_EQUAL(css->solutionIDBefore(180.0).second, 180.);
+       CPPUNIT_ASSERT_EQUAL(css->solutionIDAfter(120.0).second, 180.);
    }
 
    // common code testing leakages and gains in the test table
@@ -300,6 +304,12 @@ public:
        CPPUNIT_ASSERT_EQUAL(3l, sID);
        for (long id = 0; id<4; ++id) {
             CPPUNIT_ASSERT_EQUAL(id, css->solutionID(0.5+60.*id));
+            CPPUNIT_ASSERT_EQUAL(id, css->solutionIDBefore(0.5+60.*id).first);
+            CPPUNIT_ASSERT(abs(60.*id - css->solutionIDBefore(0.5+60.*id).second) < 0.01);
+            if (id > 0) {
+                CPPUNIT_ASSERT_EQUAL(id, css->solutionIDAfter(0.5+60.*(id-1)).first);
+                CPPUNIT_ASSERT(abs(60.*id - css->solutionIDAfter(0.5+60.*(id-1)).second) < 0.01);
+            }
        }
        const boost::shared_ptr<ICalSolutionConstAccessor> acc = css->roSolution(sID);
        CPPUNIT_ASSERT(acc);
