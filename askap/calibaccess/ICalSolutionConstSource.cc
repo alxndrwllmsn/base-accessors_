@@ -38,8 +38,31 @@ namespace accessors {
 /// @brief virtual destructor to keep the compiler happy
 ICalSolutionConstSource::~ICalSolutionConstSource() {}
 
+/// @brief obtain closest solution ID before a given time
+/// @details This method looks for the first solution valid before
+/// the given time and returns its ID.
+/// @param[in] time time stamp in seconds since MJD of 0.
+/// @return solution ID, time of solution
+std::pair<long, double> ICalSolutionConstSource::solutionIDBefore(const double time) const
+{
+    // default implementation just returns the solutionID
+    // it is up to derived classes to provide the correct implementation
+    return std::pair<long, double>(solutionID(time),0.0);
+}
+
+/// @brief obtain closest solution ID after a given time
+/// @details This method looks for the first solution valid after
+/// the given time and returns its ID.
+/// @param[in] time time stamp in seconds since MJD of 0.
+/// @return solution ID, time of solution
+std::pair<long, double> ICalSolutionConstSource::solutionIDAfter(const double time) const
+{
+    // default implementation just returns the solutionID
+    // it is up to derived classes to provide the correct implementation
+    return std::pair<long, double>(solutionID(time),0.0);
+}
+
+
 } // namespace accessors
 
 } // namespace askap
-
-

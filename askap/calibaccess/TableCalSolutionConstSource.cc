@@ -2,7 +2,7 @@
 /// @brief table-based implementation of the calibration solution source
 /// @details This implementation reads calibration solutions from a casa table
 /// Main functionality is implemented in the corresponding TableCalSolutionFiller class.
-/// This class manages the time/row dependence and creates an instance of the 
+/// This class manages the time/row dependence and creates an instance of the
 /// MemCalSolutionAccessor with above mentioned filler when a read-only accessor is
 /// requested.
 ///
@@ -48,12 +48,12 @@ namespace accessors {
 /// @details
 /// @param[in] tab table to read the solutions from
 TableCalSolutionConstSource::TableCalSolutionConstSource(const casacore::Table &tab) : TableHolder(tab) {}
-  
+
 /// @brief constructor using a file name
 /// @details The table is opened for reading and an exception is thrown if the table doesn't exist
-/// @param[in] name table file name 
-TableCalSolutionConstSource::TableCalSolutionConstSource(const std::string &name) : 
-        TableHolder(casacore::Table(name)) 
+/// @param[in] name table file name
+TableCalSolutionConstSource::TableCalSolutionConstSource(const std::string &name) :
+        TableHolder(casacore::Table(name))
 {
   ASKAPCHECK(table().nrow()>0u, "The table "<<name<<" passed to TableCalSolutionConstSource is empty");
 }
@@ -61,13 +61,13 @@ TableCalSolutionConstSource::TableCalSolutionConstSource(const std::string &name
 
 /// @brief obtain ID for the most recent solution
 /// @return ID for the most recent solution
-long TableCalSolutionConstSource::mostRecentSolution() const 
+long TableCalSolutionConstSource::mostRecentSolution() const
 {
   // derived classes may initialise the table for writing and, therefore, it could be empty by this point
   // despite the check in the constructor
   return table().nrow() > 0u ? static_cast<long>(table().nrow()) - 1 : -1;
 }
-  
+
 /// @brief obtain solution ID for a given time
 /// @details This method looks for a solution valid at the given time
 /// and returns its ID. It is equivalent to mostRecentSolution() if
@@ -76,22 +76,52 @@ long TableCalSolutionConstSource::mostRecentSolution() const
 /// @return solution ID
 long TableCalSolutionConstSource::solutionID(const double time) const
 {
+    return solutionIDBefore(time).first;
+}
+
+/// @brief obtain solution ID for a given time
+/// @details This method looks for a solution valid at the given time
+/// and returns its ID. It is equivalent to mostRecentSolution() if
+/// called with a time sufficiently into the future.
+/// @param[in] time time stamp in seconds since MJD of 0.
+/// @return solution ID, time of solution
+std::pair<long, double> TableCalSolutionConstSource::solutionIDBefore(const double time) const
+{
   ASKAPASSERT(table().nrow()>0);
   casacore::ROScalarMeasColumn<casacore::MEpoch> bufCol(table(),"TIME");
   for (casacore::rownr_t row = table().nrow(); row > 0u; --row) {
        const double cTime = bufCol.convert(row - 1,casacore::MEpoch::UTC).get("s").getValue();
        if (time >= cTime) {
-           return static_cast<long>(row) - 1;
+           return std::pair<long, double>(static_cast<long>(row) - 1, cTime);
        }
   }
   ASKAPTHROW(AskapError, "Unable to find solution matching the time "<<time<<", the table doesn't go that far in the past");
 }
-  
+
+/// @brief obtain closest solution ID after a given time
+/// @details This method looks for the first solution valid after
+/// the given time and returns its ID.
+/// @param[in] time time stamp in seconds since MJD of 0.
+/// @return solution ID
+std::pair<long, double> TableCalSolutionConstSource::solutionIDAfter(const double time) const
+{
+  ASKAPASSERT(table().nrow()>0);
+  casacore::ROScalarMeasColumn<casacore::MEpoch> bufCol(table(),"TIME");
+  for (casacore::rownr_t row = 0u; row < table().nrow(); ++row) {
+       const double cTime = bufCol.convert(row,casacore::MEpoch::UTC).get("s").getValue();
+       if (time <= cTime) {
+           return std::pair<long, double>(static_cast<long>(row), cTime);
+       }
+  }
+  // return last valid solution if no later one found
+  return solutionIDBefore(time);
+}
+
 /// @brief obtain read-only accessor for a given solution ID
 /// @details This method returns a shared pointer to the solution accessor, which
-/// can be used to read the parameters. If a solution with the given ID doesn't 
+/// can be used to read the parameters. If a solution with the given ID doesn't
 /// exist, a backwards search is performed. An exception is thrown if the top of the table is reached or id is outside the table.
-//  Existing solutions with undefined parameters 
+//  Existing solutions with undefined parameters
 /// are managed via validity flags of gains, leakages and bandpasses
 /// @param[in] id solution ID to read
 /// @return shared pointer to an accessor object
@@ -121,11 +151,10 @@ bool TableCalSolutionConstSource::tableExists(const std::string &fname)
   } catch (const std::exception &) {
      return false;
   }
-  return true; 
+  return true;
 }
 
 
 } // namespace accessors
 
 } // namespace askap
-
