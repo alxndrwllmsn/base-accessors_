@@ -75,7 +75,7 @@ public:
 
   /// @brief obtain ID for the most recent solution
   /// @return ID for the most recent solution
-  virtual long mostRecentSolution() const;
+  virtual long mostRecentSolution() const override;
 
   /// @brief obtain solution ID for a given time
   /// @details This method looks for a solution valid at the given time
@@ -83,21 +83,21 @@ public:
   /// called with a time sufficiently into the future.
   /// @param[in] time time stamp in seconds since MJD of 0.
   /// @return solution ID
-  virtual long solutionID(const double time) const;
+  virtual long solutionID(const double time) const override;
 
   /// @brief obtain closest solution ID before a given time
   /// @details This method looks for the first solution valid before
   /// the given time and returns its ID and timestamp
   /// @param[in] time time stamp in seconds since MJD of 0.
   /// @return solution ID, time of solution
-  virtual std::pair<long, double> solutionIDBefore(const double time) const;
+  virtual std::pair<long, double> solutionIDBefore(const double time) const override;
 
   /// @brief obtain closest solution ID after a given time
   /// @details This method looks for the first solution valid after
   /// the given time and returns its ID and timestamp
   /// @param[in] time time stamp in seconds since MJD of 0.
   /// @return solution ID, time of solution
-  virtual std::pair<long, double> solutionIDAfter(const double time) const;
+  virtual std::pair<long, double> solutionIDAfter(const double time) const override;
 
   /// @brief obtain read-only accessor for a given solution ID
   /// @details This method returns a shared pointer to the solution accessor, which
@@ -107,7 +107,7 @@ public:
   /// are managed via validity flags of gains, leakages and bandpasses
   /// @param[in] id solution ID to read
   /// @return shared pointer to an accessor object
-  virtual boost::shared_ptr<ICalSolutionConstAccessor> roSolution(const long id) const;
+  virtual boost::shared_ptr<ICalSolutionConstAccessor> roSolution(const long id) const override;
 
   /// @brief shared pointer definition
   typedef boost::shared_ptr<TableCalSolutionConstSource> ShPtr;
