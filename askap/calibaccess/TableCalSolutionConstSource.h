@@ -2,7 +2,7 @@
 /// @brief table-based implementation of the calibration solution source
 /// @details This implementation reads calibration solutions from a casa table
 /// Main functionality is implemented in the corresponding TableCalSolutionFiller class.
-/// This class manages the time/row dependence and creates an instance of the 
+/// This class manages the time/row dependence and creates an instance of the
 /// MemCalSolutionAccessor with above mentioned filler when a read-only accessor is
 /// requested.
 ///
@@ -53,51 +53,65 @@ namespace accessors {
 /// @brief table-based implementation of the calibration solution source
 /// @details This implementation reads calibration solutions from a casa table
 /// Main functionality is implemented in the corresponding TableCalSolutionFiller class.
-/// This class manages the time/row dependence and creates an instance of the 
+/// This class manages the time/row dependence and creates an instance of the
 /// MemCalSolutionAccessor with above mentioned filler when a read-only accessor is
 /// requested.
 /// @ingroup calibaccess
 class TableCalSolutionConstSource : virtual public ICalSolutionConstSource,
                                     virtual protected TableHolder {
-public:  
+public:
 
   /// @brief constructor using a table defined explicitly
   /// @details
   /// @param[in] tab table to read the solutions from
   TableCalSolutionConstSource(const casacore::Table &tab);
-  
+
   /// @brief constructor using a file name
   /// @details The table is opened for reading and an exception is thrown if the table doesn't exist
-  /// @param[in] name table file name 
+  /// @param[in] name table file name
   TableCalSolutionConstSource(const std::string &name);
 
   // virtual methods of the interface
-  
+
   /// @brief obtain ID for the most recent solution
   /// @return ID for the most recent solution
-  virtual long mostRecentSolution() const;
-  
+  virtual long mostRecentSolution() const override;
+
   /// @brief obtain solution ID for a given time
   /// @details This method looks for a solution valid at the given time
   /// and returns its ID. It is equivalent to mostRecentSolution() if
   /// called with a time sufficiently into the future.
   /// @param[in] time time stamp in seconds since MJD of 0.
   /// @return solution ID
-  virtual long solutionID(const double time) const;
-  
+  virtual long solutionID(const double time) const override;
+
+  /// @brief obtain closest solution ID before a given time
+  /// @details This method looks for the first solution valid before
+  /// the given time and returns its ID and timestamp
+  /// @param[in] time time stamp in seconds since MJD of 0.
+  /// @return solution ID, time of solution
+  virtual std::pair<long, double> solutionIDBefore(const double time) const override;
+
+  /// @brief obtain closest solution ID after a given time
+  /// @details This method looks for the first solution valid after
+  /// the given time and returns its ID and timestamp
+  /// @param[in] time time stamp in seconds since MJD of 0.
+  /// @return solution ID, time of solution
+  virtual std::pair<long, double> solutionIDAfter(const double time) const override;
+
   /// @brief obtain read-only accessor for a given solution ID
   /// @details This method returns a shared pointer to the solution accessor, which
-  /// can be used to read the parameters. If a solution with the given ID doesn't 
+  /// can be used to read the parameters. If a solution with the given ID doesn't
   /// exist, a backwards search is performed. An exception is thrown if the top of the table is teached or id is outside the table.
-  /// Existing solutions with undefined parameters 
+  /// Existing solutions with undefined parameters
   /// are managed via validity flags of gains, leakages and bandpasses
   /// @param[in] id solution ID to read
   /// @return shared pointer to an accessor object
-  virtual boost::shared_ptr<ICalSolutionConstAccessor> roSolution(const long id) const;
-  
+  virtual boost::shared_ptr<ICalSolutionConstAccessor> roSolution(const long id) const override;
+
   /// @brief shared pointer definition
   typedef boost::shared_ptr<TableCalSolutionConstSource> ShPtr;
-  
+
   /// @brief check that the table exists and can be opened
   /// @details This is a helper method which tries to open a given table
   /// to determine whether it exists and can be used. It catches the exception and
@@ -109,7 +123,7 @@ public:
 
 
 } // namespace accessors
- 
+
 } // namespace askap
 
 #endif

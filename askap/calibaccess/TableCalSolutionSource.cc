@@ -2,8 +2,8 @@
 /// @brief table-based implementation of the calibration solution source
 /// @details This implementation reads calibration solutions from and writes to a casa table
 /// Main functionality is implemented in the corresponding TableCalSolutionFiller class.
-/// This class creates an instance of the MemCalSolutionAccessor with the above mentioned filler 
-/// when a writeable accessor is requested. Read-only functionality is implemented in the 
+/// This class creates an instance of the MemCalSolutionAccessor with the above mentioned filler
+/// when a writeable accessor is requested. Read-only functionality is implemented in the
 /// base class.
 ///
 /// @copyright (c) 2011 CSIRO
@@ -41,6 +41,7 @@
 #include <casacore/measures/TableMeasures/TableMeasValueDesc.h>
 #include <casacore/tables/Tables/ScaColDesc.h>
 #include <casacore/tables/Tables/Table.h>
+#include <casacore/tables/Tables/TableUtil.h>
 #include <casacore/measures/Measures/MEpoch.h>
 #include <casacore/measures/TableMeasures/ScalarMeasColumn.h>
 #include <casacore/measures/Measures/MCEpoch.h>
@@ -61,20 +62,20 @@ namespace accessors {
 /// @details
 /// @param[in] tab table to work with
 /// @param[in] nAnt maximum number of antennas
-/// @param[in] nBeam maximum number of beams   
-/// @param[in] nChan maximum number of channels   
-TableCalSolutionSource::TableCalSolutionSource(const casacore::Table &tab, const casacore::uInt nAnt, 
-         const casacore::uInt nBeam, const casacore::uInt nChan) : TableHolder(tab), 
+/// @param[in] nBeam maximum number of beams
+/// @param[in] nChan maximum number of channels
+TableCalSolutionSource::TableCalSolutionSource(const casacore::Table &tab, const casacore::uInt nAnt,
+         const casacore::uInt nBeam, const casacore::uInt nChan) : TableHolder(tab),
    TableCalSolutionConstSource(tab), itsNAnt(nAnt), itsNBeam(nBeam), itsNChan(nChan) {}
- 
+
 /// @brief constructor using a file name
 /// @details The table is opened for writing
-/// @param[in] name table file name 
+/// @param[in] name table file name
 /// @param[in] nAnt maximum number of antennas
-/// @param[in] nBeam maximum number of beams   
-/// @param[in] nChan maximum number of channels   
-TableCalSolutionSource::TableCalSolutionSource(const std::string &name, const casacore::uInt nAnt, 
-         const casacore::uInt nBeam, const casacore::uInt nChan) : 
+/// @param[in] nBeam maximum number of beams
+/// @param[in] nChan maximum number of channels
+TableCalSolutionSource::TableCalSolutionSource(const std::string &name, const casacore::uInt nAnt,
+         const casacore::uInt nBeam, const casacore::uInt nChan) :
    TableHolder(casacore::Table()), TableCalSolutionConstSource(table()), itsNAnt(nAnt), itsNBeam(nBeam), itsNChan(nChan)
 {
   try {
@@ -88,7 +89,7 @@ TableCalSolutionSource::TableCalSolutionSource(const std::string &name, const ca
      }
      catch (const casacore::TableError &te) {
         ASKAPTHROW(DataAccessError,"Unable create a new table for calibration solutions with the name="<<name<<
-                   ". AipsError: " << te.what());     
+                   ". AipsError: " << te.what());
      }
   }
 }
@@ -104,9 +105,9 @@ TableCalSolutionSource::TableCalSolutionSource(const std::string &name, const ca
 long TableCalSolutionSource::newSolutionID(const double time) {
    if (!table().actualTableDesc().isColumn("TIME")) {
        // this is a new table, we need to create new TIME column
-       casacore::ScalarColumnDesc<casacore::Double> timeColDesc("TIME", 
+       casacore::ScalarColumnDesc<casacore::Double> timeColDesc("TIME",
            "Time stamp when the calibration solution was obtained");
-       table().addColumn(timeColDesc);    
+       table().addColumn(timeColDesc);
        casacore::TableMeasRefDesc measRef(casacore::MEpoch::UTC);
        casacore::TableMeasValueDesc measVal(table().actualTableDesc(), "TIME");
        casacore::TableMeasDesc<casacore::MEpoch> mepochCol(measVal, measRef);
@@ -121,22 +122,22 @@ long TableCalSolutionSource::newSolutionID(const double time) {
    bufCol.put(newRow, epoch);
    return static_cast<long>(newRow);
 }
-  
+
 /// @brief obtain a writeable accessor for a given solution ID
 /// @details This method returns a shared pointer to the solution accessor, which
-/// can be used to both read the parameters and write them back. If a solution with 
-/// the given ID doesn't exist, an exception is thrown. Existing solutions with undefined 
+/// can be used to both read the parameters and write them back. If a solution with
+/// the given ID doesn't exist, an exception is thrown. Existing solutions with undefined
 /// parameters are managed via validity flags of gains, leakages and bandpasses
 /// @param[in] id solution ID to access
 /// @return shared pointer to an accessor object
 boost::shared_ptr<ICalSolutionAccessor> TableCalSolutionSource::rwSolution(const long id) const {
    ASKAPCHECK((id >= 0) && (static_cast<long>(table().nrow()) > id), "Requested solution id="<<id<<" is not in the table");
-   boost::shared_ptr<TableCalSolutionFiller> filler(new TableCalSolutionFiller(table(),id,itsNAnt, 
+   boost::shared_ptr<TableCalSolutionFiller> filler(new TableCalSolutionFiller(table(),id,itsNAnt,
           itsNBeam, itsNChan));
    ASKAPDEBUGASSERT(filler);
    boost::shared_ptr<MemCalSolutionAccessor> acc(new MemCalSolutionAccessor(filler,false));
    ASKAPDEBUGASSERT(acc);
-   return acc;  
+   return acc;
 }
 
 /// @brief helper method to remove an old table
@@ -148,14 +149,14 @@ boost::shared_ptr<ICalSolutionAccessor> TableCalSolutionSource::rwSolution(const
 /// An exception is thrown in this case if this parameter is false.
 void TableCalSolutionSource::removeOldTable(const std::string &fname, const bool removeIfNotTable)
 {
-  if (casacore::Table::canDeleteTable(fname,false)) {
-      casacore::Table::deleteTable(fname, false);
+  if (casacore::TableUtil::canDeleteTable(fname,false)) {
+      casacore::TableUtil::deleteTable(fname, false);
   } else {
      // check that the table simply doesn't exist
      ASKAPCHECK(!tableExists(fname), "Unable to delete existing table "<<fname);
      casacore::File tmpFile(fname);
      if (tmpFile.exists()) {
-         ASKAPCHECK(removeIfNotTable, 
+         ASKAPCHECK(removeIfNotTable,
                     "TableCalSolutionSource::removeOldTable: File or directory "<<fname<<
                     " exists, but it is not a table - unable to remove");
          // we need to remove the file with the given name
@@ -175,4 +176,3 @@ void TableCalSolutionSource::removeOldTable(const std::string &fname, const bool
 } // namespace accessors
 
 } // namespace askap
-
