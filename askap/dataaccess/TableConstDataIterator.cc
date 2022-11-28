@@ -41,6 +41,7 @@
 #include <casacore/measures/TableMeasures/ScalarMeasColumn.h>
 #include <casacore/scimath/Mathematics/SquareMatrix.h>
 #include <casacore/measures/Measures/MeasFrame.h>
+#include <casacore/measures/Measures/MCFrequency.h>
 #include <casacore/casa/Arrays/Slicer.h>
 #include <casacore/casa/Arrays/IPosition.h>
 
@@ -192,6 +193,7 @@ void TableConstDataIterator::init()
                                getTableSelector(itsConverter)),"TIME",
 	     casacore::TableIterator::Ascending,casacore::TableIterator::NoSort);
   }
+  itsChannelsSelected = false;
   setUpIteration();
 }
 
@@ -283,7 +285,7 @@ void TableConstDataIterator::setUpIteration()
               }
       }
   }
-  // retreive the number of channels and polarizations from the table
+  // retrieve the number of channels and polarizations from the table
   if (itsNumberOfRows) {
       // determine whether DATA_DESC_ID is uniform in the whole chunk
       // and reduce itsNumberOfRows if necessary
@@ -362,6 +364,13 @@ void TableConstDataIterator::makeUniformDataDescID()
                " channel(s) available in  the dataset");
       }
   }
+
+  // if we're selecting by frequency we need to redo the channel selection when time or DATA_DESC_ID changes
+  if (itsSelector->frequenciesSelected()) {
+      // reset the channel selection
+      itsChannelsSelected = false;
+  }
+
   for (uInt row=1;row<itsNumberOfRows;++row) {
        if (dataDescCol(row+itsCurrentTopRow)!=itsCurrentDataDescID) {
            itsNumberOfRows=row;
@@ -660,13 +669,60 @@ const casacore::MDirection& TableConstDataIterator::getCurrentReferenceDir() con
 std::pair<casacore::uInt, casacore::uInt> TableConstDataIterator::getChannelRange() const
 {
   ASKAPDEBUGASSERT(itsSelector);
-  const std::pair<int, int> chanSelection = itsSelector->getChannelSelection();
-  const casacore::uInt nChan = itsSelector->channelsSelected() ?
-                           casacore::uInt(chanSelection.first) : itsNumberOfChannels;
-  const casacore::uInt startChan = itsSelector->channelsSelected() ?
-                           casacore::uInt(chanSelection.second) : 0;
-  ASKAPDEBUGASSERT(startChan + nChan <= itsNumberOfChannels);
-  return std::pair<casacore::uInt, casacore::uInt>(nChan, startChan);
+  if (!itsChannelsSelected) {
+
+      if (itsSelector->frequenciesSelected()) {
+          const std::tuple<int,double,double,casacore::MFrequency::Types> freqSel = itsSelector->getFrequencySelection();
+          // cannot do multiple channels yet
+          ASKAPCHECK(std::get<0>(freqSel)<=1, "Can only do a single channel in frequency selection mode");
+          // convert frequency in requested frame to MS frame
+          // Using antenna 0 and antenna pointing (= field direction) as reference
+          // Note this differs from imager which uses current phase centre direction in freq conversion
+          const ITableSpWindowHolder& spWindowSubtable=subtableInfo().getSpWindow();
+          const casacore::MeasFrame frame(MEpoch(currentEpoch()),subtableInfo().getAntenna().getPosition(0),
+                getCurrentReferenceDir());
+          const casacore::MFrequency::Types dataType =
+            casacore::MFrequency::castType(spWindowSubtable.getReferenceFrame(currentSpWindowID()).getType());
+          const casacore::MFrequency::Ref refin(dataType,frame); // the frame of the input channels
+          casacore::MFrequency::Types selType = std::get<3>(freqSel);
+          if (selType == casacore::MFrequency::Undefined) {
+              selType = dataType;
+          }
+          const casacore::MFrequency::Ref refout(selType,frame); // the frame desired
+          casacore::MFrequency::Convert backw(refout,refin); // from desired to input
+          const MVFrequency requiredFreq = backw(std::get<1>(freqSel)).getValue();
+          // Now find corresponding channel
+          const casacore::Vector<casacore::Double> dataFreqs(spWindowSubtable.getFrequencies(currentSpWindowID()));
+          // assuming linear freq scale
+          itsNumberOfChannelsSelected = 1;
+          itsStartChannelSelected = 0;
+          const uint nFreq = dataFreqs.nelements();
+          if (nFreq > 1) {
+              const double freqInc = dataFreqs(1) - dataFreqs(0);
+              ASKAPDEBUGASSERT(freqInc != 0);
+              const double channel = (requiredFreq - dataFreqs(0)) / freqInc;
+              // for now just use nearest channel, but could do linear interpolation between nearest two
+              const int nearestChannel = std::lrint(channel);
+              if (nearestChannel >= 0 && nearestChannel < nFreq) {
+                  itsStartChannelSelected = (uint)nearestChannel;
+              } else {
+                  if (nearestChannel >= nFreq) {
+                      itsStartChannelSelected = nFreq - 1;
+                  }
+              }
+          }
+      } else {
+          const std::pair<int, int> chanSelection = itsSelector->getChannelSelection();
+          itsNumberOfChannelsSelected = itsSelector->channelsSelected() ?
+                                   casacore::uInt(chanSelection.first) : itsNumberOfChannels;
+          itsStartChannelSelected = itsSelector->channelsSelected() ?
+                                   casacore::uInt(chanSelection.second) : 0;
+          ASKAPDEBUGASSERT(itsNumberOfChannelsSelected + itsStartChannelSelected <= itsNumberOfChannels);
+      }
+      itsChannelsSelected = true;
+  }
+  
+  return std::pair<casacore::uInt, casacore::uInt>(itsNumberOfChannelsSelected,itsStartChannelSelected);
 }
 
 /// @brief fill the buffer with the polarisation types
@@ -934,7 +990,7 @@ void TableConstDataIterator::fillDirectionCache(casacore::Vector<casacore::MVDir
            offset*=rotMatrix;
        }
        casacore::MDirection feedPointingCentre(antReferenceDir);
-       // x direction is fliped to convert az-el type frame to ra-dec
+       // x direction is flipped to convert az-el type frame to ra-dec
        feedPointingCentre.shift(casacore::MVDirection(-offset(0),
                              offset(1)),casacore::True);
        itsConverter->direction(feedPointingCentre,dirs[element]);

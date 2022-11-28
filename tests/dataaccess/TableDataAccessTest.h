@@ -24,7 +24,7 @@
 /// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 ///
 /// @author Max Voronkov <maxim.voronkov@csiro.au>
-/// 
+///
 #ifndef TABLE_DATA_ACCESS_TEST_H
 #define TABLE_DATA_ACCESS_TEST_H
 
@@ -66,7 +66,7 @@ class TableDataAccessTest : public CppUnit::TestFixture {
   CPPUNIT_TEST_EXCEPTION(bufferManagerExceptionTest,casacore::TableError);
   CPPUNIT_TEST(bufferManagerTest);
   CPPUNIT_TEST(dataDescTest);
-  CPPUNIT_TEST(spWindowTest);  
+  CPPUNIT_TEST(spWindowTest);
   CPPUNIT_TEST(polarisationTest);
   CPPUNIT_TEST(feedTest);
   CPPUNIT_TEST(fieldTest);
@@ -76,10 +76,11 @@ class TableDataAccessTest : public CppUnit::TestFixture {
   CPPUNIT_TEST(originalFlagRewriteTest);
   CPPUNIT_TEST(readOnlyTest);
   CPPUNIT_TEST(channelSelectionTest);
+  CPPUNIT_TEST(freqSelectionTest);
   CPPUNIT_TEST(chunkSizeTest);
   CPPUNIT_TEST_SUITE_END();
 public:
-  
+
   /// set up the test suite
   void setUp();
   /// destruct the test suite
@@ -96,7 +97,7 @@ public:
   void antennaSelectionTest();
   /// test of read only operations of the whole table-based implementation
   void readOnlyTest();
-  /// test exception if disk-based buffers are requested for a read-only table  
+  /// test exception if disk-based buffers are requested for a read-only table
   void bufferManagerExceptionTest();
   /// extensive test of buffer operations
   void bufferManagerTest();
@@ -113,27 +114,29 @@ public:
   /// test access to the antenna subtable
   void antennaTest();
   /// test access to antenna positions via a shortcut method
-  void antennaPositionShortcutTest(); 
+  void antennaPositionShortcutTest();
   /// test to rewrite original visibilities
   void originalVisRewriteTest();
   /// test to rewrite original flags
   void originalFlagRewriteTest();
   /// test read/write with channel selection
   void channelSelectionTest();
+  /// test read/write with frequency selection
+  void freqSelectionTest();
   /// test restriction of the chunk size
   void chunkSizeTest();
 protected:
   void doBufferTest() const;
 private:
-  boost::shared_ptr<ITableInfoAccessor> itsTableInfoAccessor;  
+  boost::shared_ptr<ITableInfoAccessor> itsTableInfoAccessor;
 }; // class TableDataAccessTest
 
 void TableDataAccessTest::setUp()
-{  
+{
 }
 
 void TableDataAccessTest::tearDown()
-{ 
+{
   itsTableInfoAccessor.reset();
 }
 
@@ -141,32 +144,32 @@ void TableDataAccessTest::tearDown()
 void TableDataAccessTest::readOnlyTest()
 {
   TableConstDataSource ds(TableTestRunner::msName());
- 
-  IDataConverterPtr conv=ds.createConverter();  
+
+  IDataConverterPtr conv=ds.createConverter();
   conv->setFrequencyFrame(casacore::MFrequency::Ref(casacore::MFrequency::BARY),"MHz");
   conv->setEpochFrame(casacore::MEpoch(casacore::Quantity(50257.29,"d"),
                       casacore::MEpoch::Ref(casacore::MEpoch::UTC)),"s");
-  conv->setDirectionFrame(casacore::MDirection::Ref(casacore::MDirection::AZEL));                    
-  
+  conv->setDirectionFrame(casacore::MDirection::Ref(casacore::MDirection::AZEL));
+
   int maxiter=4; // we don't need to read the whole dataset as it
                  // may take a long time. A few iterations should be sufficient.
                  // It is however useful to check that iteration finishes
                  // properly at the end of the measurement set. Hence, we
-                 // continue iterating through the dataset without reading.    
+                 // continue iterating through the dataset without reading.
   casacore::MDirection testDir(casacore::MVDirection(0.12345,-0.12345), casacore::MDirection::J2000);
   casacore::MDirection testDir2(casacore::MVDirection(-0.12345,0.12345), casacore::MDirection::J2000);
-                 
+
   for (IConstDataSharedIter it=ds.createConstIterator(conv);it!=it.end();++it) {
        if (maxiter<0) {
            continue;
-       }  
+       }
        --maxiter;
-       // just call several accessor methods to ensure that no exception is 
-       // thrown 
+       // just call several accessor methods to ensure that no exception is
+       // thrown
        CPPUNIT_ASSERT(it->visibility().nrow() == it->nRow());
        CPPUNIT_ASSERT(it->visibility().ncolumn() == it->nChannel());
-       CPPUNIT_ASSERT(it->visibility().nplane() == it->nPol());       
-       CPPUNIT_ASSERT(it->frequency().nelements() == it->nChannel());       
+       CPPUNIT_ASSERT(it->visibility().nplane() == it->nPol());
+       CPPUNIT_ASSERT(it->frequency().nelements() == it->nChannel());
        CPPUNIT_ASSERT(it->flag().shape() == it->visibility().shape());
        CPPUNIT_ASSERT(it->pointingDir2().nelements() == it->nRow());
        CPPUNIT_ASSERT(it->antenna1().nelements() == it->nRow());
@@ -177,23 +180,23 @@ void TableDataAccessTest::readOnlyTest()
        CPPUNIT_ASSERT(it->uvwRotationDelay(testDir,testDir2).nelements() == it->nRow());
        CPPUNIT_ASSERT(it->stokes().nelements() == it->nPol());
        CPPUNIT_ASSERT(it->nPol() == 2);
-       CPPUNIT_ASSERT(it->stokes()[0] == casacore::Stokes::XX);       
+       CPPUNIT_ASSERT(it->stokes()[0] == casacore::Stokes::XX);
        CPPUNIT_ASSERT(it->stokes()[1] == casacore::Stokes::YY);
-       
+
        // checks specific to table-based implementation
        boost::shared_ptr<TableConstDataIterator> actualIt = it.dynamicCast<TableConstDataIterator>();
        CPPUNIT_ASSERT(actualIt);
        CPPUNIT_ASSERT_EQUAL(0u, actualIt->currentFieldID());
-       CPPUNIT_ASSERT_EQUAL(0u, actualIt->currentScanID());              
+       CPPUNIT_ASSERT_EQUAL(0u, actualIt->currentScanID());
   }
 }
 
 void TableDataAccessTest::userDefinedIndexSelectionTest()
 {
   TableConstDataSource ds(TableTestRunner::msName());
-  IDataSelectorPtr sel = ds.createSelector();   
+  IDataSelectorPtr sel = ds.createSelector();
   sel->chooseUserDefinedIndex("ANTENNA1",1);
-  for (IConstDataSharedIter it=ds.createConstIterator(sel);it!=it.end();++it) {  
+  for (IConstDataSharedIter it=ds.createConstIterator(sel);it!=it.end();++it) {
        for (casacore::uInt row=0;row<it->nRow();++row) {
             CPPUNIT_ASSERT(it->antenna1()[row] == 1);
        }
@@ -201,7 +204,7 @@ void TableDataAccessTest::userDefinedIndexSelectionTest()
   sel = ds.createSelector();
   sel->chooseCrossCorrelations();
   sel->chooseUserDefinedIndex("ANTENNA1",1);
-  for (IConstDataSharedIter it=ds.createConstIterator(sel);it!=it.end();++it) {  
+  for (IConstDataSharedIter it=ds.createConstIterator(sel);it!=it.end();++it) {
        for (casacore::uInt row=0;row<it->nRow();++row) {
             CPPUNIT_ASSERT(it->antenna1()[row] == 1);
             CPPUNIT_ASSERT(it->antenna2()[row] != 1);
@@ -213,13 +216,13 @@ void TableDataAccessTest::userDefinedIndexSelectionTest()
 void TableDataAccessTest::chunkSizeTest()
 {
    TableConstDataSource ds(TableTestRunner::msName());
-   IDataSelectorPtr sel = ds.createSelector();   
+   IDataSelectorPtr sel = ds.createSelector();
    sel->chooseCrossCorrelations();
    const casacore::uInt nAnt = 6; // we have 6 antennas in the test dataset
    const casacore::uInt nBeams = 1; // we have 1 beam in the test dataset
    const casacore::uInt nRowsExpected = nBeams * nAnt * (nAnt - 1) / 2;
    casacore::uInt nIterOrig = 0;
-   for (IConstDataSharedIter it=ds.createConstIterator(sel);it!=it.end();++it,++nIterOrig) {  
+   for (IConstDataSharedIter it=ds.createConstIterator(sel);it!=it.end();++it,++nIterOrig) {
         CPPUNIT_ASSERT_EQUAL(nRowsExpected, it->nRow());
         CPPUNIT_ASSERT_EQUAL(static_cast<size_t>(nRowsExpected), it->visibility().nrow());
    }
@@ -228,7 +231,7 @@ void TableDataAccessTest::chunkSizeTest()
    ds.configureMaxChunkSize(nRowsExpected / 2);
 
    casacore::uInt count = 0;
-   for (IConstDataSharedIter it=ds.createConstIterator(sel);it!=it.end();++it,++count) {  
+   for (IConstDataSharedIter it=ds.createConstIterator(sel);it!=it.end();++it,++count) {
         const casacore::uInt nRowsExpectedThisIteration = ((nRowsExpected % 2 == 0) || (count % 3 != 2)) ? nRowsExpected / 2 : 1;
         if (count / 3 < nIterOrig) {
             // exclude the last iteration from the check as binning may be different
@@ -237,26 +240,26 @@ void TableDataAccessTest::chunkSizeTest()
         }
    }
 }
-  
+
 
 /// test of correlation type selection
-void TableDataAccessTest::corrTypeSelectionTest() 
+void TableDataAccessTest::corrTypeSelectionTest()
 {
   TableConstDataSource ds(TableTestRunner::msName());
-  IDataSelectorPtr sel = ds.createSelector();   
+  IDataSelectorPtr sel = ds.createSelector();
   sel->chooseAutoCorrelations();
-  for (IConstDataSharedIter it=ds.createConstIterator(sel);it!=it.end();++it) {  
+  for (IConstDataSharedIter it=ds.createConstIterator(sel);it!=it.end();++it) {
        for (casacore::uInt row=0;row<it->nRow();++row) {
             CPPUNIT_ASSERT(it->antenna1()[row] == it->antenna2()[row]);
-            CPPUNIT_ASSERT(it->feed1()[row] == it->feed2()[row]); 
+            CPPUNIT_ASSERT(it->feed1()[row] == it->feed2()[row]);
        }
   }
   sel = ds.createSelector();
   sel->chooseCrossCorrelations();
-  for (IConstDataSharedIter it=ds.createConstIterator(sel);it!=it.end();++it) {  
+  for (IConstDataSharedIter it=ds.createConstIterator(sel);it!=it.end();++it) {
        for (casacore::uInt row=0;row<it->nRow();++row) {
             CPPUNIT_ASSERT((it->antenna1()[row] != it->antenna2()[row]) ||
-                           (it->feed1()[row] != it->feed2()[row])); 
+                           (it->feed1()[row] != it->feed2()[row]));
        }
   }
 }
@@ -264,9 +267,9 @@ void TableDataAccessTest::corrTypeSelectionTest()
 void TableDataAccessTest::nonZeroMinUVSelectionTest()
 {
   TableConstDataSource ds(TableTestRunner::msName());
-  IDataSelectorPtr sel = ds.createSelector();   
+  IDataSelectorPtr sel = ds.createSelector();
   sel->chooseMinNonZeroUVDistance(1000.);
-  for (IConstDataSharedIter it=ds.createConstIterator(sel);it!=it.end();++it) {  
+  for (IConstDataSharedIter it=ds.createConstIterator(sel);it!=it.end();++it) {
        for (casacore::uInt row=0;row<it->nRow();++row) {
             const casacore::RigidVector<casacore::Double, 3> &uvw = it->uvw()(row);
             const casacore::Double uvDist = sqrt(casacore::square(uvw(0))+
@@ -274,13 +277,13 @@ void TableDataAccessTest::nonZeroMinUVSelectionTest()
             // it's ok to compare doubles with zero here because the specific case with zero uvw
             // arises from direct assignment of 0. to each uvw coordinate and selection rule
             // also checks for match
-            CPPUNIT_ASSERT(uvDist>=1000. || (uvw(0) == 0. && uvw(1) == 0. && uvw(2) == 0.)); 
+            CPPUNIT_ASSERT(uvDist>=1000. || (uvw(0) == 0. && uvw(1) == 0. && uvw(2) == 0.));
        }
   }
   // explicit selection of auto-correlations to ensure zero uv gets through
   sel->chooseAutoCorrelations();
   casacore::uInt counter = 0;
-  for (IConstDataSharedIter it=ds.createConstIterator(sel);it!=it.end();++it) {  
+  for (IConstDataSharedIter it=ds.createConstIterator(sel);it!=it.end();++it) {
        counter += it->nRow();
        for (casacore::uInt row=0;row<it->nRow();++row) {
             const casacore::RigidVector<casacore::Double, 3> &uvw = it->uvw()(row);
@@ -293,39 +296,39 @@ void TableDataAccessTest::nonZeroMinUVSelectionTest()
 }
 
 /// test of selection based on the minimum/maximum uv distance
-void TableDataAccessTest::uvDistanceSelectionTest() 
+void TableDataAccessTest::uvDistanceSelectionTest()
 {
   TableConstDataSource ds(TableTestRunner::msName());
-  IDataSelectorPtr sel = ds.createSelector();   
+  IDataSelectorPtr sel = ds.createSelector();
   sel->chooseMinUVDistance(1000.);
-  for (IConstDataSharedIter it=ds.createConstIterator(sel);it!=it.end();++it) {  
+  for (IConstDataSharedIter it=ds.createConstIterator(sel);it!=it.end();++it) {
        for (casacore::uInt row=0;row<it->nRow();++row) {
             const casacore::RigidVector<casacore::Double, 3> &uvw = it->uvw()(row);
             const casacore::Double uvDist = sqrt(casacore::square(uvw(0))+
                                              casacore::square(uvw(1)));
-            CPPUNIT_ASSERT(uvDist>=1000.);                                 
+            CPPUNIT_ASSERT(uvDist>=1000.);
        }
   }
   sel = ds.createSelector();
   sel->chooseCrossCorrelations();
   sel->chooseMaxUVDistance(3000.);
-  for (IConstDataSharedIter it=ds.createConstIterator(sel);it!=it.end();++it) {  
+  for (IConstDataSharedIter it=ds.createConstIterator(sel);it!=it.end();++it) {
        for (casacore::uInt row=0;row<it->nRow();++row) {
             const casacore::RigidVector<casacore::Double, 3> &uvw = it->uvw()(row);
             const casacore::Double uvDist = sqrt(casacore::square(uvw(0))+
                                              casacore::square(uvw(1)));
-            CPPUNIT_ASSERT(uvDist<=3000.);                                 
+            CPPUNIT_ASSERT(uvDist<=3000.);
        }
-  }  
+  }
 }
 
 /// test of selection based on antenna index
 void TableDataAccessTest::antennaSelectionTest()
 {
   TableConstDataSource ds(TableTestRunner::msName());
-  IDataSelectorPtr sel = ds.createSelector();   
+  IDataSelectorPtr sel = ds.createSelector();
   sel->chooseAntenna(2u);
-  for (IConstDataSharedIter it=ds.createConstIterator(sel);it!=it.end();++it) {  
+  for (IConstDataSharedIter it=ds.createConstIterator(sel);it!=it.end();++it) {
        for (casacore::uInt row=0;row<it->nRow();++row) {
             CPPUNIT_ASSERT((it->antenna1()[row] == 2u) || (it->antenna2()[row] == 2u));
        }
@@ -334,12 +337,12 @@ void TableDataAccessTest::antennaSelectionTest()
   sel = ds.createSelector();
   sel->chooseCrossCorrelations();
   sel->chooseAntenna(2u);
-  for (IConstDataSharedIter it=ds.createConstIterator(sel);it!=it.end();++it) {  
+  for (IConstDataSharedIter it=ds.createConstIterator(sel);it!=it.end();++it) {
        casacore::uInt cntFirst = 0u;
        casacore::uInt cntSecond = 0u;
        for (casacore::uInt row=0;row<it->nRow();++row) {
             CPPUNIT_ASSERT((it->antenna1()[row] != it->antenna2()[row]) ||
-                           (it->feed1()[row] != it->feed2()[row])); 
+                           (it->feed1()[row] != it->feed2()[row]));
             CPPUNIT_ASSERT((it->antenna1()[row] == 2u) || (it->antenna2()[row] == 2u));
             if (it->antenna1()[row] == 2u) {
                 ++cntFirst;
@@ -347,7 +350,7 @@ void TableDataAccessTest::antennaSelectionTest()
                 ++cntSecond;
             }
        }
-       // test dataset has 6 antennas, so 5 cross-correlations with antenna 2 
+       // test dataset has 6 antennas, so 5 cross-correlations with antenna 2
        // first index is slow varying, so 3 cross-correlations will have antenna 2 as
        // the first index and 2 as the second
        CPPUNIT_ASSERT_EQUAL(5u, cntFirst + cntSecond);
@@ -363,7 +366,7 @@ void TableDataAccessTest::bufferManagerExceptionTest()
   // should throw a TableError
   itsTableInfoAccessor.reset(new TableInfoAccessor(
           casacore::Table(TableTestRunner::msName()),false));
-  doBufferTest();						   
+  doBufferTest();
 }
 
 void TableDataAccessTest::bufferManagerTest()
@@ -410,7 +413,7 @@ void TableDataAccessTest::spWindowTest()
                  casacore::MFrequency::TOPO);
   CPPUNIT_ASSERT(spWindow.getFrequencyUnit().getName() == "Hz");
   CPPUNIT_ASSERT(spWindow.getFrequencies(0).size() == 13);
-  for (casacore::uInt chan=0;chan<13;++chan) { 
+  for (casacore::uInt chan=0;chan<13;++chan) {
      CPPUNIT_ASSERT(spWindow.getFrequencies(0)[chan] ==
               spWindow.getFrequency(0,chan).getValue().getValue());
   }
@@ -451,14 +454,14 @@ void TableDataAccessTest::feedTest()
                       subtableInfo().getFeed();
   casacore::MEpoch time(casacore::MVEpoch(casacore::Quantity(50257.29,"d")),
                     casacore::MEpoch::Ref(casacore::MEpoch::UTC));
-  for (casacore::uInt feed=0; feed<5; ++feed) {                  
+  for (casacore::uInt feed=0; feed<5; ++feed) {
        for (casacore::uInt ant=1; ant<6; ++ant) {
             CPPUNIT_ASSERT(fabs(feedSubtable.getBeamOffset(time,0,ant,feed)(0)-
                        feedSubtable.getBeamOffset(time,0,0,feed)(0))<1e-7);
             CPPUNIT_ASSERT(fabs(feedSubtable.getBeamOffset(time,0,ant,feed)(1)-
                        feedSubtable.getBeamOffset(time,0,0,feed)(1))<1e-7);
             CPPUNIT_ASSERT(fabs(feedSubtable.getBeamPA(time,0,ant,feed)-
-                       feedSubtable.getBeamPA(time,0,0,feed))<1e-7);           
+                       feedSubtable.getBeamPA(time,0,0,feed))<1e-7);
        }
        if (feed!=4) {
            CPPUNIT_ASSERT(fabs(feedSubtable.getBeamOffset(time,0,0,
@@ -472,7 +475,7 @@ void TableDataAccessTest::feedTest()
                                              feed)(1))<1e-5);
        }
        CPPUNIT_ASSERT(fabs(feedSubtable.getBeamPA(time,0,0,feed))<1e-5);
-  }                  
+  }
 }
 
 /// test access to the field subtable
@@ -498,7 +501,7 @@ void TableDataAccessTest::fieldTest()
   CPPUNIT_ASSERT(fieldSubtable.getReferenceDir(0).getRef().getType() ==
                  casacore::MDirection::J2000);
   CPPUNIT_ASSERT(fieldSubtable.getReferenceDir(0).getValue().
-                 separation(refDir)<1e-7);  
+                 separation(refDir)<1e-7);
 }
 
 
@@ -506,7 +509,7 @@ void TableDataAccessTest::doBufferTest() const
 {
   const IBufferManager &bufferMgr=itsTableInfoAccessor->subtableInfo().
                                   getBufferManager();
-  const casacore::uInt index=5;				 
+  const casacore::uInt index=5;
   CPPUNIT_ASSERT(!bufferMgr.bufferExists("TEST",index));
   casacore::Cube<casacore::Complex> vis(5,10,2);
   vis.set(casacore::Complex(1.,-0.5));
@@ -521,12 +524,12 @@ void TableDataAccessTest::doBufferTest() const
   bufferMgr.readBuffer(vis2,"TEST",index);
   CPPUNIT_ASSERT(vis.shape()==casacore::IPosition(3,5,1,2));
   CPPUNIT_ASSERT(vis2.shape()==casacore::IPosition(3,5,10,2));
-  ASKAPDEBUGASSERT(vis.shape()[0]>=0);  
+  ASKAPDEBUGASSERT(vis.shape()[0]>=0);
   ASKAPDEBUGASSERT(vis.shape()[1]>=0);
   ASKAPDEBUGASSERT(vis.shape()[2]>=0);
   for (casacore::uInt x=0;x<casacore::uInt(vis.shape()[0]);++x) {
        for (casacore::uInt y=0;y<casacore::uInt(vis.shape()[1]);++y) {
-            for (casacore::uInt z=0;z<casacore::uInt(vis.shape()[2]);++z) {	         
+            for (casacore::uInt z=0;z<casacore::uInt(vis.shape()[2]);++z) {
 	         CPPUNIT_ASSERT(abs(vis2(x,y,z)+vis(x,0,z))<1e-9);
 	    }
        }
@@ -551,7 +554,7 @@ void TableDataAccessTest::antennaTest()
               separation(antennaSubtable.getPosition(ant2).getValue(),"deg").
                          getValue()<0.1);
       }
-  }                     
+  }
 }
 
 /// test access to antenna positions via a short cut method, specific to
@@ -590,7 +593,7 @@ void TableDataAccessTest::channelSelectionTest()
 {
   TableDataSource tds(TableTestRunner::msName(), TableDataSource::WRITE_PERMITTED);
   IDataSource &ds=tds; // to have all interface methods available without
-                       // ambiguity (otherwise methods overridden in 
+                       // ambiguity (otherwise methods overridden in
                        // TableDataSource would get a priority)
   for (IDataSharedIter it=ds.createIterator(); it!=it.end(); ++it) {
        // store original visibilities in a buffer
@@ -598,8 +601,8 @@ void TableDataAccessTest::channelSelectionTest()
        // set new values for all spectral channels, rows and pols
        it->rwVisibility().set(casacore::Complex(1.,0.5));
   }
-  
-  
+
+
   IDataSelectorPtr sel = ds.createSelector();
   ASKAPASSERT(sel);
   sel->chooseChannels(2, 3);
@@ -607,9 +610,9 @@ void TableDataAccessTest::channelSelectionTest()
        // different value corresponding to selected channels
        it->rwVisibility().set(casacore::Complex(-0.5,1.0));
   }
-  
+
   // check that the visibilities are set to a required constant for the selected subset of channels
-  for (IConstDataSharedIter cit = ds.createConstIterator(sel); 
+  for (IConstDataSharedIter cit = ds.createConstIterator(sel);
                                         cit != cit.end(); ++cit) {
        const casacore::Cube<casacore::Complex> &vis = cit->visibility();
        // selected just two channels
@@ -623,9 +626,9 @@ void TableDataAccessTest::channelSelectionTest()
             }
        }
   }
-  
+
   // check that the visibilities are set to a required constant in the whole cube
-  for (IConstDataSharedIter cit = ds.createConstIterator(); 
+  for (IConstDataSharedIter cit = ds.createConstIterator();
                                         cit != cit.end(); ++cit) {
        const casacore::Cube<casacore::Complex> &vis = cit->visibility();
        // selected just two channels
@@ -640,9 +643,79 @@ void TableDataAccessTest::channelSelectionTest()
             }
        }
   }
-  
-  
-  
+
+
+
+  // set visibilities back to the original values
+  for (IDataSharedIter it=ds.createIterator(); it!=it.end(); ++it) {
+       // store original visibilities in a buffer
+       it->rwVisibility() = it.buffer("BACKUP").visibility();
+  }
+}
+
+/// test read/write with frequency selection
+void TableDataAccessTest::freqSelectionTest()
+{
+  TableDataSource tds(TableTestRunner::msName(), TableDataSource::WRITE_PERMITTED);
+  IDataSource &ds=tds; // to have all interface methods available without
+                       // ambiguity (otherwise methods overridden in
+                       // TableDataSource would get a priority)
+  casacore::Vector<casacore::Double> freqs;
+  for (IDataSharedIter it=ds.createIterator(); it!=it.end(); ++it) {
+       // store original visibilities in a buffer
+       it.buffer("BACKUP").rwVisibility() = it->visibility();
+       // set new values for all spectral channels, rows and pols
+       it->rwVisibility().set(casacore::Complex(1.,0.5));
+       if (freqs.nelements()==0) {
+           freqs = it->frequency();
+       }
+  }
+
+
+  IDataSelectorPtr sel = ds.createSelector();
+  ASKAPASSERT(sel);
+  // choose 3rd freq (i.e. freq(2)), note only 0 width is supported at present
+  sel->chooseFrequencies(1, freqs(2), 0.);
+  for (IDataSharedIter it=ds.createIterator(sel); it!=it.end(); ++it) {
+       // different value corresponding to selected channels
+       it->rwVisibility().set(casacore::Complex(-0.5,1.0));
+  }
+
+  // check that the visibilities are set to a required constant for the selected subset of channels
+  for (IConstDataSharedIter cit = ds.createConstIterator(sel);
+                                        cit != cit.end(); ++cit) {
+       const casacore::Cube<casacore::Complex> &vis = cit->visibility();
+       // selected just two channels
+       ASKAPASSERT(vis.ncolumn() == 1);
+       for (casacore::uInt row = 0; row < vis.nrow(); ++row) {
+            for (casacore::uInt column = 0; column < vis.ncolumn(); ++column) {
+                 for (casacore::uInt plane = 0; plane < vis.nplane(); ++plane) {
+                      CPPUNIT_ASSERT(abs(vis(row,column,plane)-
+                                         casacore::Complex(-0.5,1.0))<1e-7);
+                 }
+            }
+       }
+  }
+
+  // check that the visibilities are set to a required constant in the whole cube
+  for (IConstDataSharedIter cit = ds.createConstIterator();
+                                        cit != cit.end(); ++cit) {
+       const casacore::Cube<casacore::Complex> &vis = cit->visibility();
+       // selected just two channels
+       ASKAPASSERT(vis.ncolumn() == 13);
+       for (casacore::uInt row = 0; row < vis.nrow(); ++row) {
+            for (casacore::uInt column = 0; column < vis.ncolumn(); ++column) {
+                 for (casacore::uInt plane = 0; plane < vis.nplane(); ++plane) {
+                      const casacore::Complex result = (column==2 ?
+                                  casacore::Complex(-0.5,1.0) : casacore::Complex(1.0,0.5));
+                      CPPUNIT_ASSERT(abs(vis(row,column,plane) - result)<1e-7);
+                 }
+            }
+       }
+  }
+
+
+
   // set visibilities back to the original values
   for (IDataSharedIter it=ds.createIterator(); it!=it.end(); ++it) {
        // store original visibilities in a buffer
@@ -718,7 +791,7 @@ void TableDataAccessTest::originalVisRewriteTest()
 {
   TableDataSource tds(TableTestRunner::msName(), TableDataSource::WRITE_PERMITTED);
   IDataSource &ds=tds; // to have all interface methods available without
-                       // ambiguity (otherwise methods overridden in 
+                       // ambiguity (otherwise methods overridden in
                        // TableDataSource would get a priority)
   casacore::uInt iterCntr=0;
   for (IDataSharedIter it=ds.createIterator(); it!=it.end(); ++it,++iterCntr) {
@@ -734,7 +807,7 @@ void TableDataAccessTest::originalVisRewriteTest()
        it->rwVisibility().set(casacore::Complex(1.,0.5));
   }
   // check that the visibilities are set to a required constant
-  for (IConstDataSharedIter cit = ds.createConstIterator(); 
+  for (IConstDataSharedIter cit = ds.createConstIterator();
                                         cit != cit.end(); ++cit) {
        const casacore::Cube<casacore::Complex> &vis = cit->visibility();
        for (casacore::uInt row = 0; row < vis.nrow(); ++row) {
@@ -751,10 +824,10 @@ void TableDataAccessTest::originalVisRewriteTest()
        // store original visibilities in a buffer
        it->rwVisibility() = it.buffer("BACKUP").visibility();
   }
-  
+
   // compare with the values stored in the memory
   iterCntr=0;
-  for (IConstDataSharedIter cit = ds.createConstIterator(); 
+  for (IConstDataSharedIter cit = ds.createConstIterator();
                                   cit != cit.end(); ++cit,++iterCntr) {
        const casacore::Cube<casacore::Complex> &vis = cit->visibility();
        for (casacore::uInt row = 0; row < vis.nrow(); ++row) {
