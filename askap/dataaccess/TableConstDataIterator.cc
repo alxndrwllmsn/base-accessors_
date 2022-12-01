@@ -194,6 +194,7 @@ void TableConstDataIterator::init()
 	     casacore::TableIterator::Ascending,casacore::TableIterator::NoSort);
   }
   itsChannelsSelected = false;
+  itsFlagData = false;
   setUpIteration();
 }
 
@@ -491,6 +492,9 @@ void TableConstDataIterator::fillVisibility(casacore::Cube<casacore::Complex> &v
 void TableConstDataIterator::fillFlag(casacore::Cube<casacore::Bool> &flag) const
 {
   fillCube(flag,"FLAG");
+  if (itsFlagData) {
+      flag = true;
+  }
 }
 
 /// populate the buffer of noise figures with the values of current
@@ -670,6 +674,7 @@ std::pair<casacore::uInt, casacore::uInt> TableConstDataIterator::getChannelRang
 {
   ASKAPDEBUGASSERT(itsSelector);
   if (!itsChannelsSelected) {
+      itsFlagData = true;
 
       if (itsSelector->frequenciesSelected()) {
           const std::tuple<int,double,double,casacore::MFrequency::Types> freqSel = itsSelector->getFrequencySelection();
@@ -700,11 +705,14 @@ std::pair<casacore::uInt, casacore::uInt> TableConstDataIterator::getChannelRang
           if (nFreq > 1) {
               const double freqInc = dataFreqs(1) - dataFreqs(0);
               ASKAPDEBUGASSERT(freqInc != 0);
+              ASKAPCHECK(abs((dataFreqs(nFreq-1)-dataFreqs(0))/((nFreq-1)*freqInc)-1)<0.001,
+                "Frequency axis non-linear, cannot do frequency selection with current code");
               const double channel = (requiredFreq - dataFreqs(0)) / freqInc;
               // for now just use nearest channel, but could do linear interpolation between nearest two
               const int nearestChannel = std::lrint(channel);
               if (nearestChannel >= 0 && nearestChannel < nFreq) {
                   itsStartChannelSelected = (uint)nearestChannel;
+                  itsFlagData = false;
               } else {
                   if (nearestChannel >= nFreq) {
                       itsStartChannelSelected = nFreq - 1;
@@ -718,10 +726,11 @@ std::pair<casacore::uInt, casacore::uInt> TableConstDataIterator::getChannelRang
           itsStartChannelSelected = itsSelector->channelsSelected() ?
                                    casacore::uInt(chanSelection.second) : 0;
           ASKAPDEBUGASSERT(itsNumberOfChannelsSelected + itsStartChannelSelected <= itsNumberOfChannels);
+          itsFlagData = false;
       }
       itsChannelsSelected = true;
   }
-  
+
   return std::pair<casacore::uInt, casacore::uInt>(itsNumberOfChannelsSelected,itsStartChannelSelected);
 }
 
@@ -754,7 +763,8 @@ void TableConstDataIterator::fillFrequency(casacore::Vector<casacore::Double> &f
   // we need to take care of constness as taking a slice is not a const
   // operation.
   if (itsConverter->isVoid(spWindowSubtable.getReferenceFrame(spWindowID),
-	                   spWindowSubtable.getFrequencyUnit()) && !itsSelector->channelsSelected()) {
+	                   spWindowSubtable.getFrequencyUnit()) && !itsSelector->channelsSelected()
+                       && !itsSelector->frequenciesSelected()) {
       // the conversion is void, i.e. table units/frame are exactly what
       // we need for output. This simplifies things a lot.
       freq.reference(spWindowSubtable.getFrequencies(spWindowID));

@@ -476,6 +476,8 @@ private:
   mutable uint itsStartChannelSelected;
   /// selection initialised?
   mutable bool itsChannelsSelected;
+  /// selection invalid?
+  mutable bool itsFlagData;
 };
 
 
