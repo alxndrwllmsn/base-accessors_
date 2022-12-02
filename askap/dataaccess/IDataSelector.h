@@ -1,7 +1,7 @@
 /// @file IDataSelector.h
 /// @brief Interface class representing visibility selection
 /// @details Interface class representing a selection of visibility
-///                data according to some criterion. 
+///                data according to some criterion.
 ///
 /// @copyright (c) 2007 CSIRO
 /// Australia Telescope National Facility (ATNF)
@@ -31,7 +31,7 @@
 #define ASKAP_ACCESSORS_I_DATA_SELECTOR_H
 
 #include <casacore/casa/aips.h>
-#include <casacore/casa/Quanta/MVFrequency.h>
+#include <casacore/measures/Measures/MFrequency.h>
 #include <casacore/casa/Quanta/MVRadialVelocity.h>
 #include <casacore/casa/Quanta/MVEpoch.h>
 #include <casacore/casa/BasicSL/String.h>
@@ -42,7 +42,7 @@ namespace accessors {
 
 /// @brief Interface class representing visibility selection
 /// @details IDataSelector represents a selection of visibility
-/// data according to some criterion 
+/// data according to some criterion
 /// A derivative from this class is passed to a derivative from
 /// IDataSource in the request for an iterator. The iterator obtained
 /// that way runs through the selected part of the dataset (doesn't
@@ -53,7 +53,7 @@ class IDataSelector
 public:
     /// An empty virtual destructor to make the compiler happy
     virtual ~IDataSelector();
-		
+
     /// Choose a single feed, the same for both antennae
     /// @param[in] feedID the sequence number of feed to choose
     virtual void chooseFeed(casacore::uInt feedID) = 0;
@@ -72,13 +72,13 @@ public:
     /// @param[in] column column name in the measurement set for a user-defined index
     /// @param[in] value index value
     virtual void chooseUserDefinedIndex(const std::string &column, const casacore::uInt value) = 0;
-	
+
     /// @brief Choose autocorrelations only
     virtual void chooseAutoCorrelations() = 0;
-  
+
     /// @brief Choose crosscorrelations only
     virtual void chooseCrossCorrelations() = 0;
-	
+
     /// @brief Choose samples corresponding to a uv-distance larger than threshold
     /// @details This effectively rejects the baselines giving a smaller
     /// uv-distance than the specified threshold (in metres)
@@ -89,7 +89,7 @@ public:
     /// @details This effectively rejects the baselines giving a smaller
     /// uv-distance than the specified threshold (in metres), but unlike chooseMinUVDistance
     /// preserve samples with uvw equal to exatly zero. One example of such zero uvw samples is
-    /// auto-correlation (which can be filtered out separately by another selector call), but the 
+    /// auto-correlation (which can be filtered out separately by another selector call), but the
     /// main motivation behind such method is to preserve completely flagged samples which may not
     /// have uvw defined (and therefore it could be set to zero)
     /// @param[in] uvDist threshold
@@ -100,8 +100,8 @@ public:
     /// uv-distance than the specified threshold (in metres)
     /// @param[in] uvDist threshold
     virtual void chooseMaxUVDistance(casacore::Double uvDist) = 0;
-	
-	
+
+
     /// Choose a subset of spectral channels
     /// @param[in] nChan a number of spectral channels wanted in the output
     /// @param[in] start the number of the first spectral channel to choose
@@ -111,7 +111,7 @@ public:
 	         casacore::uInt start, casacore::uInt nAvg = 1) = 0;
 
     /// Choose a subset of frequencies. The reference frame is
-    /// defined by the DataSource object
+    /// defined by the DataSource object by default, but can be specified
     /// @param[in] nChan a number of spectral channels wanted in the output
     /// @param[in] start the frequency of the first spectral channel to
     ///        choose (given as casacore::MVFrequency object)
@@ -119,9 +119,12 @@ public:
     ///        same reference frame as start. This parameter plays
     ///        the same role as nAvg for chooseChannels, i.e. twice
     ///        the frequency resolution would average two adjacent channels
+    /// @param[in] freqRef the reference type for the frequency
+    ///        default is reference of DataSource
     virtual void chooseFrequencies(casacore::uInt nChan,
-             const casacore::MVFrequency &start, 
-             const casacore::MVFrequency &freqInc) = 0;
+             const casacore::MVFrequency &start,
+             const casacore::MVFrequency &freqInc,
+             const casacore::MFrequency::Types freqRef = casacore::MFrequency::Undefined) = 0;
 
     /// Choose a subset of radial velocities. The reference frame is
     /// defined by the DataSource object
@@ -135,7 +138,7 @@ public:
     virtual void chooseVelocities(casacore::uInt nChan,
              const casacore::MVRadialVelocity &start,
              const casacore::MVRadialVelocity &velInc) = 0;
-	
+
     /// Choose a single spectral window (also known as IF).
     /// @param[in] spWinID the ID of the spectral window to choose
     virtual void chooseSpectralWindow(casacore::uInt spWinID) = 0;
@@ -151,7 +154,7 @@ public:
     virtual void chooseTimeRange(const casacore::MVEpoch &start,
 	          const casacore::MVEpoch &stop) = 0;
 
-    /// Choose time range. This method accepts a time range with 
+    /// Choose time range. This method accepts a time range with
     /// respect to the origin defined by the DataSource object.
     /// Both start and stop times are given as Doubles.
     /// The reference frame is the same as for the version accepting
@@ -160,8 +163,8 @@ public:
     /// @param[in] stop the end of the chosen time interval
     virtual void chooseTimeRange(casacore::Double start,casacore::Double stop) = 0;
 
-    /// Choose polarization. 
-    /// @param pols a string describing the wanted polarization 
+    /// Choose polarization.
+    /// @param pols a string describing the wanted polarization
     /// in the output. Allowed values are: I, "IQUV","XXYY","RRLL"
     virtual void choosePolarizations(const casacore::String &pols) = 0;
 

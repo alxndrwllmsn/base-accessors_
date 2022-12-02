@@ -2,10 +2,10 @@
 /// @brief An interface to ANTENNA subtable
 /// @details A class derived from this interface provides access to
 /// the content of the ANTENNA subtable (which provides antenna mounts and
-/// positions). It looks like the measurement set can't easily handle 
+/// positions). It looks like the measurement set can't easily handle
 /// time-dependent antenna tables and this case is definitely out of scope for
 /// ASKAP. Therefore, the interface doesn't allow the information to change in
-/// time. 
+/// time.
 ///
 /// @copyright (c) 2007 CSIRO
 /// Australia Telescope National Facility (ATNF)
@@ -49,19 +49,19 @@ namespace accessors {
 /// @brief An interface to ANTENNA subtable
 /// @details A class derived from this interface provides access to
 /// the content of the ANTENNA subtable (which provides antenna mounts and
-/// positions). It looks like the measurement set can't easily handle 
+/// positions). It looks like the measurement set can't easily handle
 /// time-dependent antenna tables and this case is definitely out of scope for
 /// ASKAP. Therefore, the interface doesn't allow the information to change
-/// with time. 
+/// with time.
 /// @ingroup dataaccess_tab
 struct IAntennaSubtableHandler : virtual public IHolder {
-  
+
   /// @brief obtain the position of the given antenna
   /// @details
   /// @param[in] antID antenna ID to return the position for
   /// @return a reference to the MPosition measure
   virtual const casacore::MPosition& getPosition(casacore::uInt antID) const = 0;
-  
+
   /// @brief obtain the mount type for the given antenna
   /// @details
   /// @param[in] antID antenna ID to return the position for
@@ -70,19 +70,19 @@ struct IAntennaSubtableHandler : virtual public IHolder {
   
   /// @brief check whether all antennas are equatorialy mounted
   /// @details
-  /// This method checks the mount type for all antennas to be 
+  /// This method checks the mount type for all antennas to be
   /// either EQUATORIAL or equatorial. This mount type doesn't require
-  /// parallactic angle rotation and can be trated separately.
+  /// parallactic angle rotation and can be treated separately.
   /// @return true, if all antennas are equatorially mounted
-  virtual bool allEquatorial() const = 0; 
-  
+  virtual bool allEquatorial() const = 0;
+
   /// @brief get the number of antennas
   /// @details
   /// This method returns the number of antennas (i.e. all antID indices
   /// are expected to be less than this number). Following the general
   /// assumptions about ANTENNA subtable, this number is assumed to be
   /// fixed.
-  /// @return total number of antennas 
+  /// @return total number of antennas
   virtual casacore::uInt getNumberOfAntennas() const = 0;
 };
 
