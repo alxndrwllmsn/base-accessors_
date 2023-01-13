@@ -36,6 +36,7 @@
 /// ASKAPsoft includes
 #include <askap/askap/AskapLogging.h>
 #include <askap/askap/AskapError.h>
+#include <askap/profile/AskapProfiler.h>
 #include <casacore/tables/Tables/ArrayColumn.h>
 #include <casacore/tables/Tables/ScalarColumn.h>
 #include <casacore/measures/TableMeasures/ScalarMeasColumn.h>
@@ -159,8 +160,8 @@ TableConstDataIterator::TableConstDataIterator(
         itsSelector(sel->clone()),
 	    itsConverter(conv->clone()),
 #endif
-	    itsMaxChunkSize(maxChunkSize)
-
+	    itsMaxChunkSize(maxChunkSize),
+        itsAtStart(false)
 {
   ASKAPDEBUGASSERT(conv);
   ASKAPDEBUGASSERT(sel);
@@ -174,28 +175,33 @@ TableConstDataIterator::TableConstDataIterator(
 /// Restart the iteration from the beginning
 void TableConstDataIterator::init()
 {
-  itsCurrentTopRow=0;
-  itsCurrentDataDescID=-100; // this value can't be in the table,
-                             // therefore it is a flag of a new data descriptor
-  itsCurrentFieldID = -100; // this value can't be in the table,
-                            // therefore it is a flag of a new field ID
-  // by default use FIELD_ID column if it exists, otherwise use time to select
-  // pointings
-  itsUseFieldID = table().actualTableDesc().isColumn("FIELD_ID");
+    ASKAPTRACE("TableConstDataIterator::init");
+  // avoid doing this if not required as it can be expensive
+  if (!itsAtStart) {
+      itsCurrentTopRow=0;
+      itsCurrentDataDescID=-100; // this value can't be in the table,
+                                 // therefore it is a flag of a new data descriptor
+      itsCurrentFieldID = -100; // this value can't be in the table,
+                                // therefore it is a flag of a new field ID
+      // by default use FIELD_ID column if it exists, otherwise use time to select
+      // pointings
+      itsUseFieldID = table().actualTableDesc().isColumn("FIELD_ID");
 
-  const casacore::TableExprNode &exprNode =
-              itsSelector->getTableSelector(itsConverter);
-  if (exprNode.isNull()) {
-      itsTabIterator=casacore::TableIterator(table(),"TIME",
-	     casacore::TableIterator::Ascending,casacore::TableIterator::NoSort);
-  } else {
-      itsTabIterator=casacore::TableIterator(table()(itsSelector->
-                               getTableSelector(itsConverter)),"TIME",
-	     casacore::TableIterator::Ascending,casacore::TableIterator::NoSort);
+      const casacore::TableExprNode &exprNode =
+                  itsSelector->getTableSelector(itsConverter);
+      if (exprNode.isNull()) {
+          itsTabIterator=casacore::TableIterator(table(),"TIME",
+    	     casacore::TableIterator::Ascending,casacore::TableIterator::NoSort);
+      } else {
+          itsTabIterator=casacore::TableIterator(table()(itsSelector->
+                                   getTableSelector(itsConverter)),"TIME",
+    	     casacore::TableIterator::Ascending,casacore::TableIterator::NoSort);
+      }
+      itsChannelsSelected = false;
+      itsFlagData = false;
+      setUpIteration();
+      itsAtStart = true;
   }
-  itsChannelsSelected = false;
-  itsFlagData = false;
-  setUpIteration();
 }
 
 /// operator* delivers a reference to data accessor (current chunk)
@@ -223,6 +229,8 @@ casacore::Bool TableConstDataIterator::hasMore() const throw()
 ///         while(it.next()) {} are possible)
 casacore::Bool TableConstDataIterator::next()
 {
+  ASKAPTRACE("TableConstDataIterator::next");
+  itsAtStart = false;
   itsCurrentTopRow+=itsNumberOfRows;
   if (itsCurrentTopRow>=itsCurrentIteration.nrow()) {
       ASKAPDEBUGASSERT(!itsTabIterator.pastEnd());
@@ -1149,7 +1157,7 @@ void TableConstDataIterator::fillVectorOfPointings(
                    " are beyond the range of the FEED table");
            }
        if (directionCacheIndices(antIDs[row],feedIDs[row])<0) {
-           ASKAPTHROW(DataAccessError, "The pair andID="<<antIDs[row]<<
+           ASKAPTHROW(DataAccessError, "The pair antID="<<antIDs[row]<<
                    " feedID="<<feedIDs[row]<<" doesn't have beam parameters defined");
        }
        const casacore::uInt index = static_cast<casacore::uInt>(
