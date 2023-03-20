@@ -110,12 +110,9 @@ public:
    ///        same reference frame as start. This parameter plays
    ///        the same role as nAvg for chooseChannels, i.e. twice
    ///        the frequency resolution would average two adjacent channels
-   /// @param[in] freqRef the reference type for the frequency
-   ///        default is reference of DataSource
    virtual void chooseFrequencies(casacore::uInt nChan,
-            const casacore::MVFrequency &start,
-            const casacore::MVFrequency &freqInc,
-            const casacore::MFrequency::Types freqType = casacore::MFrequency::Undefined);
+            const casacore::MFrequency &start,
+            const casacore::MVFrequency &freqInc);
 
   /// Choose a subset of radial velocities. The reference frame is
   /// defined by the DataSource object
@@ -199,7 +196,7 @@ public:
   /// @details By default all channels are selected. However, if chooseFrequencies
   /// has been called, less channels are returned by the accessor. This method
   /// returns the number of channels, the start frequency and the increment (Hz)
-  virtual std::tuple<int,double,double,casacore::MFrequency::Types> getFrequencySelection() const throw();
+  virtual std::tuple<int,casacore::MFrequency,double> getFrequencySelection() const throw();
 
 
 
@@ -220,11 +217,9 @@ private:
   /// number of Frequencies
   int itsNFreq;
   /// start frequency
-  double itsFreqStart;
+  casacore::MFrequency itsFreqStart;
   /// frequency increment (channel width)
   double itsFreqInc;
-  /// frequency reference type
-  casacore::MFrequency::Types itsFreqType;
 };
 
 } // namespace accessors
