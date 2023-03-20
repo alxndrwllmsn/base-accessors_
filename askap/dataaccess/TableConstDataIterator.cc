@@ -685,24 +685,30 @@ std::pair<casacore::uInt, casacore::uInt> TableConstDataIterator::getChannelRang
       itsFlagData = true;
 
       if (itsSelector->frequenciesSelected()) {
-          const std::tuple<int,double,double,casacore::MFrequency::Types> freqSel = itsSelector->getFrequencySelection();
+          const std::tuple<int,casacore::MFrequency,double> freqSel = itsSelector->getFrequencySelection();
           // cannot do multiple channels yet
           ASKAPCHECK(std::get<0>(freqSel)<=1, "Can only do a single channel in frequency selection mode");
           // convert frequency in requested frame to MS frame
-          // Using antenna 0 and antenna pointing (= field direction) as reference
+          // Using antenna 0 and antenna pointing (= field direction) as reference (or direction ref in MFrequency)
           // Note this differs from imager which uses current phase centre direction in freq conversion
+          const casacore::MFrequency freqMeas = std::get<1>(freqSel);
+          casacore::MeasRef<casacore::MFrequency> freqRef = freqMeas.getRef();
+          const casacore::Measure *pMeas = freqRef.getFrame().direction();
+          // If the MFrequency in freqSel has a reference direction use that, otherwise use pointing
+          casacore::MDirection velDir = (pMeas ? MDirection(pMeas) : getCurrentReferenceDir());
+          casacore::MeasFrame frame(MEpoch(currentEpoch()),subtableInfo().getAntenna().getPosition(0),velDir);
           const ITableSpWindowHolder& spWindowSubtable=subtableInfo().getSpWindow();
-          const casacore::MeasFrame frame(MEpoch(currentEpoch()),subtableInfo().getAntenna().getPosition(0),
-                getCurrentReferenceDir());
           const casacore::MFrequency::Types dataType =
             casacore::MFrequency::castType(spWindowSubtable.getReferenceFrame(currentSpWindowID()).getType());
-          const casacore::MFrequency::Ref refin(dataType,frame); // the frame of the input channels
-          casacore::MFrequency::Types selType = std::get<3>(freqSel);
+          casacore::MFrequency::Types selType = MFrequency::castType(freqRef.getType());
           if (selType == casacore::MFrequency::Undefined) {
               selType = dataType;
           }
+
+          const casacore::MFrequency::Ref refin(dataType,frame); // the frame of the input channels
           const casacore::MFrequency::Ref refout(selType,frame); // the frame desired
           casacore::MFrequency::Convert backw(refout,refin); // from desired to input
+          
           const MVFrequency requiredFreq = backw(std::get<1>(freqSel)).getValue();
           // Now find corresponding channel
           const casacore::Vector<casacore::Double> dataFreqs(spWindowSubtable.getFrequencies(currentSpWindowID()));

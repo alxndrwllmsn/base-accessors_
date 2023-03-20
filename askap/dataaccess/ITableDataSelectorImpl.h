@@ -132,9 +132,8 @@ public:
   /// @brief obtain frequency selection
   /// @details By default all channels are selected. However, if chooseFrequencies
   /// has been called, less channels are returned by the accessor. This method
-  /// returns the number of channels, the start frequency, the increment (Hz) and
-  /// the frequency reference type
-  virtual std::tuple<int,double,double,casacore::MFrequency::Types> getFrequencySelection() const throw() = 0;
+  /// returns the number of channels, the start frequency and the increment (Hz)
+  virtual std::tuple<int,casacore::MFrequency,double> getFrequencySelection() const throw() = 0;
 
 };
 

@@ -114,17 +114,14 @@ public:
     /// defined by the DataSource object by default, but can be specified
     /// @param[in] nChan a number of spectral channels wanted in the output
     /// @param[in] start the frequency of the first spectral channel to
-    ///        choose (given as casacore::MVFrequency object)
+    ///        choose (given as casacore::MFrequency object)
     /// @param[in] freqInc an increment in terms of the frequency in the
     ///        same reference frame as start. This parameter plays
     ///        the same role as nAvg for chooseChannels, i.e. twice
     ///        the frequency resolution would average two adjacent channels
-    /// @param[in] freqRef the reference type for the frequency
-    ///        default is reference of DataSource
     virtual void chooseFrequencies(casacore::uInt nChan,
-             const casacore::MVFrequency &start,
-             const casacore::MVFrequency &freqInc,
-             const casacore::MFrequency::Types freqRef = casacore::MFrequency::Undefined) = 0;
+             const casacore::MFrequency &start,
+             const casacore::MVFrequency &freqInc) = 0;
 
     /// Choose a subset of radial velocities. The reference frame is
     /// defined by the DataSource object
