@@ -57,7 +57,7 @@ void FitsAuxImageSpectra::PrintError(int status)
 FitsAuxImageSpectra::FitsAuxImageSpectra(const std::string& fitsFileName, 
                                          const casacore::RecordInterface &tableInfo,
                                          const int nChannels, const int nrows)
-    : itsStatus(0), itsName(fitsFileName)
+    : itsStatus(0), itsName(fitsFileName), itsNChannels(nChannels)
 {
     if (fits_create_file(&itsFitsPtr, fitsFileName.c_str(), &itsStatus)) /* create new FITS file */
          PrintError(itsStatus);           /* call printerror if error occurs */        
@@ -89,6 +89,12 @@ FitsAuxImageSpectra::create(const casacore::RecordInterface &tableInfo,
 {
     const char extname[] = "Stoke";
 
+    // check to see if the user specifies the column name for the stoke
+    casacore::String stoke("spectrum"); // spectrum for I,Q,U and V
+    if ( tableInfo.isDefined("Stoke") ) {
+        casacore::RecordFieldId fieldId(tableInfo.fieldNumber("Stoke"));
+        tableInfo.get(fieldId,stoke);
+    }
     unsigned int nCol = 2;
     CPointerWrapper cPointerWrapper { nCol };
     std::string col1 = "Id";
@@ -102,7 +108,7 @@ FitsAuxImageSpectra::create(const casacore::RecordInterface &tableInfo,
     std::memset(cPointerWrapper.itsUnits[0],'\0',2);
     std::memcpy(cPointerWrapper.itsUnits[0],"",1);
 
-    std::string col2 = "Spectrum";
+    std::string col2(stoke.data());
     cPointerWrapper.itsTType[1] = new char[sizeof(char) * col2.length() + 1];
     std::memset(cPointerWrapper.itsTType[1],'\0',col2.length() + 1);
     std::memcpy(cPointerWrapper.itsTType[1],col2.data(),col2.length());
@@ -160,6 +166,33 @@ FitsAuxImageSpectra::add(const std::string& id, const SpectrumT& spectrum,
          PrintError(itsStatus);
 }
 
+void
+FitsAuxImageSpectra::get(const long row, SpectrumT& spectrum)
+{
+    itsStatus = 0;
+    // open the file again
+    if ( fits_open_file(&itsFitsPtr,itsName.c_str(), READWRITE, &itsStatus) )
+         PrintError(itsStatus);
 
+    // move to the HDU 2 which is the spectrum binary table
+    int hduType;
+    if ( fits_movabs_hdu(itsFitsPtr,spectrumHDU(),&hduType,&itsStatus) )
+         PrintError(itsStatus);
+
+    float fnull = 0.0;    
+    int anynull = 0;
+    const int spectrumCol = 2; // for now
+    const long felem = 1;
+    const long nelem = itsNChannels;
+    
+    spectrum.resize(itsNChannels);
+    float* data = const_cast<float *> (spectrum.data());
+    if (fits_read_col(itsFitsPtr,TFLOAT,spectrumCol,row,felem,nelem,&fnull,data,&anynull,&itsStatus))
+        PrintError(itsStatus);
+
+    // close the FITS file
+    if (fits_close_file(itsFitsPtr,&itsStatus))
+         PrintError(itsStatus);
+}
 
 //        void addI(const std::string& fitsFileName, const std::string& id, const std::vector<float>& spectrum) override;

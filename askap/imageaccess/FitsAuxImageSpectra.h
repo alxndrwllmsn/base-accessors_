@@ -50,6 +50,7 @@ class FitsAuxImageSpectra {
         //void add(const std::string& id, const std::vector<float>& spectrum) // override;
         void add(const std::string& id, const SpectrumT& spectrum, 
                  const unsigned int startingRow);
+        void get(const long row, SpectrumT& spectrum);
         ~FitsAuxImageSpectra() {}
         static void PrintError(int status);
     private :
@@ -61,6 +62,7 @@ class FitsAuxImageSpectra {
         fitsfile* itsFitsPtr;
         int itsStatus;
         std::string itsName;
+        int itsNChannels;
         
 };
 } // accessors

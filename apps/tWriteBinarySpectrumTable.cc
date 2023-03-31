@@ -53,7 +53,7 @@
 #include <casacore/coordinates/Coordinates/CoordinateSystem.h>
 #include <casacore/casa/Containers/Record.h>
 #include <ctime>
-
+#include <algorithm>
 
 
 ASKAP_LOGGER(logger, ".tImageWriteBinaryTable");
@@ -85,28 +85,56 @@ public:
         //parset.add("imagetype","fits");
         itsCurrentRow = 0;
         casacore::Record record;
-        itsFitsAuxImageSpectraTable.reset(new FitsAuxImageSpectra("spectrum_table.fits",record,288,1000000));
-        
+        record.define("Stoke","I");
+        itsFitsAuxImageSpectraTable.reset(new FitsAuxImageSpectra("spectrum_table.fits",record,288,0));
+        srand((unsigned int)time(NULL));
     }
  
-   void addOneRow()
+   // random number beween id and id+1
+   float generate(unsigned int id)
    {
-      srand((unsigned int)time(NULL));
-      float a = 5.0;
-      std::vector<float> randomSpectrum;
-      for(int n = 0; n < 288; n++) {
-        float r = float(rand())/float((RAND_MAX)) * a;
-        randomSpectrum.push_back(r);
-      }
-      itsCurrentRow += 1;
-      std::string id = std::string("Source_")  + std::to_string(itsCurrentRow);
-      itsFitsAuxImageSpectraTable->add(id,randomSpectrum,itsCurrentRow);
+        // generate a random number between 0 and 1 (inclusively)
+        float rnum = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+        return rnum + id;
    }
+
+   void addNRow(unsigned int nrows)
+   {
+      std::vector<float> randomSpectrum;
+      for (unsigned int row = 0; row < nrows; row++) {
+        for(int n = 0; n < 288; n++) {
+            float r = generate(row);
+            //if ( row == 1 ) std::cout << "r = " << r << std::endl;
+            randomSpectrum.push_back(r);
+        }
+        itsCurrentRow += 1;
+        std::string id = std::string("Source_")  + std::to_string(itsCurrentRow);
+        itsFitsAuxImageSpectraTable->add(id,randomSpectrum,itsCurrentRow);
+        randomSpectrum.resize(0);
+     }
+   }
+
+   void readSpectrum(long row,std::vector<float>& spectrum)
+   {
+        itsFitsAuxImageSpectraTable->get(row,spectrum);
+   }
+
    virtual int run(int argc, char* argv[])
    {
      try {
         setup();
-        addOneRow();
+        addNRow(10);
+        std::vector<float> spectrum;
+        readSpectrum(3,spectrum);
+        // Because of the way we insert the spectrum to the table, we know
+        // the spectrum for row 3 is between 2.0 and 3.0
+        bool status = std::all_of(spectrum.begin(),spectrum.end(),
+                                  [](float v) { return (v >= 2.0 && v <= 3);});
+        ASKAPCHECK(status, "Error: spectrum in row 3 is not between 2 and 3");
+        std::cout << std::endl << "[ ";
+        for_each(spectrum.begin(),spectrum.end(),
+                    [](float v) {std::cout << v << " ";});
+        std::cout << "]" << std::endl;
         
         return 0;
      }
