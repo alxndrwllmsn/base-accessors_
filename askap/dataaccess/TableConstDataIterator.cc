@@ -36,11 +36,13 @@
 /// ASKAPsoft includes
 #include <askap/askap/AskapLogging.h>
 #include <askap/askap/AskapError.h>
+#include <askap/profile/AskapProfiler.h>
 #include <casacore/tables/Tables/ArrayColumn.h>
 #include <casacore/tables/Tables/ScalarColumn.h>
 #include <casacore/measures/TableMeasures/ScalarMeasColumn.h>
 #include <casacore/scimath/Mathematics/SquareMatrix.h>
 #include <casacore/measures/Measures/MeasFrame.h>
+#include <casacore/measures/Measures/MCFrequency.h>
 #include <casacore/casa/Arrays/Slicer.h>
 #include <casacore/casa/Arrays/IPosition.h>
 
@@ -158,8 +160,8 @@ TableConstDataIterator::TableConstDataIterator(
         itsSelector(sel->clone()),
 	    itsConverter(conv->clone()),
 #endif
-	    itsMaxChunkSize(maxChunkSize)
-
+	    itsMaxChunkSize(maxChunkSize),
+        itsAtStart(false)
 {
   ASKAPDEBUGASSERT(conv);
   ASKAPDEBUGASSERT(sel);
@@ -173,26 +175,33 @@ TableConstDataIterator::TableConstDataIterator(
 /// Restart the iteration from the beginning
 void TableConstDataIterator::init()
 {
-  itsCurrentTopRow=0;
-  itsCurrentDataDescID=-100; // this value can't be in the table,
-                             // therefore it is a flag of a new data descriptor
-  itsCurrentFieldID = -100; // this value can't be in the table,
-                            // therefore it is a flag of a new field ID
-  // by default use FIELD_ID column if it exists, otherwise use time to select
-  // pointings
-  itsUseFieldID = table().actualTableDesc().isColumn("FIELD_ID");
+    ASKAPTRACE("TableConstDataIterator::init");
+  // avoid doing this if not required as it can be expensive
+  if (!itsAtStart) {
+      itsCurrentTopRow=0;
+      itsCurrentDataDescID=-100; // this value can't be in the table,
+                                 // therefore it is a flag of a new data descriptor
+      itsCurrentFieldID = -100; // this value can't be in the table,
+                                // therefore it is a flag of a new field ID
+      // by default use FIELD_ID column if it exists, otherwise use time to select
+      // pointings
+      itsUseFieldID = table().actualTableDesc().isColumn("FIELD_ID");
 
-  const casacore::TableExprNode &exprNode =
-              itsSelector->getTableSelector(itsConverter);
-  if (exprNode.isNull()) {
-      itsTabIterator=casacore::TableIterator(table(),"TIME",
-	     casacore::TableIterator::Ascending,casacore::TableIterator::NoSort);
-  } else {
-      itsTabIterator=casacore::TableIterator(table()(itsSelector->
-                               getTableSelector(itsConverter)),"TIME",
-	     casacore::TableIterator::Ascending,casacore::TableIterator::NoSort);
+      const casacore::TableExprNode &exprNode =
+                  itsSelector->getTableSelector(itsConverter);
+      if (exprNode.isNull()) {
+          itsTabIterator=casacore::TableIterator(table(),"TIME",
+    	     casacore::TableIterator::Ascending,casacore::TableIterator::NoSort);
+      } else {
+          itsTabIterator=casacore::TableIterator(table()(itsSelector->
+                                   getTableSelector(itsConverter)),"TIME",
+    	     casacore::TableIterator::Ascending,casacore::TableIterator::NoSort);
+      }
+      itsChannelsSelected = false;
+      itsFlagData = false;
+      setUpIteration();
+      itsAtStart = true;
   }
-  setUpIteration();
 }
 
 /// operator* delivers a reference to data accessor (current chunk)
@@ -220,6 +229,8 @@ casacore::Bool TableConstDataIterator::hasMore() const throw()
 ///         while(it.next()) {} are possible)
 casacore::Bool TableConstDataIterator::next()
 {
+  ASKAPTRACE("TableConstDataIterator::next");
+  itsAtStart = false;
   itsCurrentTopRow+=itsNumberOfRows;
   if (itsCurrentTopRow>=itsCurrentIteration.nrow()) {
       ASKAPDEBUGASSERT(!itsTabIterator.pastEnd());
@@ -283,7 +294,7 @@ void TableConstDataIterator::setUpIteration()
               }
       }
   }
-  // retreive the number of channels and polarizations from the table
+  // retrieve the number of channels and polarizations from the table
   if (itsNumberOfRows) {
       // determine whether DATA_DESC_ID is uniform in the whole chunk
       // and reduce itsNumberOfRows if necessary
@@ -362,6 +373,13 @@ void TableConstDataIterator::makeUniformDataDescID()
                " channel(s) available in  the dataset");
       }
   }
+
+  // if we're selecting by frequency we need to redo the channel selection when time or DATA_DESC_ID changes
+  if (itsSelector->frequenciesSelected()) {
+      // reset the channel selection
+      itsChannelsSelected = false;
+  }
+
   for (uInt row=1;row<itsNumberOfRows;++row) {
        if (dataDescCol(row+itsCurrentTopRow)!=itsCurrentDataDescID) {
            itsNumberOfRows=row;
@@ -482,6 +500,9 @@ void TableConstDataIterator::fillVisibility(casacore::Cube<casacore::Complex> &v
 void TableConstDataIterator::fillFlag(casacore::Cube<casacore::Bool> &flag) const
 {
   fillCube(flag,"FLAG");
+  if (itsFlagData) {
+      flag = true;
+  }
 }
 
 /// populate the buffer of noise figures with the values of current
@@ -660,13 +681,71 @@ const casacore::MDirection& TableConstDataIterator::getCurrentReferenceDir() con
 std::pair<casacore::uInt, casacore::uInt> TableConstDataIterator::getChannelRange() const
 {
   ASKAPDEBUGASSERT(itsSelector);
-  const std::pair<int, int> chanSelection = itsSelector->getChannelSelection();
-  const casacore::uInt nChan = itsSelector->channelsSelected() ?
-                           casacore::uInt(chanSelection.first) : itsNumberOfChannels;
-  const casacore::uInt startChan = itsSelector->channelsSelected() ?
-                           casacore::uInt(chanSelection.second) : 0;
-  ASKAPDEBUGASSERT(startChan + nChan <= itsNumberOfChannels);
-  return std::pair<casacore::uInt, casacore::uInt>(nChan, startChan);
+  if (!itsChannelsSelected) {
+      itsFlagData = true;
+
+      if (itsSelector->frequenciesSelected()) {
+          const std::tuple<int,casacore::MFrequency,double> freqSel = itsSelector->getFrequencySelection();
+          // cannot do multiple channels yet
+          ASKAPCHECK(std::get<0>(freqSel)<=1, "Can only do a single channel in frequency selection mode");
+          // convert frequency in requested frame to MS frame
+          // Using antenna 0 and antenna pointing (= field direction) as reference (or direction ref in MFrequency)
+          // Note this differs from imager which uses current phase centre direction in freq conversion
+          const casacore::MFrequency freqMeas = std::get<1>(freqSel);
+          casacore::MeasRef<casacore::MFrequency> freqRef = freqMeas.getRef();
+          const casacore::Measure *pMeas = freqRef.getFrame().direction();
+          // If the MFrequency in freqSel has a reference direction use that, otherwise use pointing
+          casacore::MDirection velDir = (pMeas ? MDirection(pMeas) : getCurrentReferenceDir());
+          casacore::MeasFrame frame(MEpoch(currentEpoch()),subtableInfo().getAntenna().getPosition(0),velDir);
+          const ITableSpWindowHolder& spWindowSubtable=subtableInfo().getSpWindow();
+          const casacore::MFrequency::Types dataType =
+            casacore::MFrequency::castType(spWindowSubtable.getReferenceFrame(currentSpWindowID()).getType());
+          casacore::MFrequency::Types selType = MFrequency::castType(freqRef.getType());
+          if (selType == casacore::MFrequency::Undefined) {
+              selType = dataType;
+          }
+
+          const casacore::MFrequency::Ref refin(dataType,frame); // the frame of the input channels
+          const casacore::MFrequency::Ref refout(selType,frame); // the frame desired
+          casacore::MFrequency::Convert backw(refout,refin); // from desired to input
+          
+          const MVFrequency requiredFreq = backw(std::get<1>(freqSel)).getValue();
+          // Now find corresponding channel
+          const casacore::Vector<casacore::Double> dataFreqs(spWindowSubtable.getFrequencies(currentSpWindowID()));
+          // assuming linear freq scale
+          itsNumberOfChannelsSelected = 1;
+          itsStartChannelSelected = 0;
+          const uint nFreq = dataFreqs.nelements();
+          if (nFreq > 1) {
+              const double freqInc = dataFreqs(1) - dataFreqs(0);
+              ASKAPDEBUGASSERT(freqInc != 0);
+              ASKAPCHECK(abs((dataFreqs(nFreq-1)-dataFreqs(0))/((nFreq-1)*freqInc)-1)<0.001,
+                "Frequency axis non-linear, cannot do frequency selection with current code");
+              const double channel = (requiredFreq - dataFreqs(0)) / freqInc;
+              // for now just use nearest channel, but could do linear interpolation between nearest two
+              const int nearestChannel = std::lrint(channel);
+              if (nearestChannel >= 0 && nearestChannel < nFreq) {
+                  itsStartChannelSelected = (uint)nearestChannel;
+                  itsFlagData = false;
+              } else {
+                  if (nearestChannel >= nFreq) {
+                      itsStartChannelSelected = nFreq - 1;
+                  }
+              }
+          }
+      } else {
+          const std::pair<int, int> chanSelection = itsSelector->getChannelSelection();
+          itsNumberOfChannelsSelected = itsSelector->channelsSelected() ?
+                                   casacore::uInt(chanSelection.first) : itsNumberOfChannels;
+          itsStartChannelSelected = itsSelector->channelsSelected() ?
+                                   casacore::uInt(chanSelection.second) : 0;
+          ASKAPDEBUGASSERT(itsNumberOfChannelsSelected + itsStartChannelSelected <= itsNumberOfChannels);
+          itsFlagData = false;
+      }
+      itsChannelsSelected = true;
+  }
+
+  return std::pair<casacore::uInt, casacore::uInt>(itsNumberOfChannelsSelected,itsStartChannelSelected);
 }
 
 /// @brief fill the buffer with the polarisation types
@@ -698,7 +777,8 @@ void TableConstDataIterator::fillFrequency(casacore::Vector<casacore::Double> &f
   // we need to take care of constness as taking a slice is not a const
   // operation.
   if (itsConverter->isVoid(spWindowSubtable.getReferenceFrame(spWindowID),
-	                   spWindowSubtable.getFrequencyUnit()) && !itsSelector->channelsSelected()) {
+	                   spWindowSubtable.getFrequencyUnit()) && !itsSelector->channelsSelected()
+                       && !itsSelector->frequenciesSelected()) {
       // the conversion is void, i.e. table units/frame are exactly what
       // we need for output. This simplifies things a lot.
       freq.reference(spWindowSubtable.getFrequencies(spWindowID));
@@ -934,7 +1014,7 @@ void TableConstDataIterator::fillDirectionCache(casacore::Vector<casacore::MVDir
            offset*=rotMatrix;
        }
        casacore::MDirection feedPointingCentre(antReferenceDir);
-       // x direction is fliped to convert az-el type frame to ra-dec
+       // x direction is flipped to convert az-el type frame to ra-dec
        feedPointingCentre.shift(casacore::MVDirection(-offset(0),
                              offset(1)),casacore::True);
        itsConverter->direction(feedPointingCentre,dirs[element]);
@@ -1083,7 +1163,7 @@ void TableConstDataIterator::fillVectorOfPointings(
                    " are beyond the range of the FEED table");
            }
        if (directionCacheIndices(antIDs[row],feedIDs[row])<0) {
-           ASKAPTHROW(DataAccessError, "The pair andID="<<antIDs[row]<<
+           ASKAPTHROW(DataAccessError, "The pair antID="<<antIDs[row]<<
                    " feedID="<<feedIDs[row]<<" doesn't have beam parameters defined");
        }
        const casacore::uInt index = static_cast<casacore::uInt>(
