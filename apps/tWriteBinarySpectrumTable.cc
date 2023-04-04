@@ -84,9 +84,11 @@ public:
         LOFAR::ParameterSet parset;
         //parset.add("imagetype","fits");
         itsCurrentRow = 0;
+        itsCol = 288;
         casacore::Record record;
         record.define("Stoke","I");
-        itsFitsAuxImageSpectraTable.reset(new FitsAuxImageSpectra("spectrum_table.fits",record,288,0));
+        remove("spectrum_table.fits");
+        itsFitsAuxImageSpectraTable.reset(new FitsAuxImageSpectra("spectrum_table.fits",record,itsCol,0));
         srand((unsigned int)time(NULL));
     }
  
@@ -101,29 +103,63 @@ public:
    void addNRow(unsigned int nrows)
    {
       std::vector<float> randomSpectrum;
+
       for (unsigned int row = 0; row < nrows; row++) {
-        for(int n = 0; n < 288; n++) {
+        for(int n = 0; n < itsCol; n++) {
             float r = generate(row);
-            //if ( row == 1 ) std::cout << "r = " << r << std::endl;
             randomSpectrum.push_back(r);
         }
         itsCurrentRow += 1;
         std::string id = std::string("Source_")  + std::to_string(itsCurrentRow);
-        itsFitsAuxImageSpectraTable->add(id,randomSpectrum,itsCurrentRow);
+        itsFitsAuxImageSpectraTable->add(id,randomSpectrum);
         randomSpectrum.resize(0);
      }
+   }
+
+   void addNRow2(unsigned int nrows)
+   {
+      //std::vector<std::vector<float>> arrayOfRandomSpectrum;
+      casacore::Matrix<float> arrayOfRandomSpectrum(nrows,itsCol);
+      std::vector<std::string> ids;
+
+      //for (unsigned int row = 0; row < nrows; row++) {
+      unsigned int num = itsCurrentRow;
+      unsigned int j = 0;
+      for(int n = 0; n < itsCol; n++) {
+        for (unsigned int row = 0; row < nrows; row++) {
+            float r = generate(num);
+            arrayOfRandomSpectrum(casacore::IPosition(2,row,n)) = r;
+            if ( j == itsCol - 1) {
+                num += 1;
+                j = 0;
+            } else { 
+                j += 1;
+            }
+        }
+     }
+     for (unsigned int row = 0; row < nrows; row++) {
+        unsigned int r = row + itsCurrentRow;
+        std::string id = std::string("Source_")  + std::to_string(r);
+        ids.push_back(id);
+     }
+     itsFitsAuxImageSpectraTable->add(ids,arrayOfRandomSpectrum);
+     itsCurrentRow += nrows;
    }
 
    void readSpectrum(long row,std::vector<float>& spectrum)
    {
         itsFitsAuxImageSpectraTable->get(row,spectrum);
+        //std::string id = std::string("Source_") + std::to_string(row);
+        //itsFitsAuxImageSpectraTable->get(id,spectrum);
    }
 
    virtual int run(int argc, char* argv[])
    {
      try {
+        askap::StatReporter stats;
         setup();
-        addNRow(10);
+        addNRow2(1000000);
+        addNRow2(10);
         std::vector<float> spectrum;
         readSpectrum(3,spectrum);
         // Because of the way we insert the spectrum to the table, we know
@@ -136,6 +172,7 @@ public:
                     [](float v) {std::cout << v << " ";});
         std::cout << "]" << std::endl;
         
+        stats.logSummary();
         return 0;
      }
      catch (const askap::AskapError& e) {
@@ -157,6 +194,7 @@ private:
    }
    std::unique_ptr<FitsAuxImageSpectra> itsFitsAuxImageSpectraTable;
    unsigned long itsCurrentRow;
+   unsigned long itsCol;
    /// @brief image accessor
    //boost::shared_ptr<accessors::IImageAccess<casacore::Float> > itsImageAccessor;
 

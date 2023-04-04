@@ -57,7 +57,8 @@ void FitsAuxImageSpectra::PrintError(int status)
 FitsAuxImageSpectra::FitsAuxImageSpectra(const std::string& fitsFileName, 
                                          const casacore::RecordInterface &tableInfo,
                                          const int nChannels, const int nrows)
-    : itsStatus(0), itsName(fitsFileName), itsNChannels(nChannels)
+    : itsStatus(0), itsName(fitsFileName), itsNChannels(nChannels),
+      itsCurrentRow(1)
 {
     if (fits_create_file(&itsFitsPtr, fitsFileName.c_str(), &itsStatus)) /* create new FITS file */
          PrintError(itsStatus);           /* call printerror if error occurs */        
@@ -138,10 +139,10 @@ FitsAuxImageSpectra::create(const casacore::RecordInterface &tableInfo,
 }
 
 void 
-FitsAuxImageSpectra::add(const std::string& id, const SpectrumT& spectrum,
-                         const unsigned int startingRow)
+FitsAuxImageSpectra::add(const std::string& id, const SpectrumT& spectrum)
 {
     itsStatus = 0;
+
     // open the file again
     if ( fits_open_file(&itsFitsPtr,itsName.c_str(), READWRITE, &itsStatus) )
          PrintError(itsStatus);
@@ -153,22 +154,71 @@ FitsAuxImageSpectra::add(const std::string& id, const SpectrumT& spectrum,
 
     long firstElem = 1;
     char* bptr[] = {const_cast<char *> (id.c_str())};
-    if (fits_write_col(itsFitsPtr,TSTRING,1,startingRow,firstElem,1,
+    if (fits_write_col(itsFitsPtr,TSTRING,1,itsCurrentRow,firstElem,1,
                        bptr,&itsStatus) )
         PrintError(itsStatus);
 
-    if (fits_write_col(itsFitsPtr,TFLOAT,2,startingRow,firstElem,spectrum.size(),
+    if (fits_write_col(itsFitsPtr,TFLOAT,2,itsCurrentRow,firstElem,spectrum.size(),
                        const_cast<float *> (spectrum.data()),&itsStatus) )
         PrintError(itsStatus);
 
     // close the FITS file
     if (fits_close_file(itsFitsPtr,&itsStatus))
          PrintError(itsStatus);
+
+    itsId2RowMap.insert(std::make_pair(id,itsCurrentRow));
+    itsCurrentRow += 1;
+    
+}
+
+void FitsAuxImageSpectra::add(const std::vector<std::string>& ids, 
+                              const ArrayOfSpectrumT& arrayOfSpectrums)
+{
+    auto s1 = ids.size();
+    auto s2 = arrayOfSpectrums.nrow();
+    ASKAPCHECK(s1 == s2, "ids and arrayOfSpectrums are not the same. " 
+                << " s1 = " << s1 << ", s2 = " << s2);
+
+    if ( ! ids.empty() ) {
+        // open the file again
+        if ( fits_open_file(&itsFitsPtr,itsName.c_str(), READWRITE, &itsStatus) )
+            PrintError(itsStatus);
+
+        // move to the HDU 2 which is the spectrum binary table
+        int hduType;
+        if ( fits_movabs_hdu(itsFitsPtr,spectrumHDU(),&hduType,&itsStatus) )
+            PrintError(itsStatus);
+
+        long firstElem = 1;
+        char** bptr = new char*[sizeof(char) * ids.size()];
+        for (auto i = 0; i < s1; i++) {
+            bptr[i] = const_cast<char *> (ids[i].c_str());
+        }
+        if (fits_write_col(itsFitsPtr,TSTRING,1,itsCurrentRow,firstElem,ids.size(),
+                       bptr,&itsStatus) )
+            PrintError(itsStatus);
+        for (auto i = 0; i < s1; i++) {
+            // to be safe
+            bptr[i] = nullptr;
+        }
+        delete []bptr;
+
+        if (fits_write_col(itsFitsPtr,TFLOAT,2,itsCurrentRow,firstElem,arrayOfSpectrums.size(),
+                       const_cast<float *> (arrayOfSpectrums.data()),&itsStatus) )
+            PrintError(itsStatus);
+        
+        // close the FITS file
+        if (fits_close_file(itsFitsPtr,&itsStatus))
+            PrintError(itsStatus);
+
+        itsCurrentRow += s1;
+    }
 }
 
 void
 FitsAuxImageSpectra::get(const long row, SpectrumT& spectrum)
 {
+    std::cout << "get spectrum"  << std::endl;
     itsStatus = 0;
     // open the file again
     if ( fits_open_file(&itsFitsPtr,itsName.c_str(), READWRITE, &itsStatus) )
@@ -193,6 +243,17 @@ FitsAuxImageSpectra::get(const long row, SpectrumT& spectrum)
     // close the FITS file
     if (fits_close_file(itsFitsPtr,&itsStatus))
          PrintError(itsStatus);
+
+    std::cout << "spectrum size: " << spectrum.size() << std::endl;
+}
+
+void
+FitsAuxImageSpectra::get(const std::string& id, SpectrumT& spectrum)
+{
+    const auto& iter = itsId2RowMap.find(id);
+    if ( iter != itsId2RowMap.end() ) {
+        this->get(iter->second,spectrum);
+    }
 }
 
 //        void addI(const std::string& fitsFileName, const std::string& id, const std::vector<float>& spectrum) override;
