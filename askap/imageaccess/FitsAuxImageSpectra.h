@@ -100,7 +100,6 @@ class FitsAuxImageSpectra {
         int itsStatus;
         std::string itsName;
         int itsNChannels;
-        
 };
 } // accessors
 } // askap

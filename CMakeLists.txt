@@ -122,7 +122,7 @@ option (ENABLE_OPENMP "Build with OPENMP Support" NO)
 #find_package(askap-askap REQUIRED)
 #find_package(askap-scimath REQUIRED)
 #find_package(askap-parallel REQUIRED)
-find_package(Boost REQUIRED COMPONENTS thread chrono)
+find_package(Boost REQUIRED COMPONENTS filesystem system thread chrono)
 find_package(log4cxx REQUIRED)
 find_package(Casacore REQUIRED COMPONENTS  ms images mirlib coordinates fits lattices measures scimath scimath_f tables casa)
 find_package(XercesC REQUIRED)
@@ -209,6 +209,7 @@ target_link_libraries(accessors
 	${CASACORE_LIBRARIES}
 	${log4cxx_LIBRARY}
 	${XercesC_LIBRARY}
+    ${Boost_LIBRARIES}
 )
 
 if (OPENMP_FOUND)

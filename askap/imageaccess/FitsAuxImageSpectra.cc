@@ -60,7 +60,11 @@ FitsAuxImageSpectra::FitsAuxImageSpectra(const std::string& fitsFileName,
     : itsStatus(0), itsName(fitsFileName), itsNChannels(nChannels),
       itsCurrentRow(1)
 {
-    if (fits_create_file(&itsFitsPtr, fitsFileName.c_str(), &itsStatus)) /* create new FITS file */
+    if ( fitsFileName.rfind(".fits") == std::string::npos ) {
+        itsName.append(".fits");
+    }
+
+    if (fits_create_file(&itsFitsPtr, itsName.c_str(), &itsStatus)) /* create new FITS file */
          PrintError(itsStatus);           /* call printerror if error occurs */        
 
     // create a dummy image
