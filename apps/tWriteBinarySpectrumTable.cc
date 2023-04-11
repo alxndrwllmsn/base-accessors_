@@ -88,7 +88,8 @@ public:
         casacore::Record record;
         record.define("Stoke","I");
         remove("spectrum_table.fits");
-        itsFitsAuxImageSpectraTable.reset(new FitsAuxImageSpectra("spectrum_table.fits",record,itsCol,0));
+        casacore::CoordinateSystem coord;
+        itsFitsAuxImageSpectraTable.reset(new FitsAuxImageSpectra("spectrum_table.fits",itsCol,0,coord,record));
         srand((unsigned int)time(NULL));
     }
  

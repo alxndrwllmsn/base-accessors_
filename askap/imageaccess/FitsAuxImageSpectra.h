@@ -31,13 +31,14 @@
 #ifndef ASKAP_ACCESSORS_FITS_AUX_IMAGE_SPECTRA_H
 #define ASKAP_ACCESSORS_FITS_AUX_IMAGE_SPECTRA_H
 
-//#include <askap/imageaccess/AuxImageSpectra.h>
+#include <askap/imageaccess/FitsImageAccess.h>
 #include <askap/imageaccess/Utils.h>
 #include <casacore/casa/Containers/RecordInterface.h>
 #include <casacore/casa/Arrays/Matrix.h>
+#include <casacore/coordinates/Coordinates.h>
+#include <casacore/tables/Tables.h>
 #include <fitsio.h>
 #include <map>
-
 namespace askap {
 namespace accessors {
 //class FitsAuxImageSpectra : public AuxImageSpectra {
@@ -55,9 +56,12 @@ class FitsAuxImageSpectra {
         ///              of the spectrum.
         /// @param[in] - nrows - how many rows to be created. 
         ///              0 => create an empty table
+        // @param[in] - coord - CoordinateSystem object which is used to obtain
+        ///             keywords to be written to FITS file header.
         FitsAuxImageSpectra(const std::string& fitsFileName,
-                            const casacore::RecordInterface &tableInfo,
-                            const int nChannels, const int nrows);
+                            const int nChannels, const int nrows,
+                            const casacore::CoordinateSystem& coord,
+                            const casacore::RecordInterface &tableInfo = casacore::Record());
 
         /// @brief - add an id and a spectrum to the table
         /// @param[in] - id - a string id (must be unique)
@@ -100,6 +104,8 @@ class FitsAuxImageSpectra {
         int itsStatus;
         std::string itsName;
         int itsNChannels;
+
+        std::unique_ptr<IImageAccess<float>> itsIA;
 };
 } // accessors
 } // askap

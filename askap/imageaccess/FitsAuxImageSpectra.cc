@@ -53,35 +53,29 @@ void FitsAuxImageSpectra::PrintError(int status)
         exit(status);      /* terminate the program, returning error status */
     }
 }
-
-FitsAuxImageSpectra::FitsAuxImageSpectra(const std::string& fitsFileName, 
-                                         const casacore::RecordInterface &tableInfo,
-                                         const int nChannels, const int nrows)
+FitsAuxImageSpectra::FitsAuxImageSpectra(const std::string& fitsFileName,
+                                         const int nChannels, const int nrows,
+                                         const casacore::CoordinateSystem& coord,
+                                         const casacore::RecordInterface &tableInfo)
     : itsStatus(0), itsName(fitsFileName), itsNChannels(nChannels),
-      itsCurrentRow(1)
+      itsCurrentRow(1), itsIA(new FitsImageAccess())
 {
+    // we want to use image accessor to create the fits file and populate
+    // the keywords for us.
+    casacore::IPosition dummyShape(2,1,1);
+    itsIA->create(itsName,dummyShape,coord);
+
+    // image accessor creates the file with the .fits extension even if the filename
+    // does not have the .fits extension
     if ( fitsFileName.rfind(".fits") == std::string::npos ) {
         itsName.append(".fits");
     }
 
-    if (fits_create_file(&itsFitsPtr, itsName.c_str(), &itsStatus)) /* create new FITS file */
-         PrintError(itsStatus);           /* call printerror if error occurs */        
-
-    // create a dummy image
-    int bitpix = USHORT_IMG; /* 16-bit unsigned short pixel values       */
-    long naxis    =   2;  /* 2-dimensional image                            */
-    long naxes[2] = { 2, 2 };   /* image is 1 pixels wide by 1 rows */
-    
-    if ( fits_create_img(itsFitsPtr,  bitpix, naxis, naxes, &itsStatus) )
+    // open the file to create the binary table 
+    if ( fits_open_file(&itsFitsPtr,itsName.c_str(), READWRITE, &itsStatus) )
          PrintError(itsStatus);
-
-    // 2x2 array ie 2 rows and 2 columns
-    unsigned short array[2][2] = {{65535,65535},{65535,65535}};
-    long fpixel = 1;
-    long nelements = naxes[0] * naxes[1];
-    if ( fits_write_img(itsFitsPtr, TUSHORT, fpixel, nelements, array[0], &itsStatus) )
-        PrintError(itsStatus);
-
+    
+    // create the fits binary table
     create(tableInfo,nChannels,nrows);
 
     if ( fits_close_file(itsFitsPtr,&itsStatus) )       /* close the FITS file */
@@ -92,7 +86,7 @@ void
 FitsAuxImageSpectra::create(const casacore::RecordInterface &tableInfo,
                             const int nChannels, const int nrows)
 {
-    const char extname[] = "Stoke";
+    const char extname[] = "PolSpec";
 
     // check to see if the user specifies the column name for the stoke
     casacore::String stoke("spectrum"); // spectrum for I,Q,U and V
