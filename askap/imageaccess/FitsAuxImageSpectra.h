@@ -41,7 +41,15 @@
 #include <map>
 namespace askap {
 namespace accessors {
-//class FitsAuxImageSpectra : public AuxImageSpectra {
+///
+/// @brief - This class has a FITS binary used to store various 1D spectra of detected components.
+/// @details - The current implementation is each spectra of a detected component is stored as an
+///            image in the FITS file, resulting in a large number of FITS files to be generated. 
+///            Moreover, on Setonix, there is a limit on the number of files in a given directory. 
+///            As a result, there needs to be a new scheme to store these spectra and this class is 
+///            designed to overcome such restrictions by keeping these spctra in a FITS binary table.
+///            Note: This class does not support parallel IO and hence, in the MPI environment, it is 
+///            assumed that there is only one rank that does all the IO.
 class FitsAuxImageSpectra {
     public :
         using SpectrumT = std::vector<float>;
@@ -50,7 +58,6 @@ class FitsAuxImageSpectra {
 
         /// @brief create a FITS image spectra table object
         /// @param[in] - fitsFileName - name of the fits file to be created
-        /// @param[in] - a table record. @TODO
         /// @param[in] - nChannels - the number of channels.
         ///              This determines the size of the array
         ///              of the spectrum.
@@ -58,6 +65,7 @@ class FitsAuxImageSpectra {
         ///              0 => create an empty table
         // @param[in] - coord - CoordinateSystem object which is used to obtain
         ///             keywords to be written to FITS file header.
+        /// @param[in] - a table record. @TODO
         FitsAuxImageSpectra(const std::string& fitsFileName,
                             const int nChannels, const int nrows,
                             const casacore::CoordinateSystem& coord,
@@ -78,6 +86,7 @@ class FitsAuxImageSpectra {
         /// @param[in] - row - row number in the table
         /// @param[out] - spectrum - the extracted spectrum from the table
         void get(const long row, SpectrumT& spectrum);
+
         /// @brief - get a spectrum from a table
         /// @param[in] - id - unique id in the id column
         /// @param[out] - spectrum - the extracted spectrum from the table
@@ -99,12 +108,21 @@ class FitsAuxImageSpectra {
         /// So dont know if it is a good idea to keep it in memory. See
         /// how it goes
         std::map<std::string,long> itsId2RowMap;
+
+        /// store the last inserted row
         long itsCurrentRow;
+
         fitsfile* itsFitsPtr;
         int itsStatus;
+
+        /// name of the fits file
         std::string itsName;
+
+        /// how many channels in the array ie spectrum size
         int itsNChannels;
 
+        /// image access object. used to create the keywords in the
+        /// primary header ie the coordinate system.
         std::unique_ptr<IImageAccess<float>> itsIA;
 };
 } // accessors

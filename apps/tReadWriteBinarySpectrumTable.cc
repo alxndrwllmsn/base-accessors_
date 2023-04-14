@@ -176,16 +176,55 @@ public:
             casacore::CoordinateSystem coord = itsImageAccessor->coordSys(f);
             itsFitsAuxImageSpectraTable.reset(new FitsAuxImageSpectra(destDir,itsCol,0,coord));
             int nChannels = 0;
+            casacore::Matrix<casacore::Float> mat(m.second.size(),itsCol);
+            std::vector<std::string> ids;
+            std::size_t r = 0;
             for ( const auto& v : m.second ) {
                 std::string fitsfile = srcDir + "/" + m.first + "_" + v;
                 //std::cout << fitsfile << std::endl;
                 int nChannels = 0;
+                // spectrum shape is (1,1,1,288) in this case
                 casacore::Array<float> spectrum;
                 readFits(fitsfile,spectrum,nChannels);
                 ASKAPCHECK(nChannels == itsCol, "channels mismatch");
-                itsFitsAuxImageSpectraTable->add(v,spectrum.tovector());
-                
+                //itsFitsAuxImageSpectraTable->add(v,spectrum.tovector());
+                ids.push_back(v);
+                mat.row(r) = spectrum;
+                r += 1;
+                static bool doOnce = false;
+                if ( !doOnce ) {
+                    doOnce =  true;
+                    //casacore::Vector<float> data(spectrum);
+                    //std::cout << std::endl << "->[ ";
+                    //std::cout << "????? shape: " << data.shape();
+                    //for (int i = 0; i < spectrum.size(); i++) {
+                    //    std::cout << spectrum(casacore::IPosition(4,0,0,0,i)) << " ";
+                   //}
+                    //std::cout << "] <-" << std::endl;
+                }
             }
+            itsFitsAuxImageSpectraTable->add(ids,mat);
+
+/*
+            static bool doOnce2 = false;
+            if ( !doOnce2 ) {
+                doOnce2 =  true;
+                casacore::Vector<float> data = mat.row(0);
+                std::cout << std::endl << "->[ ";
+                for (int i = 0; i < data.size(); i++) {
+                    std::cout << data(i) << std::endl;    
+                }
+                std::cout << "] <-" << std::endl;
+
+                data = mat.row(1);
+                std::cout << "=====================================" << std::endl;
+                std::cout << std::endl << "->[ ";
+                for (int i = 0; i < data.size(); i++) {
+                    std::cout << data(i) << std::endl;
+                }
+                std::cout << "] <-" << std::endl;
+            }
+*/
         }
         stats.logSummary();
         return 0;

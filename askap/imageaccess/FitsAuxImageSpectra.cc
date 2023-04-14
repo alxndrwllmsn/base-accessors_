@@ -35,7 +35,7 @@
 using namespace askap;
 using namespace askap::accessors;
 
-ASKAP_LOGGER(FITSlogger, ".FitsAuxImageSpectra");
+ASKAP_LOGGER(logger, ".FitsAuxImageSpectra");
 
 /// class static function
 void FitsAuxImageSpectra::PrintError(int status)
@@ -48,7 +48,7 @@ void FitsAuxImageSpectra::PrintError(int status)
     fits_get_errstatus(status, status_str);
 
     if (status) {
-        ASKAPLOG_ERROR_STR(FITSlogger, "FitsIO error: " << status_str); /* print error report */
+        ASKAPLOG_ERROR_STR(logger, "FitsIO error: " << status_str); /* print error report */
 
         exit(status);      /* terminate the program, returning error status */
     }
@@ -172,6 +172,7 @@ FitsAuxImageSpectra::add(const std::string& id, const SpectrumT& spectrum)
 void FitsAuxImageSpectra::add(const std::vector<std::string>& ids, 
                               const ArrayOfSpectrumT& arrayOfSpectrums)
 {
+    ASKAPLOG_INFO_STR(logger,"---> FitsAuxImageSpectra::add");
     auto s1 = ids.size();
     auto s2 = arrayOfSpectrums.nrow();
     ASKAPCHECK(s1 == s2, "ids and arrayOfSpectrums are not the same. " 
@@ -188,28 +189,11 @@ void FitsAuxImageSpectra::add(const std::vector<std::string>& ids,
             PrintError(itsStatus);
 
         long firstElem = 1;
-        char** bptr = new char*[sizeof(char) * ids.size()];
-        for (auto i = 0; i < s1; i++) {
-            bptr[i] = const_cast<char *> (ids[i].c_str());
-        }
-        if (fits_write_col(itsFitsPtr,TSTRING,1,itsCurrentRow,firstElem,ids.size(),
-                       bptr,&itsStatus) )
-            PrintError(itsStatus);
-        for (auto i = 0; i < s1; i++) {
-            // to be safe
-            bptr[i] = nullptr;
-        }
-        delete []bptr;
 
-        if (fits_write_col(itsFitsPtr,TFLOAT,2,itsCurrentRow,firstElem,arrayOfSpectrums.size(),
-                       const_cast<float *> (arrayOfSpectrums.data()),&itsStatus) )
-            PrintError(itsStatus);
-        
-        // close the FITS file
-        if (fits_close_file(itsFitsPtr,&itsStatus))
-            PrintError(itsStatus);
-
-        itsCurrentRow += s1;
+        auto nrow = arrayOfSpectrums.nrow();
+        for (auto r = 0; r < nrow; r++) {
+            this->add(ids[r],arrayOfSpectrums.row(r).tovector());
+        }
     }
 }
 
@@ -253,5 +237,3 @@ FitsAuxImageSpectra::get(const std::string& id, SpectrumT& spectrum)
         this->get(iter->second,spectrum);
     }
 }
-
-//        void addI(const std::string& fitsFileName, const std::string& id, const std::vector<float>& spectrum) override;
