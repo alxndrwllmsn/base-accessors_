@@ -75,7 +75,7 @@ FetchContent_Declare(base-askap
 # -------- base-askapparallel --------
 FetchContent_Declare(base-askapparallel
   GIT_REPOSITORY    ${ASKAPSDP_GIT_URL}/base-askapparallel.git
-  GIT_TAG           ${BASE_ASKAPPARRALLEL_TAG}
+  GIT_TAG           ${BASE_ASKAPPARALLEL_TAG}
   SOURCE_DIR        base-askapparallel
 )
 
