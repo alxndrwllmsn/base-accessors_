@@ -132,6 +132,11 @@ public:
   /// in the output. Allowed values are: I, "IQUV","XXYY","RRLL"
   virtual void choosePolarizations(const casacore::String &pols);
 
+  /// Choose Data Tiles (in time/row direction)
+  /// @param[in] nTiles number of tiles to select
+  /// @param[in] start Starting tile number (>=0)
+  void chooseDataTiles(uint nTiles, uint start);
+
   /// Obtain a table expression node for selection. This method is
   /// used in the implementation of the iterator to form a subtable
   /// obeying the selection criteria specified by the user via

@@ -37,6 +37,10 @@
 #include <askap/dataaccess/DataAccessError.h>
 #include <askap/dataaccess/TableTimeStampSelectorImpl.h>
 
+#include <casacore/tables/DataMan/TiledStManAccessor.h>
+#include <askap/askap/AskapLogging.h>
+ASKAP_LOGGER(logger, ".dataaccess");
+
 using namespace askap;
 using namespace askap::accessors;
 using namespace casa;
@@ -174,6 +178,39 @@ void TableDataSelector::chooseVelocities(casacore::uInt nChan,
 void TableDataSelector::choosePolarizations(const casacore::String &pols)
 {
    ASKAPTHROW(DataAccessLogicError, "choosePolarizations has not yet been implemented, requested pols="<<pols);
+}
+
+/// Choose Data Tiles (in time/row direction)
+/// @param[in] nTiles number of tiles to select
+/// @param[in] start Starting tile number (>=0)
+void TableDataSelector::chooseDataTiles(uint nTiles, uint start)
+{
+    // first check if data is tiled and only has a single hypercube
+    TableDesc td = table().actualTableDesc();
+    const ColumnDesc& cdesc = td[getDataColumnName()];
+    String dataManType = cdesc.dataManagerType();
+    String dataManGroup = cdesc.dataManagerGroup();
+    ASKAPCHECK(dataManType.contains("Tiled"),"Tiles selection requires a tiled Data column");
+    ROTiledStManAccessor tsm(table(), dataManGroup);
+    // try to find first non-empty hypercube and count how many we have
+    int hypercube = -1;
+    uint nhyper = 0;
+    for (uint i = 0; i < tsm.nhypercubes(); i++) {
+        if (tsm.getTileShape(i).product() > 0 ) {
+            if (hypercube == -1) {
+                hypercube = i;
+            }
+            nhyper++;
+        }
+    }
+    ASKAPCHECK(nhyper == 1,"Tiles selection requires uniformly tiled data");
+    const IPosition tileShape = tsm.getTileShape(hypercube);
+    //const IPosition hypercubeShape = tsm.getHypercubeShape(0);
+    //ASKAPDEBUGASSERT(tileShape.nelements()==3 && hypercubeShape.nelements()==3);
+    //const uInt nTilesInTime = hypercubeShape(2)/tileShape(2);
+    ASKAPLOG_INFO_STR(logger,"Tile selection nTiles = " << nTiles << ", start = " << start << " -> " <<
+                 "row selection nRows = " << nTiles*tileShape(2)<<", start = "<<start*tileShape(2));
+    chooseRows(nTiles * tileShape(2), start * tileShape(2));
 }
 
 /// @brief choose data column

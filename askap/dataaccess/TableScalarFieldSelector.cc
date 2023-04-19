@@ -115,13 +115,13 @@ void TableScalarFieldSelector::chooseMinUVDistance(casacore::Double uvDist)
   TableExprNode uvwExprNode = table().col("UVW");
   const TableExprNode uExprNode = uvwExprNode(IPosition(1,0));
   const TableExprNode vExprNode = uvwExprNode(IPosition(1,1));
-  
+
   if (itsTableSelector.isNull()) {
-      itsTableSelector = (ndim(uvwExprNode) == 1) && (nelements(uvwExprNode) >= 2) 
+      itsTableSelector = (ndim(uvwExprNode) == 1) && (nelements(uvwExprNode) >= 2)
                     && (sqrt(square(uExprNode)+square(vExprNode)) >= uvDist);
   } else {
-      itsTableSelector = itsTableSelector && (ndim(uvwExprNode) == 1) && 
-                 (nelements(uvwExprNode) >= 2) && 
+      itsTableSelector = itsTableSelector && (ndim(uvwExprNode) == 1) &&
+                 (nelements(uvwExprNode) >= 2) &&
                  (sqrt(square(uExprNode) + square(vExprNode)) >= uvDist);
   }
 }
@@ -130,7 +130,7 @@ void TableScalarFieldSelector::chooseMinUVDistance(casacore::Double uvDist)
 /// @details This effectively rejects the baselines giving a smaller
 /// uv-distance than the specified threshold (in metres), but unlike chooseMinUVDistance
 /// preserve samples with uvw equal to exatly zero. One example of such zero uvw samples is
-/// auto-correlation (which can be filtered out separately by another selector call), but the 
+/// auto-correlation (which can be filtered out separately by another selector call), but the
 /// main motivation behind such method is to preserve completely flagged samples which may not
 /// have uvw defined (and therefore it could be set to zero)
 /// @param[in] uvDist threshold
@@ -140,15 +140,15 @@ void TableScalarFieldSelector::chooseMinNonZeroUVDistance(casacore::Double uvDis
   const TableExprNode uExprNode = uvwExprNode(IPosition(1,0));
   const TableExprNode vExprNode = uvwExprNode(IPosition(1,1));
   const TableExprNode wExprNode = uvwExprNode(IPosition(1,2));
-  
+
   if (itsTableSelector.isNull()) {
-      itsTableSelector = (ndim(uvwExprNode) == 1) && (nelements(uvwExprNode) >= 3) 
-                    && ((sqrt(square(uExprNode)+square(vExprNode)) >= uvDist) || 
+      itsTableSelector = (ndim(uvwExprNode) == 1) && (nelements(uvwExprNode) >= 3)
+                    && ((sqrt(square(uExprNode)+square(vExprNode)) >= uvDist) ||
                     ((uExprNode == 0.) && (vExprNode == 0.) && (wExprNode == 0.)));
   } else {
-      itsTableSelector = itsTableSelector && (ndim(uvwExprNode) == 1) && 
-                 (nelements(uvwExprNode) >= 3) && 
-                 ((sqrt(square(uExprNode) + square(vExprNode)) >= uvDist) || 
+      itsTableSelector = itsTableSelector && (ndim(uvwExprNode) == 1) &&
+                 (nelements(uvwExprNode) >= 3) &&
+                 ((sqrt(square(uExprNode) + square(vExprNode)) >= uvDist) ||
                  ((uExprNode == 0.) && (vExprNode == 0.) && (wExprNode == 0.)));
   }
 }
@@ -163,13 +163,13 @@ void TableScalarFieldSelector::chooseMaxUVDistance(casacore::Double uvDist)
   TableExprNode uvwExprNode = table().col("UVW");
   const TableExprNode uExprNode = uvwExprNode(IPosition(1,0));
   const TableExprNode vExprNode = uvwExprNode(IPosition(1,1));
-  
+
   if (itsTableSelector.isNull()) {
-      itsTableSelector = (ndim(uvwExprNode) == 1) && (nelements(uvwExprNode) >= 2) 
+      itsTableSelector = (ndim(uvwExprNode) == 1) && (nelements(uvwExprNode) >= 2)
                   && (sqrt(square(uExprNode) + square(vExprNode)) <= uvDist);
   } else {
       itsTableSelector = itsTableSelector && (ndim(uvwExprNode) == 1) &&
-                 (nelements(uvwExprNode) > 2) && 
+                 (nelements(uvwExprNode) > 2) &&
                  (sqrt(square(uExprNode) + square(vExprNode)) <= uvDist);
   }
 }
@@ -188,6 +188,18 @@ void TableScalarFieldSelector::chooseScanNumber(casacore::uInt scanNumber)
     }
 }
 
+/// @brief choose row numbers
+/// @param[in] numRows number of rows to select
+/// @param[in] startRow first row to select
+void TableScalarFieldSelector::chooseRows(const casacore::rownr_t numRows, const casacore::rownr_t startRow)
+{
+   if (itsTableSelector.isNull()) {
+       itsTableSelector = (table().nodeRownr() >= startRow && table().nodeRownr() < (startRow + numRows));
+   } else {
+       itsTableSelector = itsTableSelector && (table().nodeRownr() >= startRow && table().nodeRownr() < (startRow + numRows));
+   }
+}
+
 /// @brief Choose autocorrelations only
 void TableScalarFieldSelector::chooseAutoCorrelations()
 {
@@ -202,13 +214,13 @@ void TableScalarFieldSelector::chooseAutoCorrelations()
                            (table().col("FEED1") == table().col("FEED2"));
    }
 }
-  
+
 /// @brief Choose crosscorrelations only
 void TableScalarFieldSelector::chooseCrossCorrelations()
 {
    if (itsTableSelector.isNull()) {
        itsTableSelector = (table().col("ANTENNA1") !=
-                           table().col("ANTENNA2")) || 
+                           table().col("ANTENNA2")) ||
                            (table().col("FEED1") != table().col("FEED2"));
    } else {
        itsTableSelector = itsTableSelector && ((table().col("ANTENNA1") !=
@@ -229,7 +241,7 @@ void TableScalarFieldSelector::chooseSpectralWindow(casacore::uInt spWinID)
        std::vector<size_t>::const_iterator ci=dataDescIDs.begin();
        TableExprNode tempNode=(table().col("DATA_DESC_ID") ==
                   static_cast<casacore::Int>(*ci));
-       for(++ci;ci!=dataDescIDs.end();++ci) {           
+       for(++ci;ci!=dataDescIDs.end();++ci) {
 	   tempNode = tempNode || (table().col("DATA_DESC_ID") ==
                   static_cast<casacore::Int>(*ci));
        }
@@ -237,16 +249,16 @@ void TableScalarFieldSelector::chooseSpectralWindow(casacore::uInt spWinID)
            itsTableSelector=tempNode;
        } else {
            itsTableSelector = itsTableSelector && tempNode;
-       }       
+       }
    } else {
      // required spectral window is not present in the measurement set
      // we have to insert a dummy expression, otherwise an exception
      // is thrown within the table selection.
      itsTableSelector=(table().col("DATA_DESC_ID") == -1) && False;
-   }   
+   }
 }
- 
-/// @brief Obtain a table expression node for selection. 
+
+/// @brief Obtain a table expression node for selection.
 /// @details This method is
 /// used in the implementation of the iterator to form a subtable
 /// obeying the selection criteria specified by the user via
@@ -254,7 +266,7 @@ void TableScalarFieldSelector::chooseSpectralWindow(casacore::uInt spWinID)
 /// @return a const reference to table expression node object
 const casacore::TableExprNode& TableScalarFieldSelector::getTableSelector(const
             boost::shared_ptr<IDataConverterImpl const> &) const
-{ 
+{
   return itsTableSelector;
 }
 
@@ -262,7 +274,6 @@ const casacore::TableExprNode& TableScalarFieldSelector::getTableSelector(const
 /// @return a reference to the cached table expression node
 ///
 casacore::TableExprNode& TableScalarFieldSelector::rwTableSelector() const
-{ 
+{
   return itsTableSelector;
 }
-

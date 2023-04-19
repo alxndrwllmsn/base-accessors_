@@ -41,11 +41,11 @@ using namespace askap::accessors;
 /// construct an object linked with the given read-write iterator
 /// @param iter a reference to the associated read-write iterator
 TableDataAccessor::TableDataAccessor(const TableDataIterator &iter) :
-                 MetaDataAccessor(iter.getAccessor()), 
+                 MetaDataAccessor(iter.getAccessor()),
                  itsVisNeedsFlush(false), itsFlagNeedsFlush(false),
                  itsIterator(iter) {}
 
-/// Read-only visibilities (a cube is nRow x nChannel x nPol; 
+/// Read-only visibilities (a cube is nRow x nChannel x nPol;
 /// each element is a complex visibility)
 ///
 /// @return a reference to nRow x nChannel x nPol cube, containing
@@ -53,7 +53,7 @@ TableDataAccessor::TableDataAccessor(const TableDataIterator &iter) :
 ///
 const casacore::Cube<casacore::Complex>& TableDataAccessor::visibility() const
 {
-  return getROAccessor().visibility();  
+  return getROAccessor().visibility();
 }
 
 /// Read-write access to visibilities (a cube is nRow x nChannel x nPol;
@@ -63,17 +63,22 @@ const casacore::Cube<casacore::Complex>& TableDataAccessor::visibility() const
 /// all visibility data
 ///
 casacore::Cube<casacore::Complex>& TableDataAccessor::rwVisibility()
-{    
+{
   if (!itsIterator.mainTableWritable()) {
-      throw DataAccessLogicError("rwVisibility() is used for original visibilities, "
-           "but the table is not writable");
+      try {
+          itsIterator.table().dataOnly();
+          itsIterator.table().reopenRW();
+      } catch (const std::exception& x) {
+          throw DataAccessLogicError("rwVisibility() is used for original visibilities, "
+                "but the table is not writable");
+      }
   }
-  
+
   itsVisNeedsFlush = true;
-  
+
   // the solution with const_cast is not very elegant, however it seems to
   // be the only alternative to creating a copy of the buffer or making the whole
-  // const interface untidy by putting a non-const method there. 
+  // const interface untidy by putting a non-const method there.
   // It is safe to use const_cast here because we know that the actual buffer
   // is declared mutable in CachedAccessorField.
   return const_cast<casacore::Cube<casacore::Complex>&>(getROAccessor().visibility());
@@ -84,7 +89,7 @@ casacore::Cube<casacore::Complex>& TableDataAccessor::rwVisibility()
 ///         information. If True, the corresponding element is flagged.
 const casacore::Cube<casacore::Bool>& TableDataAccessor::flag() const
 {
-  return getROAccessor().flag();  
+  return getROAccessor().flag();
 }
 
 /// Non-const access to the cube of flags.
@@ -92,17 +97,22 @@ const casacore::Cube<casacore::Bool>& TableDataAccessor::flag() const
 ///         information. If True, the corresponding element is flagged.
 casacore::Cube<casacore::Bool>& TableDataAccessor::rwFlag()
 {
-   if (!itsIterator.mainTableWritable()) {
-       throw DataAccessLogicError("rwFlag() is used for original visibilities, "
-           "but the table is not writable");
-   }
+    if (!itsIterator.mainTableWritable()) {
+        try {
+            itsIterator.table().dataOnly();
+            itsIterator.table().reopenRW();
+        } catch (const std::exception& x) {
+            throw DataAccessLogicError("rwFlag() is used for original flags, "
+                  "but the table is not writable");
+        }
+    }
    // also need a check that FLAG_ROW is not present
 
    itsFlagNeedsFlush = true;
-  
+
    // the solution with const_cast is not very elegant, however it seems to
    // be the only alternative to creating a copy of the buffer or making the whole
-   // const interface untidy by putting a non-const method there. 
+   // const interface untidy by putting a non-const method there.
    // It is safe to use const_cast here because we know that the actual buffer
    // is declared mutable in CachedAccessorField.
    return const_cast<casacore::Cube<casacore::Bool>&>(getROAccessor().flag());
