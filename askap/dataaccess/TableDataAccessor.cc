@@ -66,7 +66,9 @@ casacore::Cube<casacore::Complex>& TableDataAccessor::rwVisibility()
 {
   if (!itsIterator.mainTableWritable()) {
       try {
+#ifdef HAVE_CASACORE_TABLE_DATAONLY
           itsIterator.table().dataOnly();
+#endif
           itsIterator.table().reopenRW();
       } catch (const std::exception& x) {
           throw DataAccessLogicError("rwVisibility() is used for original visibilities, "
@@ -99,7 +101,9 @@ casacore::Cube<casacore::Bool>& TableDataAccessor::rwFlag()
 {
     if (!itsIterator.mainTableWritable()) {
         try {
+#ifdef HAVE_CASACORE_TABLE_DATAONLY
             itsIterator.table().dataOnly();
+#endif
             itsIterator.table().reopenRW();
         } catch (const std::exception& x) {
             throw DataAccessLogicError("rwFlag() is used for original flags, "

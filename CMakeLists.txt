@@ -104,7 +104,7 @@ configure_file(askap_accessors.cc.in ${CMAKE_CURRENT_BINARY_DIR}/askap_accessors
 # Required Version of ASKAP dependencies is the MAJOR and MINOR version
 # of this package. This allows the PATCH versions to change on everything
 # but the version number cannot be less or more than the current version
-# 
+#
 set(REQUIRED_VERSION "${VERSION_MAJOR}.${VERSION_MINOR}")
 
 
@@ -170,7 +170,6 @@ if (CASACORE3 OR CXX11)
 	set(CMAKE_CXX_STANDARD 11)
 	set(CMAKE_CXX_STANDARD_REQUIRED ON)
 endif()
-
 
 add_library(accessors SHARED
 	${CMAKE_CURRENT_BINARY_DIR}/askap_accessors.cc
@@ -260,6 +259,17 @@ if (BUILD_TESTING)
   add_subdirectory(tests/votable)
   add_subdirectory(tests/imageaccess)
 endif ()
+
+# look for dataOnly member in Table.h
+# (tried and failed to get CheckCXXSymbolExists and CheckCXXSourceCompiles working)
+file (READ "${CASACORE_INCLUDE_DIR}/casacore/tables/Tables/Table.h" TMPTXT)
+string (FIND "${TMPTXT}" "dataOnly" FOUND)
+message(STATUS "dataonly flag: ${FOUND}")
+unset (TMPTXT)
+if (FOUND GREATER 0)
+    message(STATUS "Found casacore::Table::dataOnly: adding HAVE_CASACORE_TABLE_DATAONLY" )
+    add_compile_definitions(HAVE_CASACORE_TABLE_DATAONLY)
+endif()
 
 
 #include(yanda_export)
