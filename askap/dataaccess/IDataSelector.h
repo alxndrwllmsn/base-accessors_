@@ -175,11 +175,6 @@ public:
     /// @param[in] scanNumber the scan number to choose
     virtual void chooseScanNumber(casacore::uInt scanNumber) = 0;
 
-    /// Choose Data Tiles (in time/row direction)
-    /// @param[in] nTiles number of tiles to select
-    /// @param[in] start Starting tile number (>=0)
-    virtual void chooseDataTiles(uint nTiles, uint start) = 0;
-
 };
 
 } // end of namespace accessors

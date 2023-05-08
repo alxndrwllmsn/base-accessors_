@@ -203,6 +203,14 @@ public:
   /// returns the number of channels, the start frequency and the increment (Hz)
   virtual std::tuple<int,casacore::MFrequency,double> getFrequencySelection() const throw();
 
+  /// @brief work out the tiling of the column in the time/row direction
+  /// @param[in] string column : name of column to inspect (usually DATA or FLAG)
+  /// @param[out] tileShape : the tileShape of the column
+  /// @param[out] hypercubeShape: the shape of the tiled hypercube
+  /// @return uint: the number of tiles in the row direction, or 0 if invalid
+  uint getTiling(const std::string& column,
+          casacore::IPosition& tileShape, casacore::IPosition& hypercubeShape) const;
+
 
 
 private:
