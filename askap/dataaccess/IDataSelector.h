@@ -174,6 +174,7 @@ public:
     /// Choose a single scan number
     /// @param[in] scanNumber the scan number to choose
     virtual void chooseScanNumber(casacore::uInt scanNumber) = 0;
+
 };
 
 } // end of namespace accessors

@@ -39,6 +39,7 @@ ASKAP_LOGGER(logger, "");
 
 #include <askap/askap/AskapError.h>
 #include <askap/dataaccess/DataAccessError.h>
+#include <askap/dataaccess/TableDataSelector.h>
 
 #include <iostream>
 
@@ -50,6 +51,23 @@ void askap::accessors::operator<<(const boost::shared_ptr<IDataSelector> &sel,
                  const LOFAR::ParameterSet &parset)
 {
   ASKAPDEBUGASSERT(sel);
+  // do tile selection first, other selections may affect #rows/tile and break the tile selection
+  // also - filter out the auto setting (handled elsewhere)
+  if (parset.isDefined("Tiles") && parset.getString("Tiles","")!="auto") {
+      std::vector<LOFAR::uint32> tiles = parset.getUint32Vector("Tiles",true);
+      if (tiles.size() != 2) {
+          ASKAPTHROW(DataAccessError,"The 'Tiles' parameter in the Parset should have "
+	          "exactly 2 elements, the current parameter has "<<tiles.size()<<" elements");
+      }
+      // Tiles is Table specific, so cast to TableDataSelector
+      boost::shared_ptr<TableDataSelector> tsel = boost::dynamic_pointer_cast<TableDataSelector>(sel);
+      if (tsel) {
+          tsel->chooseDataTiles(static_cast<casacore::uInt>(tiles[0]),
+                static_cast<casacore::uInt>(tiles[1]));
+      } else {
+          ASKAPTHROW(DataAccessError,"Tile selection can only be used for data stored in Tables");
+      }
+  }
   if (parset.isDefined("Feed")) {
       ASKAPCHECK(!parset.isDefined("Beam"), "Both 'Feed' and 'Beam' should not be defined simultaneously!");
       sel->chooseFeed(static_cast<casacore::uInt>(parset.getUint32("Feed")));
@@ -65,7 +83,7 @@ void askap::accessors::operator<<(const boost::shared_ptr<IDataSelector> &sel,
 	          "exactly 2 elements, the current parameter has "<<baseline.size()<<" elements");
       }
       sel->chooseBaseline(static_cast<casacore::uInt>(baseline[0]),
-                          static_cast<casacore::uInt>(baseline[1]));  
+                          static_cast<casacore::uInt>(baseline[1]));
   }
   if (parset.isDefined("Antenna")) {
       sel->chooseAntenna(static_cast<casacore::uInt>(parset.getUint32("Antenna")));
@@ -94,7 +112,7 @@ void askap::accessors::operator<<(const boost::shared_ptr<IDataSelector> &sel,
 	          "exactly 2 elements, the current parameter has "<<cycles.size()<<" elements");
       }
       sel->chooseCycles(static_cast<casacore::uInt>(cycles[0]),
-                        static_cast<casacore::uInt>(cycles[1]));  
+                        static_cast<casacore::uInt>(cycles[1]));
   }
   if (parset.isDefined("TimeRange")) {
       std::vector<double> timeRange = parset.getDoubleVector("TimeRange");
@@ -103,8 +121,8 @@ void askap::accessors::operator<<(const boost::shared_ptr<IDataSelector> &sel,
 	          "exactly 2 elements, the current parameter has "<<timeRange.size()<<" elements");
       }
       sel->chooseTimeRange(static_cast<casacore::Double>(timeRange[0]),
-                        static_cast<casacore::Double>(timeRange[1]));  
-  } 
+                        static_cast<casacore::Double>(timeRange[1]));
+  }
   if (parset.isDefined("CorrelationType")) {
       std::string corrType=parset.getString("CorrelationType");
       if (corrType == "auto") {
