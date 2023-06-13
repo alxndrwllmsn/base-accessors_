@@ -229,6 +229,18 @@ public:
   /// @return current scan ID
   casacore::uInt currentScanID() const;
 
+  /// @brief obtain a current spectral window ID
+  /// @details This method obtains a spectral window ID corresponding to the
+  /// current data description ID and tests its validity
+  /// @return current spectral window ID
+  casacore::uInt currentSpWindowID() const;
+
+  /// @brief obtain a current polarisation ID
+  /// @details This method obtains a polarisation ID corresponding to the current
+  /// data description ID and tests its validity
+  /// @return current polarisation ID
+  casacore::uInt currentPolID() const;
+
 protected:
   /// @brief obtain selected range of channels
   /// @details A subset spectral channels can be selected for this iterator to work with.
@@ -354,18 +366,6 @@ protected:
   /// in the pair.
   /// @param[in] dirs a reference to a vector to fill
   void fillDishPointingCache(casacore::Vector<casacore::MVDirection> &dirs) const;
-
-  /// @brief obtain a current spectral window ID
-  /// @details This method obtains a spectral window ID corresponding to the
-  /// current data description ID and tests its validity
-  /// @return current spectral window ID
-  casacore::uInt currentSpWindowID() const;
-
-  /// @brief obtain a current polarisation ID
-  /// @details This method obtains a polarisation ID corresponding to the current
-  /// data description ID and tests its validity
-  /// @return current polarisation ID
-  casacore::uInt currentPolID() const;
 
   /// @brief obtain the current iteration of the table iterator
   /// @details This class uses TableIterator behind the scene. This method
