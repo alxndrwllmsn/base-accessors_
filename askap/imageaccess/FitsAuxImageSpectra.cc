@@ -102,7 +102,7 @@ FitsAuxImageSpectra::create(const casacore::RecordInterface &tableInfo,
     std::memcpy(cPointerWrapper.itsTType[0],col1.data(),col1.length());
     cPointerWrapper.itsTForm[0] = new char[sizeof(char)*4];
     std::memset(cPointerWrapper.itsTForm[0],'\0',4);
-    std::memcpy(cPointerWrapper.itsTForm[0],"20A",3);
+    std::memcpy(cPointerWrapper.itsTForm[0],"50A",3);
     cPointerWrapper.itsUnits[0] = new char[2];
     std::memset(cPointerWrapper.itsUnits[0],'\0',2);
     std::memcpy(cPointerWrapper.itsUnits[0],"",1);
