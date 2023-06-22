@@ -52,9 +52,7 @@ namespace accessors {
 ///            assumed that there is only one rank that does all the IO.
 class FitsAuxImageSpectra {
     public :
-        //using SpectrumT = std::vector<float>;
         using SpectrumT = casacore::Vector<float>;
-        //using ArrayOfSpectrumT = std::vector<SpectrumT>;
         using ArrayOfSpectrumT = casacore::Matrix<float>;
 
         /// @brief create a FITS image spectra table object
