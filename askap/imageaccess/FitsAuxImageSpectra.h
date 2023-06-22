@@ -52,7 +52,8 @@ namespace accessors {
 ///            assumed that there is only one rank that does all the IO.
 class FitsAuxImageSpectra {
     public :
-        using SpectrumT = std::vector<float>;
+        //using SpectrumT = std::vector<float>;
+        using SpectrumT = casacore::Vector<float>;
         //using ArrayOfSpectrumT = std::vector<SpectrumT>;
         using ArrayOfSpectrumT = casacore::Matrix<float>;
 
@@ -76,9 +77,9 @@ class FitsAuxImageSpectra {
         /// @param[in] - spectrum - the spectrum of a component
         void add(const std::string& id, const SpectrumT& spectrum); 
 
-        /// @brief - add an array of spectrums to the table
+        /// @brief - add an array of spectra to the table
         /// @param[in] - ids - an array of identifiers
-        /// @param[in] - arrayOfSpectrums - a casacore matrix of spectrums 
+        /// @param[in] - arrayOfSpectrums - a casacore matrix of spectra 
         ///              to be added to the table.
         void add(const std::vector<std::string>& ids, const ArrayOfSpectrumT& arrayOfSpectrums);
 

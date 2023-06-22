@@ -99,7 +99,7 @@ public:
         }
     }
 
-   void readSpectrum(long row,std::vector<float>& spectrum)
+   void readSpectrum(long row,casacore::Vector<float>& spectrum)
    {
         itsFitsAuxImageSpectraTable->get(row,spectrum);
    }

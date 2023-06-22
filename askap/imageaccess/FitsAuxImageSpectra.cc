@@ -89,10 +89,10 @@ FitsAuxImageSpectra::create(const casacore::RecordInterface &tableInfo,
     const char extname[] = "PolSpec";
 
     // check to see if the user specifies the column name for the stoke
-    casacore::String stoke("spectrum"); // spectrum for I,Q,U and V
-    if ( tableInfo.isDefined("Stoke") ) {
-        casacore::RecordFieldId fieldId(tableInfo.fieldNumber("Stoke"));
-        tableInfo.get(fieldId,stoke);
+    casacore::String stokes("spectrum"); // spectrum for I,Q,U and V
+    if ( tableInfo.isDefined("Stokes") ) {
+        casacore::RecordFieldId fieldId(tableInfo.fieldNumber("Stokes"));
+        tableInfo.get(fieldId,stokes);
     }
     unsigned int nCol = 2;
     CPointerWrapper cPointerWrapper { nCol };
@@ -107,7 +107,7 @@ FitsAuxImageSpectra::create(const casacore::RecordInterface &tableInfo,
     std::memset(cPointerWrapper.itsUnits[0],'\0',2);
     std::memcpy(cPointerWrapper.itsUnits[0],"",1);
 
-    std::string col2(stoke.data());
+    std::string col2(stokes.data());
     cPointerWrapper.itsTType[1] = new char[sizeof(char) * col2.length() + 1];
     std::memset(cPointerWrapper.itsTType[1],'\0',col2.length() + 1);
     std::memcpy(cPointerWrapper.itsTType[1],col2.data(),col2.length());
@@ -192,7 +192,7 @@ void FitsAuxImageSpectra::add(const std::vector<std::string>& ids,
 
         auto nrow = arrayOfSpectrums.nrow();
         for (auto r = 0; r < nrow; r++) {
-            this->add(ids[r],arrayOfSpectrums.row(r).tovector());
+            this->add(ids[r],arrayOfSpectrums.row(r));
         }
     }
 }

@@ -112,7 +112,7 @@ public:
         }
         itsCurrentRow += 1;
         std::string id = std::string("Source_")  + std::to_string(itsCurrentRow);
-        itsFitsAuxImageSpectraTable->add(id,randomSpectrum);
+        itsFitsAuxImageSpectraTable->add(id,casacore::Vector<float>(randomSpectrum));
         randomSpectrum.resize(0);
      }
    }
@@ -147,7 +147,7 @@ public:
      itsCurrentRow += nrows;
    }
 
-   void readSpectrum(long row,std::vector<float>& spectrum)
+   void readSpectrum(long row,casacore::Vector<float>& spectrum)
    {
         itsFitsAuxImageSpectraTable->get(row,spectrum);
         //std::string id = std::string("Source_") + std::to_string(row);
@@ -161,15 +161,17 @@ public:
         setup();
         addNRow2(1000000);
         addNRow2(10);
-        std::vector<float> spectrum;
+        casacore::Vector<float> spectrum;
         readSpectrum(3,spectrum);
+
+        std::vector<float> stdVect  =spectrum.tovector();
         // Because of the way we insert the spectrum to the table, we know
         // the spectrum for row 3 is between 2.0 and 3.0
-        bool status = std::all_of(spectrum.begin(),spectrum.end(),
+        bool status = std::all_of(stdVect.begin(),stdVect.end(),
                                   [](float v) { return (v >= 2.0 && v <= 3);});
         ASKAPCHECK(status, "Error: spectrum in row 3 is not between 2 and 3");
         std::cout << std::endl << "[ ";
-        for_each(spectrum.begin(),spectrum.end(),
+        for_each(stdVect.begin(),stdVect.end(),
                     [](float v) {std::cout << v << " ";});
         std::cout << "]" << std::endl;
         
