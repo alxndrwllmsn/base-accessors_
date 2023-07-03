@@ -148,7 +148,7 @@ void TableDataSelector::chooseFrequencies(casacore::uInt nChan,
          const casacore::MFrequency &start,
          const casacore::MVFrequency &freqInc)
 {
-   ASKAPDEBUGASSERT((nChan>0) && (start>=0));
+   ASKAPDEBUGASSERT((nChan>0) && (start.getValue()>=0));
    ASKAPCHECK(freqInc.near(casacore::MVFrequency(0)), "Non zero frequency increment not yet implemented");
    itsNFreq = nChan;
    itsFreqStart = start;
@@ -216,7 +216,7 @@ uint TableDataSelector::getTiling(const std::string& column,
     tileShape = tsm.getTileShape(hypercube);
     hypercubeShape = tsm.getHypercubeShape(hypercube);
     // we implicitly assume that column is tiled over pol, chan and row
-    ASKAPDEBUGASSERT(tileShape.nelements()==3 && hyperCubeShape.nelements()==3);
+    ASKAPDEBUGASSERT(tileShape.nelements()==3 && hypercubeShape.nelements()==3);
     const uint nRowTiles = hypercubeShape(2) / tileShape(2) +
         (hypercubeShape(2) % tileShape(2) ? 1 : 0);
     return nRowTiles;
