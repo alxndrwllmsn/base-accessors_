@@ -25,9 +25,6 @@ public:
                       casacore::MaskSpecifier spec = casacore::MaskSpecifier(),
                       casacore::uInt rowNumber = 0);
 
-  // destructor
-  ~ADIOSImage();
-
   casacore::Table& table()
     { return tab_p; }
 

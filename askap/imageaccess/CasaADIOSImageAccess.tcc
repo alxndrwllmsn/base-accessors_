@@ -33,7 +33,6 @@
 
 #include <askap/askap/AskapLogging.h>
 #include <askap/imageaccess/ADIOSImage.h>
-#include <casacore/images/Images/PagedImage.h>
 #include <casacore/images/Images/SubImage.h>
 #include <casacore/images/Regions/ImageRegion.h>
 #include <casacore/images/Regions/RegionHandler.h>
