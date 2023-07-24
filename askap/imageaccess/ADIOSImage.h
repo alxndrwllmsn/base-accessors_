@@ -1,5 +1,5 @@
-// #ifndef IMAGES_ADIOSIMAGE
-// #define IMAGES_ADIOSIMAGE
+#ifndef IMAGES_ADIOSIMAGE_H
+#define IMAGES_ADIOSIMAGE_H
 
 //# Includes
 #include <casacore/casa/aips.h>
@@ -41,13 +41,52 @@ public:
   virtual casacore::Bool setImageInfo(const casacore::ImageInfo& info);
 
   virtual casacore::Bool setMiscInfo (const casacore::RecordInterface& newInfo);
+
+  //rewritten PagedImage private functions
+  void attach_logtable();
+  void setTableType();
+  void restoreAll (const casacore::TableRecord& rec);
+  void applyMaskSpecifier (const casacore::MaskSpecifier&);
+  void restoreImageInfo (const casacore::TableRecord& rec);
+  void restoreUnits (const casacore::TableRecord& rec);
+  void restoreMiscInfo (const casacore::TableRecord& rec);
+  void applyMask (const casacore::String& maskName);
+
+
+
+
+
  // etc...
 private:
   casacore::Array<T> map_p;
   casacore::Table tab_p;
+
+public:
+  using casacore::PagedImage<T>::setCoordinateInfo;
+  using casacore::PagedImage<T>::shape;
+
+  using casacore::ImageInterface<T>::setMiscInfoMember;
+  using casacore::ImageInterface<T>::setUnitMember;
+  using casacore::ImageInterface<T>::imageInfo;
+  using casacore::ImageInterface<T>::setLogMember;
+  using casacore::ImageInterface<T>::setCoordsMember;
+  using casacore::ImageInterface<T>::setImageInfoMember;
+  using casacore::ImageInterface<T>::getDefaultMask;
+  using casacore::ImageInterface<T>::hasRegion;
+  using casacore::ImageInterface<T>::getImageRegionPtr;
+  using casacore::ImageInterface<T>::coordinates;
+
+
+
+
+
+
+
 };
 
 }
 }
 
-// #endif
+#include <askap/imageaccess/ADIOSImage.tcc>
+
+#endif
