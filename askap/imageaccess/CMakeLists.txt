@@ -15,7 +15,6 @@ BeamLogger.h
 CasaImageAccess.h
 CasaImageAccess.tcc
 ADIOSImage.h
-ADIOSImage.tcc
 CasaADIOSImageAccess.h
 CasaADIOSImageAccess.tcc
 FITSImageRW.h
