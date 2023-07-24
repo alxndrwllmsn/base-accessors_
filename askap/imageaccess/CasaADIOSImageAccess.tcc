@@ -60,7 +60,7 @@ casacore::IPosition CasaADIOSImageAccess<T>::shape(const std::string &name) cons
 template <class T>
 casacore::Array<T> CasaADIOSImageAccess<T>::read(const std::string &name) const
 {
-    ASKAPLOG_INFO_STR(casaImAccessLogger, "Reading CASA image " << name);
+    ASKAPLOG_INFO_STR(casaADIOSImAccessLogger, "Reading CASA image " << name);
     ADIOSImage<T> img(name);
     if (img.hasPixelMask()) {
         ASKAPLOG_INFO_STR(casaADIOSImAccessLogger, " - setting unmasked pixels to zero");
@@ -98,7 +98,7 @@ casacore::Array<T> CasaADIOSImageAccess<T>::read(const std::string &name, const 
     ASKAPLOG_INFO_STR(casaADIOSImAccessLogger, "Reading a slice of the CASA image " << name << " from " << blc << " to " << trc);
     ADIOSImage<T> img(name);
     if (img.hasPixelMask()) {
-        ASKAPLOG_INFO_STR(casaImAccessLogger, " - setting unmasked pixels to zero");
+        ASKAPLOG_INFO_STR(casaADIOSImAccessLogger, " - setting unmasked pixels to zero");
         // generate an Array of zeros and copy the elements for which the mask is true
         const casacore::Slicer slicer(blc, trc, casacore::Slicer::endIsLast);
         casacore::Array<T> tempSlice(img.getSlice(slicer).shape(), static_cast<T>(0.0));
@@ -463,9 +463,9 @@ void CasaADIOSImageAccess<T>::setMetadataKeywords(const std::string &name, const
             miscinfo.define(keyword, intVal);
             miscinfo.setComment(keyword, desc);
           } catch (const std::invalid_argument&) {
-            ASKAPLOG_WARN_STR(casaImAccessLogger, "Invalid int value for header keyword "<<keyword<<" : "<<value);
+            ASKAPLOG_WARN_STR(casaADIOSImAccessLogger, "Invalid int value for header keyword "<<keyword<<" : "<<value);
           } catch (const std::out_of_range&) {
-            ASKAPLOG_WARN_STR(casaImAccessLogger, "Out of range int value for header keyword "<<keyword<<" : "<<value);
+            ASKAPLOG_WARN_STR(casaADIOSImAccessLogger, "Out of range int value for header keyword "<<keyword<<" : "<<value);
           }
         } else if (type == "DOUBLE") {
           try {
@@ -473,15 +473,15 @@ void CasaADIOSImageAccess<T>::setMetadataKeywords(const std::string &name, const
             miscinfo.define(keyword, doubleVal);
             miscinfo.setComment(keyword, desc);
           } catch (const std::invalid_argument&) {
-            ASKAPLOG_WARN_STR(casaImAccessLogger, "Invalid double value for header keyword "<<keyword<<" : "<<value);
+            ASKAPLOG_WARN_STR(casaADIOSImAccessLogger, "Invalid double value for header keyword "<<keyword<<" : "<<value);
           } catch (const std::out_of_range&) {
-            ASKAPLOG_WARN_STR(casaImAccessLogger, "Out of range double value for header keyword "<<keyword<<" : "<<value);
+            ASKAPLOG_WARN_STR(casaADIOSImAccessLogger, "Out of range double value for header keyword "<<keyword<<" : "<<value);
           }
         } else if (type == "STRING") {
           miscinfo.define(keyword, value);
           miscinfo.setComment(keyword, desc);
         } else {
-          ASKAPLOG_WARN_STR(casaImAccessLogger, "Invalid type for header keyword "<<keyword<<" : "<<type);
+          ASKAPLOG_WARN_STR(casaADIOSImAccessLogger, "Invalid type for header keyword "<<keyword<<" : "<<type);
         }
       }
     }

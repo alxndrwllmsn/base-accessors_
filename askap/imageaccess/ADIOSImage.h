@@ -13,6 +13,10 @@
 //# Forward Declarations
 #include <casacore/casa/iosfwd.h>
 
+namespace askap {
+
+namespace accessors {
+
 template <class T> class ADIOSImage : public casacore::PagedImage<T>
 {
 public:
@@ -42,5 +46,8 @@ private:
   casacore::Array<T> map_p;
   casacore::Table tab_p;
 };
+
+}
+}
 
 // #endif
