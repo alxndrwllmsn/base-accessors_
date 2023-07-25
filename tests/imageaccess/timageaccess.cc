@@ -27,6 +27,7 @@
 #include <askap/askap/AskapTestRunner.h>
 // Test includes
 #include "CasaImageAccessTest.h"
+#include "CasaADIOSImageAccessTest.h"
 #include "FitsImageAccessTest.h"
 #include "WeightsLogTest.h"
 
@@ -49,6 +50,7 @@ int main(int argc, char *argv[])
 
     askapdev::testutils::AskapTestRunner runner(argv[0]);
     runner.addTest( askap::accessors::CasaImageAccessTest::suite());
+    runner.addTest(askap::accessors::CasaADIOSImageAccessTest::suite());
     runner.addTest( askap::accessors::FitsImageAccessTest::suite());
     runner.addTest( askap::accessors::WeightsLogTest::suite());
     bool wasSuccessful = runner.run();
