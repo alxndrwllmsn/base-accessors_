@@ -45,11 +45,14 @@ ADIOSImage<T>::ADIOSImage (const casacore::TiledShape& shape,
 			   const casacore::CoordinateSystem& coordinateInfo, 
 			   const casacore::String& filename, 
 			   casacore::uInt rowNumber)
+: casacore::ImageInterface<T>(casacore::RegionHandlerTable(getTable, this)),
+  regionPtr_p   (0)
 {
   casacore::SetupNewTable newtab (filename, casacore::TableDesc(), casacore::Table::New);
   casacore::Table tab(newtab);
   tab_p = tab;
   map_p = makeArrayColumn(shape, rowNumber);
+  row_p = rowNumber;
   attach_logtable();
   AlwaysAssert(setCoordinateInfo(coordinateInfo), casacore::AipsError);
   setTableType();
@@ -59,18 +62,26 @@ template <class T>
 ADIOSImage<T>::ADIOSImage (const casacore::String& filename, 
                           casacore::MaskSpecifier spec,
                           casacore::uInt rowNumber)
+: casacore::ImageInterface<T>(casacore::RegionHandlerTable(getTable, this)),
+  regionPtr_p   (0)
 {
   tab_p = casacore::Table(filename);
   map_p = casacore::ArrayColumn<T>(tab_p, "map").get(rowNumber);
+  row_p = rowNumber;
   attach_logtable();
   restoreAll (tab_p.keywordSet());
   applyMaskSpecifier (spec);
 }
 
-template <class T>
-casacore::String ADIOSImage<T>::name () const
+template <class T> 
+ADIOSImage<T>::ADIOSImage (const ADIOSImage<T>& other)
+: casacore::ImageInterface<T>(other),
+  map_p            (other.map_p),
+  regionPtr_p      (0)
 {
-  return tab_p.tableName();
+  if (other.regionPtr_p != 0) {
+    regionPtr_p = new casacore::LatticeRegion (*other.regionPtr_p);
+  }
 }
 
 template <class T>
@@ -192,7 +203,7 @@ void ADIOSImage<T>::attach_logtable()
   setLogMember (casacore::LoggerHolder (name() + "/logtable", tab.isWritable()));
   // Insert the keyword if possible and if it does not exist yet.
   if (tab.isWritable()  &&  ! tab.keywordSet().isDefined ("logtable")) {
-    tab.rwKeywordSet().defineTable("logtable", Table(name() + "/logtable"));
+    tab.rwKeywordSet().defineTable("logtable", casacore::Table(name() + "/logtable"));
   }
 }
 
@@ -334,5 +345,113 @@ void ADIOSImage<T>::applyMask (const casacore::String& maskName)
   // Replace current by new mask.
   delete regionPtr_p;
   regionPtr_p = latReg;
+}
+
+template<class T>
+casacore::Table& ADIOSImage<T>::getTable (void* imagePtr, casacore::Bool writable)
+{
+  ADIOSImage<T>* im = static_cast<ADIOSImage<T>*>(imagePtr);
+  return im->tab_p;
+}
+
+template <class T> 
+casacore::Bool ADIOSImage<T>::setCoordinateInfo (const casacore::CoordinateSystem& coords)
+{
+  casacore::Bool ok = casacore::ImageInterface<T>::setCoordinateInfo(coords);
+  if (ok) {
+    casacore::Table& tab = table();
+    if (tab.isWritable()) {
+      // Update the coordinates
+      if (tab.keywordSet().isDefined("coords")) {
+	tab.rwKeywordSet().removeField("coords");
+      }
+      if (!(coordinates().save(tab.rwKeywordSet(), "coords"))) {
+        casacore::LogIO os;
+	os << casacore::LogIO::SEVERE << "Error saving coordinates in image " << name()
+           << casacore::LogIO::POST;
+	ok = casacore::False;
+      }
+    } else {
+      casacore::LogIO os;
+      os << casacore::LogIO::SEVERE << "Image " << name()
+         << " is not writable; not saving coordinates"
+         << casacore::LogIO::POST;
+    }
+  }
+  return ok;
+}
+
+template <class T> 
+casacore::IPosition ADIOSImage<T>::shape() const
+{
+  return map_p.shape();
+}
+
+template <class T> 
+casacore::String ADIOSImage<T>::name (casacore::Bool stripPath) const 
+{
+  return tab_p.tableName ();
+}
+
+template <class T> 
+casacore::Bool ADIOSImage<T>::ok() const
+{
+  casacore::Int okay = (map_p.ndim() == coordinates().nPixelAxes());
+  return okay  ?  casacore::True : casacore::False;
+}
+
+template <class T> 
+casacore::Bool ADIOSImage<T>::doGetSlice(casacore::Array<T>& buffer, const casacore::Slicer& theSlice)
+{
+  casacore::ArrayColumn<T> col = casacore::ArrayColumn<T>(tab_p, "map");
+  col.getSlice(row_p, theSlice, buffer, casacore::True);
+  return casacore::False;
+}
+
+template <class T> 
+void ADIOSImage<T>::doPutSlice(const casacore::Array<T>& sourceBuffer, const casacore::IPosition& where, const casacore::IPosition& stride)
+{
+  const casacore::uInt arrDim = sourceBuffer.ndim();
+  const casacore::uInt latDim = ndim();
+  AlwaysAssert(arrDim <= latDim, casacore::AipsError);
+  casacore::ArrayColumn<T> col = casacore::ArrayColumn<T>(tab_p, "map");
+  if (arrDim == latDim) {
+    casacore::Slicer section(where, sourceBuffer.shape(), stride, casacore::Slicer::endIsLength); 
+    col.putSlice (row_p, section, sourceBuffer);
+  } else {
+    casacore::Array<T> degenerateArr(sourceBuffer.addDegenerate(latDim-arrDim));
+    casacore::Slicer section(where, degenerateArr.shape(), stride, casacore::Slicer::endIsLength); 
+    col.putSlice (row_p, section, degenerateArr);
+  } 
+}
+
+template<class T>
+const casacore::LatticeRegion* ADIOSImage<T>::getRegionPtr() const
+{
+  return regionPtr_p;
+}
+
+template <class T> 
+casacore::ImageInterface<T>* ADIOSImage<T>::cloneII() const
+{
+  return new ADIOSImage<T> (*this);
+}
+
+template<class T> 
+void ADIOSImage<T>::resize (const casacore::TiledShape& newShape)
+{
+  if (newShape.shape().nelements() != coordinates().nPixelAxes()) {
+    throw(casacore::AipsError("ADIOSImage<T>::resize: coordinate info is "
+		    "the incorrect shape."));
+  }
+  casacore::IPosition tileShape = newShape.tileShape();
+  casacore::ArrayColumn<T> col = casacore::ArrayColumn<T>(tab_p, "map");
+  col.setShape (row_p, newShape.shape(), tileShape);
+}
+
+template<class T>
+casacore::String ADIOSImage<T>::imageType() const
+{
+  return className();
 }
 #endif
