@@ -2,12 +2,12 @@
 ///
 /// @brief Implementation of IDataIterator in the table-based case
 /// @details
-/// TableConstDataIterator: Allow read-only iteration across preselected data. Each 
+/// TableConstDataIterator: Allow read-only iteration across preselected data. Each
 /// iteration step is represented by the IConstDataAccessor interface.
 /// TableDataIterator extends the interface further to read-write operations.
 /// Each iteration step is represented by the IDataAccessor interface in this
-/// case. 
-/// 
+/// case.
+///
 /// @copyright (c) 2007 CSIRO
 /// Australia Telescope National Facility (ATNF)
 /// Commonwealth Scientific and Industrial Research Organisation (CSIRO)
@@ -60,11 +60,11 @@ class TableDataAccessor;
 
 /// @brief Implementation of IDataIterator in the table-based case
 /// @details
-/// TableConstDataIterator: Allow read-only iteration across preselected data. Each 
+/// TableConstDataIterator: Allow read-only iteration across preselected data. Each
 /// iteration step is represented by the IConstDataAccessor interface.
 /// TableDataIterator extends the interface further to read-write operations.
 /// Each iteration step is represented by the IDataAccessor interface in this
-/// case. 
+/// case.
 /// @ingroup dataaccess_tab
 class TableDataIterator : public TableConstDataIterator,
                           virtual public IDataIterator,
@@ -75,7 +75,7 @@ public:
   /// @param[in] sel shared pointer to selector
   /// @param[in] conv shared pointer to converter
   /// @param[in] cacheSize a number of uvw machines in the cache (default is 1)
-  /// @param[in] tolerance pointing direction tolerance in radians, exceeding which leads 
+  /// @param[in] tolerance pointing direction tolerance in radians, exceeding which leads
   /// to initialisation of a new UVW Machine
   /// @param[in] maxChunkSize maximum number of rows per accessor
   TableDataIterator(const boost::shared_ptr<ITableManager const>
@@ -97,83 +97,83 @@ public:
   ///
   virtual IDataAccessor& operator*() const;
 
-  /// @brief Switch the output of operator* and operator-> to one of 
+  /// @brief Switch the output of operator* and operator-> to one of
   /// the buffers.
-  /// @details This is meant to be done to provide the same 
-  /// interface for a buffer access as exists for the original 
+  /// @details This is meant to be done to provide the same
+  /// interface for a buffer access as exists for the original
   /// visibilities (e.g. it->visibility() to get the cube).
-  /// It can be used for an easy substitution of the original 
+  /// It can be used for an easy substitution of the original
   /// visibilities to ones stored in a buffer, when the iterator is
-  /// passed as a parameter to mathematical algorithms.   
+  /// passed as a parameter to mathematical algorithms.
   /// The operator* and operator-> will refer to the chosen buffer
   /// until a new buffer is selected or the chooseOriginal() method
   /// is executed to revert operators to their default meaning
-  /// (to refer to the primary visibility data).  
+  /// (to refer to the primary visibility data).
   /// @param[in] bufferID  the name of the buffer to choose
   ///
   virtual void chooseBuffer(const std::string &bufferID);
-  
+
   /// Switch the output of operator* and operator-> to the original
-  /// state (present after the iterator is just constructed) 
+  /// state (present after the iterator is just constructed)
   /// where they point to the primary visibility data. This method
   /// is indended to cancel the results of chooseBuffer(std::string)
   ///
   virtual void chooseOriginal();
-  
+
   /// @brief obtain any associated buffer for read/write access.
-  /// @details The buffer is identified by its bufferID. The method 
-  /// ignores a chooseBuffer/chooseOriginal setting.  
+  /// @details The buffer is identified by its bufferID. The method
+  /// ignores a chooseBuffer/chooseOriginal setting.
   /// @param[in] bufferID the name of the buffer requested
   /// @return a reference to writable data accessor to the
   ///         buffer requested
-  virtual IDataAccessor& buffer(const std::string &bufferID) const;    
+  virtual IDataAccessor& buffer(const std::string &bufferID) const;
 
   /// Restart the iteration from the beginning
   void init();
-	
-  /// advance the iterator one step further 
-  /// @return True if there are more data (so constructions like 
+
+  /// advance the iterator one step further
+  /// @return True if there are more data (so constructions like
   ///         while(it.next()) {} are possible)
   virtual casacore::Bool next();
 
   // to make it public instead of protected
   using TableConstDataIterator::getAccessor;
 
-  /// populate the cube with the data stored in the given buffer  
+  /// populate the cube with the data stored in the given buffer
   /// @param[in] vis a reference to the nRow x nChannel x nPol buffer
   ///            cube to fill with the complex visibility data
   /// @param[in] name a name of the buffer to work with
   virtual void readBuffer(casacore::Cube<casacore::Complex> &vis,
                           const std::string &name) const;
 
-  /// write the cube back to the given buffer  
+  /// write the cube back to the given buffer
   /// @param[in] vis a reference to the nRow x nChannel x nPol buffer
   ///            cube to fill with the complex visibility data
   /// @param[in] name a name of the buffer to work with
   virtual void writeBuffer(const casacore::Cube<casacore::Complex> &vis,
                            const std::string &name) const;
-  	
+
   /// @brief write back visibilities
-  /// @details The write operation is possible if the shape of the 
+  /// @details The write operation is possible if the shape of the
   /// visibility cube stays the same as the shape of the data in the
   /// table. The method uses DataAccessor to obtain a reference to the
-  /// visibility cube (hence no parameters). 
+  /// visibility cube (hence no parameters).
   void writeOriginalVis() const;
 
   /// @brief write back flags
   /// @details The write operation is possible if the shape of the
   /// flag cube stays the same as the shape of the data in the
   /// table. The method uses DataAccessor to obtain a reference to the
-  /// visibility cube (hence no parameters). 
+  /// visibility cube (hence no parameters).
   /// @note This operation is specific to table (i.e MS) based implementaton
   /// of the interface
   void writeOriginalFlag() const;
 
-  
+
   /// @brief check whether one can write to the main table
   /// @details Buffers held in subtables are not covered by this method.
   /// @return true if write operation is allowed
-  bool mainTableWritable() const throw();		  
+  bool mainTableWritable() const throw();
 
 private:
 
@@ -184,7 +184,7 @@ private:
   /// if need arises. This method encapsulates handling of channel selection
   /// @param[in] cube Cube to work with, type should match the column type. Should be
   ///                 of the appropriate shape
-  /// @param[in] colName Name of the column 
+  /// @param[in] colName Name of the column
   template<typename T>
   void writeCube(const casacore::Cube<T> &cube, const std::string &colName) const;
 
