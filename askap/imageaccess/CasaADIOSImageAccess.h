@@ -31,7 +31,10 @@
 #ifndef ASKAP_ACCESSORS_CASA_ADIOS_IMAGE_ACCESS_H
 #define ASKAP_ACCESSORS_CASA_ADIOS_IMAGE_ACCESS_H
 
+#include <boost/shared_ptr.hpp>
+
 #include <askap/imageaccess/IImageAccess.h>
+#include <askap/imageaccess/ADIOSImage.h>
 
 namespace askap {
 namespace accessors {
@@ -234,8 +237,9 @@ struct CasaADIOSImageAccess : public IImageAccess<T> {
     /// @param[in] name image name
     /// @param[in] info record with information
     virtual void setInfo(const std::string &name, const casacore::RecordInterface & info) override;
+private:
+    mutable std::unique_ptr<ADIOSImage<T>> imagePtr_p;
 };
-
 
 } // namespace accessors
 } // namespace askap

@@ -20,12 +20,15 @@ namespace accessors {
 template <class T> class ADIOSImage : public casacore::ImageInterface<T>
 {
 public:
+
+  ADIOSImage ();
+
   ADIOSImage (const casacore::TiledShape& mapShape,
 	      const casacore::CoordinateSystem& coordinateInfo,
 	      const casacore::String& nameOfNewFile,
 	      casacore::uInt rowNumber = 0);
 
-  explicit ADIOSImage(const casacore::String &filename, 
+  explicit ADIOSImage(const casacore::String &filename,
                       casacore::MaskSpecifier spec = casacore::MaskSpecifier(),
                       casacore::uInt rowNumber = 0);
 
@@ -40,7 +43,7 @@ public:
 
   virtual casacore::String imageType() const;
 
-  casacore::Array<T> makeArrayColumn (const casacore::TiledShape& shape, casacore::uInt rowNumber);
+  void makeNewTable (const casacore::TiledShape& shape, casacore::uInt rowNumber, casacore::String filename);
 
   virtual casacore::Bool setUnits (const casacore::Unit& newUnits);
 
@@ -66,6 +69,8 @@ public:
 
   virtual void resize (const casacore::TiledShape& newShape);
 
+  virtual void reopenColumn();
+
   //rewritten PagedImage private functions
   void attach_logtable();
   void setTableType();
@@ -78,7 +83,9 @@ public:
   static casacore::Table& getTable (void* imagePtr, casacore::Bool writable);
 
 private:
-  casacore::Array<T> map_p;
+  void reopenRW();
+
+  casacore::ArrayColumn<T> map_p;
   casacore::Table tab_p;
   casacore::LatticeRegion* regionPtr_p;
   casacore::uInt row_p;

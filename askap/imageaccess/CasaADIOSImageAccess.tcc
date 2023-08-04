@@ -61,6 +61,7 @@ template <class T>
 casacore::Array<T> CasaADIOSImageAccess<T>::read(const std::string &name) const
 {
     ASKAPLOG_INFO_STR(casaADIOSImAccessLogger, "Reading CASA image " << name);
+    imagePtr_p.reset();
     ADIOSImage<T> img(name);
     if (img.hasPixelMask()) {
         ASKAPLOG_INFO_STR(casaADIOSImAccessLogger, " - setting unmasked pixels to zero");
@@ -96,6 +97,7 @@ casacore::Array<T> CasaADIOSImageAccess<T>::read(const std::string &name, const 
         const casacore::IPosition &trc) const
 {
     ASKAPLOG_INFO_STR(casaADIOSImAccessLogger, "Reading a slice of the CASA image " << name << " from " << blc << " to " << trc);
+    imagePtr_p.reset();
     ADIOSImage<T> img(name);
     if (img.hasPixelMask()) {
         ASKAPLOG_INFO_STR(casaADIOSImAccessLogger, " - setting unmasked pixels to zero");
@@ -272,8 +274,8 @@ template <class T>
 void CasaADIOSImageAccess<T>::create(const std::string &name, const casacore::IPosition &shape,
                              const casacore::CoordinateSystem &csys)
 {
-    ASKAPLOG_INFO_STR(casaADIOSImAccessLogger, "Creating a new CASA image " << name << " with the shape " << shape);
-    ADIOSImage<T> img(casacore::TiledShape(shape), csys, name);
+    ASKAPLOG_INFO_STR(casaADIOSImAccessLogger, "Creating a new CASA ADIOS image " << name << " with the shape " << shape);
+    imagePtr_p.reset(new ADIOSImage<T>(casacore::TiledShape(shape), csys, name));
 }
 
 /// @brief write full image
@@ -283,8 +285,7 @@ template <class T>
 void CasaADIOSImageAccess<T>::write(const std::string &name, const casacore::Array<T> &arr)
 {
     ASKAPLOG_INFO_STR(casaADIOSImAccessLogger, "Writing an array with the shape " << arr.shape() << " into a CASA image " << name);
-    ADIOSImage<T> img(name);
-    img.put(arr);
+    imagePtr_p->put(arr);
 }
 
 /// @brief write a slice of an image
@@ -297,8 +298,7 @@ void CasaADIOSImageAccess<T>::write(const std::string &name, const casacore::Arr
 {
     ASKAPLOG_INFO_STR(casaADIOSImAccessLogger, "Writing a slice with the shape " << arr.shape() << " into a CASA image " <<
                       name << " at " << where);
-    ADIOSImage<T> img(name);
-    img.putSlice(arr, where);
+    imagePtr_p->putSlice(arr, where);
 }
 
 /// @brief write a slice of an image and mask
@@ -311,9 +311,8 @@ void CasaADIOSImageAccess<T>::write(const std::string &name, const casacore::Arr
 {
     ASKAPLOG_INFO_STR(casaADIOSImAccessLogger, "Writing image & mask with the shape " << arr.shape() << " into a CASA image " <<
                       name);
-    ADIOSImage<T> img(name);
-    img.put(arr);
-    img.pixelMask().put(mask);
+    imagePtr_p->put(arr);
+    imagePtr_p->pixelMask().put(mask);
 }
 
 
@@ -328,9 +327,8 @@ void CasaADIOSImageAccess<T>::write(const std::string &name, const casacore::Arr
 {
     ASKAPLOG_INFO_STR(casaADIOSImAccessLogger, "Writing a slice with the shape " << arr.shape() << " into a CASA image " <<
                       name << " at " << where);
-    ADIOSImage<T> img(name);
-    img.putSlice(arr, where);
-    img.pixelMask().putSlice(mask, where);
+    imagePtr_p->putSlice(arr, where);
+    imagePtr_p->pixelMask().putSlice(mask, where);
 }
 
 
@@ -344,8 +342,7 @@ void CasaADIOSImageAccess<T>::writeMask(const std::string &name, const casacore:
 {
     ASKAPLOG_INFO_STR(casaADIOSImAccessLogger, "Writing a slice with the shape " << mask.shape() << " into a CASA image " <<
                       name << " at " << where);
-    ADIOSImage<T> img(name);
-    img.pixelMask().putSlice(mask, where);
+    imagePtr_p->pixelMask().putSlice(mask, where);
 }
 
 /// @brief write a slice of an image mask
@@ -356,8 +353,7 @@ void CasaADIOSImageAccess<T>::writeMask(const std::string &name, const casacore:
 {
     ASKAPLOG_INFO_STR(casaADIOSImAccessLogger, "Writing a full mask with the shape " << mask.shape() << " into a CASA image " <<
                       name);
-    ADIOSImage<T> img(name);
-    img.pixelMask().put(mask);
+    imagePtr_p->pixelMask().put(mask);
 }
 /// @brief set brightness units of the image
 /// @details
@@ -366,8 +362,7 @@ void CasaADIOSImageAccess<T>::writeMask(const std::string &name, const casacore:
 template <class T>
 void CasaADIOSImageAccess<T>::setUnits(const std::string &name, const std::string &units)
 {
-    ADIOSImage<T> img(name);
-    img.setUnits(casacore::Unit(units));
+    imagePtr_p->setUnits(casacore::Unit(units));
 }
 
 /// @brief set restoring beam info
@@ -380,10 +375,10 @@ void CasaADIOSImageAccess<T>::setUnits(const std::string &name, const std::strin
 template <class T>
 void CasaADIOSImageAccess<T>::setBeamInfo(const std::string &name, double maj, double min, double pa)
 {
-    ADIOSImage<T> img(name);
-    casacore::ImageInfo ii = img.imageInfo();
+
+    casacore::ImageInfo ii = imagePtr_p->imageInfo();
     ii.setRestoringBeam(casacore::Quantity(maj, "rad"), casacore::Quantity(min, "rad"), casacore::Quantity(pa, "rad"));
-    img.setImageInfo(ii);
+    imagePtr_p->setImageInfo(ii);
 }
 
 /// @brief set restoring beam info
@@ -394,14 +389,14 @@ void CasaADIOSImageAccess<T>::setBeamInfo(const std::string &name, double maj, d
 template <class T>
 void CasaADIOSImageAccess<T>::setBeamInfo(const std::string &name, const BeamList & beamlist)
 {
-    ADIOSImage<T> img(name);
-    casacore::ImageInfo ii = img.imageInfo();
+
+    casacore::ImageInfo ii = imagePtr_p->imageInfo();
     ii.setAllBeams(beamlist.size(),1,casacore::GaussianBeam());
     for (const auto& beam : beamlist) {
       ASKAPDEBUGASSERT(beam.second.size()==3);
       ii.setBeam(beam.first,0,beam.second[0],beam.second[1],beam.second[2]);
     }
-    img.setImageInfo(ii);
+    imagePtr_p->setImageInfo(ii);
 }
 
 /// @brief apply mask to image
@@ -412,13 +407,13 @@ void CasaADIOSImageAccess<T>::setBeamInfo(const std::string &name, const BeamLis
 template <class T>
 void CasaADIOSImageAccess<T>::makeDefaultMask(const std::string &name)
 {
-    ADIOSImage<T> img(name);
+
 
     // Create a mask and make it default region.
     // need to assert sizes etc ...
-    img.makeMask("mask", casacore::True, casacore::True);
-    casacore::Array<casacore::Bool> mask(img.shape(),casacore::True);
-    img.pixelMask().put(mask);
+    imagePtr_p->makeMask("mask", casacore::True, casacore::True);
+    casacore::Array<casacore::Bool> mask(imagePtr_p->shape(),casacore::True);
+    imagePtr_p->pixelMask().put(mask);
 
 }
 
@@ -434,19 +429,19 @@ void CasaADIOSImageAccess<T>::setMetadataKeyword(const std::string &name, const 
         const std::string value, const std::string &desc)
 {
 
-    ADIOSImage<T> img(name);
-    casacore::TableRecord miscinfo = img.miscInfo();
+
+    casacore::TableRecord miscinfo = imagePtr_p->miscInfo();
     miscinfo.define(keyword, value);
     miscinfo.setComment(keyword, desc);
-    img.setMiscInfo(miscinfo);
+    imagePtr_p->setMiscInfo(miscinfo);
 
 }
 
 template <class T>
 void CasaADIOSImageAccess<T>::setMetadataKeywords(const std::string &name, const LOFAR::ParameterSet &keywords)
 {
-    ADIOSImage<T> img(name);
-    casacore::TableRecord miscinfo = img.miscInfo();
+
+    casacore::TableRecord miscinfo = imagePtr_p->miscInfo();
     // Note: we could sort through the keywords here and pick out ones that need to go in places
     // other than miscInfo to be more compatible with casacore
     for (auto &elem : keywords) {
@@ -485,7 +480,7 @@ void CasaADIOSImageAccess<T>::setMetadataKeywords(const std::string &name, const
         }
       }
     }
-    img.setMiscInfo(miscinfo);
+    imagePtr_p->setMiscInfo(miscinfo);
 }
 
 /// @brief Add HISTORY messages to the image metadata
@@ -496,8 +491,8 @@ template <class T>
 void CasaADIOSImageAccess<T>::addHistory(const std::string &name, const std::vector<std::string> &historyLines)
 {
 
-    ADIOSImage<T> img(name);
-    casacore::LogIO log = img.logSink();
+
+    casacore::LogIO log = imagePtr_p->logSink();
     for (const auto& history : historyLines) {
         log << history << casacore::LogIO::POST;
     }
@@ -511,9 +506,9 @@ void CasaADIOSImageAccess<T>::addHistory(const std::string &name, const std::vec
 template <class T>
 void CasaADIOSImageAccess<T>::setInfo(const std::string &name, const casacore::RecordInterface & info)
 {
-    ADIOSImage<T> img(name);
+
     // make a copy of the table record
-    casacore::TableRecord updateTableRecord = img.miscInfo();
+    casacore::TableRecord updateTableRecord = imagePtr_p->miscInfo();
     // find the name of the info table.  this is the name field of the info sub record
     std::string infoTableName = "notfound";
     casacore::uInt subRecordFieldId = 0;
@@ -530,7 +525,7 @@ void CasaADIOSImageAccess<T>::setInfo(const std::string &name, const casacore::R
     // add the info to it
     updateTableRecord.defineRecord(infoTableName,info);
     // now set the updated record back to the image
-    img.setMiscInfo(updateTableRecord);
+    imagePtr_p->setMiscInfo(updateTableRecord);
 }
 
 /// @brief this methods retrieves the table(s) in the image and stores them in the casacore::Record
@@ -543,7 +538,7 @@ void CasaADIOSImageAccess<T>::getInfo(const std::string &name, const std::string
 {
     ADIOSImage<T> img(name);
 
-    //casacore::TableRecord tableRecord = img.miscInfo().toRecord();
+    //casacore::TableRecord tableRecord = imagePtr_p->miscInfo().toRecord();
     casacore::Record tableRecord = img.miscInfo().toRecord();
     casacore::uInt nFields = tableRecord.nfields();
     for(casacore::uInt f = 0; f < nFields; f++) {
