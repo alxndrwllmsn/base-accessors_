@@ -89,6 +89,10 @@ public:
       itsImageAccessor->create(name, shape, coordsys);
       itsImageAccessor->write(name,arr);
 
+      // write a slice
+      casacore::Vector<float> vec(10,2.);
+      itsImageAccessor->write(name,vec,casacore::IPosition(3,0,3,0));
+
       // check shape
       CPPUNIT_ASSERT(itsImageAccessor->shape(name) == shape);
       // read the whole array and check
@@ -100,9 +104,7 @@ public:
                 CPPUNIT_ASSERT(fabs(readBack(index)-arr(index))<1e-7);
            }
       }
-      // write a slice
-      casacore::Vector<float> vec(10,2.);
-      itsImageAccessor->write(name,vec,casacore::IPosition(3,0,3,0));
+
       // read a slice
       vec = itsImageAccessor->read(name,casacore::IPosition(3,0,1,0),casacore::IPosition(3,9,1,0));
       CPPUNIT_ASSERT(vec.nelements() == 10);
@@ -153,8 +155,6 @@ public:
       // mask tests
 
       itsImageAccessor->makeDefaultMask(name);
-
-
 
    }
 
