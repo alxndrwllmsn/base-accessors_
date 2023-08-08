@@ -71,6 +71,12 @@ public:
 
   virtual void reopenColumn();
 
+  virtual casacore::Bool isPaged() const;
+
+  virtual void setDefaultMask (const casacore::String& maskName);
+
+  virtual casacore::Lattice<casacore::Bool>& pixelMask();
+
   //rewritten PagedImage private functions
   void attach_logtable();
   void setTableType();

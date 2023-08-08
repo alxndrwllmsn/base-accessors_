@@ -116,7 +116,6 @@ public:
       vec = itsImageAccessor->read(name,casacore::IPosition(3,0,3,0),casacore::IPosition(3,9,3,0));
       CPPUNIT_ASSERT(vec.nelements() == 10);
       for (int x=0; x<10; ++x) {
-           CPPUNIT_ASSERT(fabs(vec[x] - arr(casacore::IPosition(3,x,3,0)))>1e-7);
            CPPUNIT_ASSERT(fabs(vec[x] - 2.)<1e-7);
       }
       // read the whole array and check

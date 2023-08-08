@@ -129,6 +129,9 @@ casacore::Bool ADIOSImage<T>::setUnits(const casacore::Unit& newUnits)
   if (tab.keywordSet().isDefined("units")) {
     tab.rwKeywordSet().removeField("units");
   }
+  if (!tab.isWritable()){
+    tab.reopenRW();
+  }
   tab.rwKeywordSet().define("units", newUnits.getName());
   return casacore::True;
 }
@@ -436,5 +439,48 @@ template<class T>
 void ADIOSImage<T>::reopenColumn()
 {
   map_p = casacore::ArrayColumn<T>(tab_p, "map");
+}
+
+template<class T>
+casacore::Bool ADIOSImage<T>::isPaged() const
+{
+  return casacore::True;
+}
+
+template<class T>
+void ADIOSImage<T>::setDefaultMask (const casacore::String& maskName)
+{
+  // No region if no mask name is given.
+  if (maskName.empty()) {
+    delete regionPtr_p;
+    regionPtr_p = 0;
+    return;
+  }
+  // Reconstruct the ImageRegion object.
+  // Turn the region into lattice coordinates.
+  casacore::ImageRegion* regPtr = getImageRegionPtr (maskName, casacore::RegionHandler::Masks);
+  casacore::LatticeRegion* latReg = new casacore::LatticeRegion
+                          (regPtr->toLatticeRegion (coordinates(), shape()));
+  delete regPtr;
+  // The mask has to cover the entire image.
+  if (latReg->shape() != shape()) {
+    delete latReg;
+    throw (casacore::AipsError ("ADIOSImage::setDefaultMask - region " + maskName +
+		      " does not cover the full image"));
+  }
+  // Replace current by new mask.
+  delete regionPtr_p;
+  regionPtr_p = latReg;
+
+  casacore::ImageInterface<T>::setDefaultMask (maskName);
+}
+
+template<class T>
+casacore::Lattice<casacore::Bool>& ADIOSImage<T>::pixelMask()
+{
+  if (regionPtr_p == 0) {
+    throw (casacore::AipsError ("ADIOSImage::pixelMask - no pixelmask used"));
+  }
+  return *regionPtr_p;
 }
 #endif
