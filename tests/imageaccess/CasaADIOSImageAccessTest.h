@@ -89,6 +89,8 @@ public:
       itsImageAccessor->create(name, shape, coordsys);
       itsImageAccessor->write(name,arr);
 
+      arr(casacore::IPosition(3,0,3,0), casacore::IPosition(3,9,3,0)) = 2.;
+
       // write a slice
       casacore::Vector<float> vec(10,2.);
       itsImageAccessor->write(name,vec,casacore::IPosition(3,0,3,0));
