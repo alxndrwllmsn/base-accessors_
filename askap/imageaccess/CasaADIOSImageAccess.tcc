@@ -1,6 +1,6 @@
 /// @file CasaADIOSImageAccess.cc
-/// @brief Access CASA ADIOS image via ADIOS Storage Manager
-/// @details This class implements IImageAccess interface for CASA ADIOS image and specifies use of the ADIOS storage manager
+/// @brief Access casa image via ADIOS Storage Manager
+/// @details This class implements IImageAccess interface for CASA image and specifies use of the ADIOS storage manager
 ///
 /// @copyright (c) 2007 CSIRO
 /// Australia Telescope National Facility (ATNF)
@@ -42,19 +42,6 @@ ASKAP_LOGGER(casaADIOSImAccessLogger, ".casaADIOSImageAccessor");
 using namespace askap;
 using namespace askap::accessors;
 
-/// @brief constructor
-/// @param[in] config, configuration file name 
-template <class T>
-CasaADIOSImageAccess::CasaADIOSImageAccess<T>(std::string config):
-{
-    if (config != "") {
-        ASKAPLOG_INFO_STR(logger, "Creating ADIOS accessor with configuration file " << config);
-    }
-    else {
-        ASKAPLOG_INFO_STR(logger, "Creating ADIOS accessor with default configuration");
-    }
-}
-
 // reading methods
 
 /// @brief obtain the shape
@@ -73,7 +60,7 @@ casacore::IPosition CasaADIOSImageAccess<T>::shape(const std::string &name) cons
 template <class T>
 casacore::Array<T> CasaADIOSImageAccess<T>::read(const std::string &name) const
 {
-    ASKAPLOG_INFO_STR(casaADIOSImAccessLogger, "Reading CASA ADIOS image " << name);
+    ASKAPLOG_INFO_STR(casaADIOSImAccessLogger, "Reading CASA image " << name);
     imagePtr_p.reset();
     imagePtr_p.reset(new ADIOSImage<T>(name));
     if (imagePtr_p->hasPixelMask()) {
@@ -82,6 +69,19 @@ casacore::Array<T> CasaADIOSImageAccess<T>::read(const std::string &name) const
         casacore::Array<T> tempArray(imagePtr_p->get().shape(), static_cast<T>(0.0));
         tempArray = casacore::MaskedArray<T>(imagePtr_p->get(), imagePtr_p->getMask(), casacore::True);
         return tempArray;
+        // The following seems to avoid a copy but takes longer:
+        //// Iterate over image array and set any unmasked pixels to zero
+        //casacore::Array<float> tempArray = img.get();
+        //const casacore::LogicalArray tempMask = img.getMask();
+        //casacore::Array<float>::iterator iterArray = tempArray.begin();
+        //casacore::LogicalArray::const_iterator iterMask = tempMask.begin();
+        //for( ; iterArray != tempArray.end() ; iterArray++ ) {
+        //    if (*iterMask == casacore::False) {
+        //        *iterArray = 0.0;
+        //    }
+        //    iterMask++;
+        //}
+        //return tempArray;
     } else {
         return imagePtr_p->get();
     }
@@ -96,7 +96,7 @@ template <class T>
 casacore::Array<T> CasaADIOSImageAccess<T>::read(const std::string &name, const casacore::IPosition &blc,
         const casacore::IPosition &trc) const
 {
-    ASKAPLOG_INFO_STR(casaADIOSImAccessLogger, "Reading a slice of the CASA ADIOS image " << name << " from " << blc << " to " << trc);
+    ASKAPLOG_INFO_STR(casaADIOSImAccessLogger, "Reading a slice of the CASA image " << name << " from " << blc << " to " << trc);
     imagePtr_p.reset();
     imagePtr_p.reset(new ADIOSImage<T>(name));
 
@@ -107,6 +107,20 @@ casacore::Array<T> CasaADIOSImageAccess<T>::read(const std::string &name, const 
         casacore::Array<T> tempSlice(imagePtr_p->getSlice(slicer).shape(), static_cast<T>(0.0));
         tempSlice = casacore::MaskedArray<T>(imagePtr_p->getSlice(slicer), imagePtr_p->getMaskSlice(slicer), casacore::True);
         return tempSlice;
+        // The following seems to avoid a copy but takes longer:
+        //// Iterate over image array and set any unmasked pixels to zero
+        //const casacore::Slicer slicer(blc,trc,casacore::Slicer::endIsLast);
+        //casacore::Array<float> tempSlice = img.getSlice(slicer);
+        //const casacore::LogicalArray tempMask = img.getMaskSlice(slicer);
+        //casacore::Array<float>::iterator iterSlice = tempSlice.begin();
+        //casacore::LogicalArray::const_iterator iterMask = tempMask.begin();
+        //for( ; iterSlice != tempSlice.end() ; iterSlice++ ) {
+        //    if (*iterMask == casacore::False) {
+        //        *iterSlice = 0.0;
+        //    }
+        //    iterMask++;
+        //}
+        //return tempSlice;
     } else {
         return imagePtr_p->getSlice(casacore::Slicer(blc, trc, casacore::Slicer::endIsLast));
     }
@@ -271,7 +285,7 @@ void CasaADIOSImageAccess<T>::create(const std::string &name, const casacore::IP
 template <class T>
 void CasaADIOSImageAccess<T>::write(const std::string &name, const casacore::Array<T> &arr)
 {
-    ASKAPLOG_INFO_STR(casaADIOSImAccessLogger, "Writing an array with the shape " << arr.shape() << " into a CASA ADIOS image " << name);
+    ASKAPLOG_INFO_STR(casaADIOSImAccessLogger, "Writing an array with the shape " << arr.shape() << " into a CASA image " << name);
     imagePtr_p->put(arr);
 }
 
@@ -283,7 +297,7 @@ template <class T>
 void CasaADIOSImageAccess<T>::write(const std::string &name, const casacore::Array<T> &arr,
                                const casacore::IPosition &where)
 {
-    ASKAPLOG_INFO_STR(casaADIOSImAccessLogger, "Writing a slice with the shape " << arr.shape() << " into a CASA ADIOS image " <<
+    ASKAPLOG_INFO_STR(casaADIOSImAccessLogger, "Writing a slice with the shape " << arr.shape() << " into a CASA image " <<
                       name << " at " << where);
     imagePtr_p->putSlice(arr, where);
 }
@@ -296,7 +310,7 @@ template <class T>
 void CasaADIOSImageAccess<T>::write(const std::string &name, const casacore::Array<T> &arr,
                                const casacore::Array<bool> &mask)
 {
-    ASKAPLOG_INFO_STR(casaADIOSImAccessLogger, "Writing image & mask with the shape " << arr.shape() << " into a CASA ADIOS image " <<
+    ASKAPLOG_INFO_STR(casaADIOSImAccessLogger, "Writing image & mask with the shape " << arr.shape() << " into a CASA image " <<
                       name);
     imagePtr_p->put(arr);
     imagePtr_p->pixelMask().put(mask);
@@ -312,7 +326,7 @@ template <class T>
 void CasaADIOSImageAccess<T>::write(const std::string &name, const casacore::Array<T> &arr,
                                const casacore::Array<bool> &mask, const casacore::IPosition &where)
 {
-    ASKAPLOG_INFO_STR(casaADIOSImAccessLogger, "Writing a slice with the shape " << arr.shape() << " into a CASA ADIOS image " <<
+    ASKAPLOG_INFO_STR(casaADIOSImAccessLogger, "Writing a slice with the shape " << arr.shape() << " into a CASA image " <<
                       name << " at " << where);
     imagePtr_p->putSlice(arr, where);
     imagePtr_p->pixelMask().putSlice(mask, where);
@@ -327,7 +341,7 @@ template <class T>
 void CasaADIOSImageAccess<T>::writeMask(const std::string &name, const casacore::Array<bool> &mask,
                                 const casacore::IPosition &where)
 {
-    ASKAPLOG_INFO_STR(casaADIOSImAccessLogger, "Writing a slice with the shape " << mask.shape() << " into a CASA ADIOS image " <<
+    ASKAPLOG_INFO_STR(casaADIOSImAccessLogger, "Writing a slice with the shape " << mask.shape() << " into a CASA image " <<
                       name << " at " << where);
     imagePtr_p->pixelMask().putSlice(mask, where);
 }
@@ -338,7 +352,7 @@ void CasaADIOSImageAccess<T>::writeMask(const std::string &name, const casacore:
 template <class T>
 void CasaADIOSImageAccess<T>::writeMask(const std::string &name, const casacore::Array<bool> &mask)
 {
-    ASKAPLOG_INFO_STR(casaADIOSImAccessLogger, "Writing a full mask with the shape " << mask.shape() << " into a CASA ADIOS image " <<
+    ASKAPLOG_INFO_STR(casaADIOSImAccessLogger, "Writing a full mask with the shape " << mask.shape() << " into a CASA image " <<
                       name);
     imagePtr_p->pixelMask().put(mask);
 }

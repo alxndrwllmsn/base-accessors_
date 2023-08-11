@@ -46,16 +46,6 @@ namespace accessors {
 template <class T = casacore::Float>
 struct CasaADIOSImageAccess : public IImageAccess<T> {
 
-    public:
-    /// @brief constructor
-    /// @param[in] config, string pointing to adios configuration
-    template <class T> CasaADIOSImageAccess<T>(std::string config = "");
-
-    /// @brief constructor
-    /// @param[in] comms, MPI communicator
-    /// @param[in] config, string pointing to adios configuration
-    template <class T> CasaADIOSImageAccess<T>(askapparallel::AskapParallel &comms, std::string config = "");
-
     //////////////////
     // Reading methods
     //////////////////
@@ -249,7 +239,6 @@ struct CasaADIOSImageAccess : public IImageAccess<T> {
     virtual void setInfo(const std::string &name, const casacore::RecordInterface & info) override;
 private:
     mutable std::unique_ptr<ADIOSImage<T>> imagePtr_p;
-    std::string configname;
 };
 
 } // namespace accessors
