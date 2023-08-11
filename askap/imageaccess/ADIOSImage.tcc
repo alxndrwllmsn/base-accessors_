@@ -50,12 +50,14 @@ template <class T>
 ADIOSImage<T>::ADIOSImage (const casacore::TiledShape& shape, 
 			   const casacore::CoordinateSystem& coordinateInfo, 
 			   const casacore::String& filename, 
+         casacore::String configname, 
 			   casacore::uInt rowNumber)
 : casacore::ImageInterface<T>(casacore::RegionHandlerTable(getTable, this)),
-  regionPtr_p   (0)
+  regionPtr_p   (0), 
 {
-  makeNewTable(shape, rowNumber, filename);
+  config = configname;
   row_p = rowNumber;
+  makeNewTable(shape, rowNumber, filename);
   attach_logtable();
   AlwaysAssert(setCoordinateInfo(coordinateInfo), casacore::AipsError);
   setTableType();
@@ -63,6 +65,7 @@ ADIOSImage<T>::ADIOSImage (const casacore::TiledShape& shape,
 
 template <class T>
 ADIOSImage<T>::ADIOSImage (const casacore::String& filename,
+                          casacore::String configname, 
                           casacore::MaskSpecifier spec,
                           casacore::uInt rowNumber)
 : casacore::ImageInterface<T>(casacore::RegionHandlerTable(getTable, this)),
@@ -71,6 +74,7 @@ ADIOSImage<T>::ADIOSImage (const casacore::String& filename,
   tab_p = casacore::Table(filename,casacore::Table::TableOption::Old);
   map_p = casacore::ArrayColumn<T>(tab_p, "map");
   row_p = rowNumber;
+  config = configname;
   attach_logtable();
   restoreAll (tab_p.keywordSet());
   applyMaskSpecifier (spec);
@@ -95,16 +99,29 @@ void ADIOSImage<T>::makeNewTable(const casacore::TiledShape& shape, casacore::uI
   const casacore::uInt ndim = latShape.nelements();
 
   casacore::TableDesc description;
+  //PJE - why are we adding a hard-coded string???
   description.addColumn(casacore::ArrayColumnDesc<T>("map",
                                                       casacore::String("version 4.0"),
                                                       latShape, casacore::ColumnDesc::FixedShape));
 
   casacore::SetupNewTable newtab(filename, description, casacore::Table::New);
 
-  casacore::Adios2StMan stman("",
+  // now invoke the Adios2 storage manager
+  if (config == "") {
+    // invoke Adios2StMan(engineType, engineParams, transportParams, operatorParams)
+    // with default engine type and parameters 
+    casacore::Adios2StMan stman("",
                               {},
                               {{}},
                               {{{"Variable", "map"},{},{}}});
+  }
+  else 
+  {
+    // invoke configuration based call 
+    //PJE - question on whether we also need to include the operatorParams {{{"Varaible", "map"}}}
+    struct from_config_t {}; 
+    casacore::Adios2StMan stman(config, from_config_t);
+  }
   
   newtab.bindColumn("map", stman);
 

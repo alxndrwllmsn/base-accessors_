@@ -58,7 +58,11 @@ boost::shared_ptr<IImageAccess<casacore::Float> > askap::accessors::imageAccessF
        // optional parameter setting may come here
        result = iaCASA;
    } else if (imageType == "adios"){
-       boost::shared_ptr<CasaADIOSImageAccess<casacore::Float> > iaADIOS(new CasaADIOSImageAccess<casacore::Float>());
+       // check if config passed 
+       const bool config_present = parset.isDefined("adios2.configfile"); 
+       if (config_present) const std::string adiosConfig = parset.getString("adios2.configfile");
+       else const std::string adiosConfig = "";
+       boost::shared_ptr<CasaADIOSImageAccess<casacore::Float> > iaADIOS(new CasaADIOSImageAccess<casacore::Float>(adiosConfig));
        result = iaADIOS; 
    } else if (imageType == "fits"){
        boost::shared_ptr<FitsImageAccess> iaFITS(new FitsImageAccess());
@@ -89,6 +93,19 @@ boost::shared_ptr<IImageAccess<casacore::Float> > askap::accessors::imageAccessF
        boost::shared_ptr<CasaImageAccess<casacore::Float> > iaCASA(new CasaImageAccess<casacore::Float>());
        // optional parameter setting may come here
        result = iaCASA;
+   } else if (imageType == "adios") {
+       // check if config passed 
+       const bool config_present = parset.isDefined("adios2.configfile"); 
+       if (config_present) const std::string adiosConfig = parset.getString("adios2.configfile");
+       else const std::string adiosConfig = "";
+       if (imageAccessType == "collective") {
+           boost::shared_ptr<CasaADIOSImageAccess<casacore::Float> > iaADIOS(new CasaADIOSImageAccess<casacore::Float>(comms, adiosConfig));
+       }
+       else {
+           boost::shared_ptr<CasaADIOSImageAccess<casacore::Float> > iaADIOS(new CasaADIOSImageAccess<casacore::Float>(adiosConfig));
+
+       }
+       result = iaADIOS; 
    } else if (imageType == "fits"){
        if (imageAccessType == "collective") {
            uint axis = parset.getUint("imageaccess.axis",0);
