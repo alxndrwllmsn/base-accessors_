@@ -26,9 +26,11 @@ public:
   ADIOSImage (const casacore::TiledShape& mapShape,
 	      const casacore::CoordinateSystem& coordinateInfo,
 	      const casacore::String& nameOfNewFile,
+        casacore::String configname = "", 
 	      casacore::uInt rowNumber = 0);
 
   explicit ADIOSImage(const casacore::String &filename,
+                      casacore::String configname = "",
                       casacore::MaskSpecifier spec = casacore::MaskSpecifier(),
                       casacore::uInt rowNumber = 0);
 
@@ -95,6 +97,7 @@ private:
   casacore::Table tab_p;
   casacore::LatticeRegion* regionPtr_p;
   casacore::uInt row_p;
+  casacore::String config;
 
 
 public:
