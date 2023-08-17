@@ -166,9 +166,9 @@ void TableDataAccessTest::readOnlyTest()
        --maxiter;
        // just call several accessor methods to ensure that no exception is
        // thrown
-       CPPUNIT_ASSERT(it->visibility().nrow() == it->nRow());
+       CPPUNIT_ASSERT(it->visibility().nrow() == it->nPol());
        CPPUNIT_ASSERT(it->visibility().ncolumn() == it->nChannel());
-       CPPUNIT_ASSERT(it->visibility().nplane() == it->nPol());
+       CPPUNIT_ASSERT(it->visibility().nplane() == it->nRow());
        CPPUNIT_ASSERT(it->frequency().nelements() == it->nChannel());
        CPPUNIT_ASSERT(it->flag().shape() == it->visibility().shape());
        CPPUNIT_ASSERT(it->pointingDir2().nelements() == it->nRow());
@@ -224,7 +224,7 @@ void TableDataAccessTest::chunkSizeTest()
    casacore::uInt nIterOrig = 0;
    for (IConstDataSharedIter it=ds.createConstIterator(sel);it!=it.end();++it,++nIterOrig) {
         CPPUNIT_ASSERT_EQUAL(nRowsExpected, it->nRow());
-        CPPUNIT_ASSERT_EQUAL(static_cast<size_t>(nRowsExpected), it->visibility().nrow());
+        CPPUNIT_ASSERT_EQUAL(static_cast<size_t>(nRowsExpected), it->visibility().nplane());
    }
 
    // restrict the chunk size for the following iterators
@@ -236,7 +236,7 @@ void TableDataAccessTest::chunkSizeTest()
         if (count / 3 < nIterOrig) {
             // exclude the last iteration from the check as binning may be different
             CPPUNIT_ASSERT_EQUAL(nRowsExpectedThisIteration, it->nRow());
-            CPPUNIT_ASSERT_EQUAL(static_cast<size_t>(nRowsExpectedThisIteration), it->visibility().nrow());
+            CPPUNIT_ASSERT_EQUAL(static_cast<size_t>(nRowsExpectedThisIteration), it->visibility().nplane());
         }
    }
 }
@@ -742,7 +742,8 @@ void TableDataAccessTest::originalFlagRewriteTest()
         IFlagDataAccessor& acc = dynamic_cast<IFlagDataAccessor&>(*it);
         const casacore::Cube<casacore::Bool>& rwFlags = acc.rwFlag();
         CPPUNIT_ASSERT(roFlags.shape() == rwFlags.shape());
-        CPPUNIT_ASSERT(roFlags.shape() == casacore::IPosition(3,it->nRow(), it->nChannel(), it->nPol()));
+        //CPPUNIT_ASSERT(roFlags.shape() == casacore::IPosition(3,it->nRow(), it->nChannel(), it->nPol()));
+        CPPUNIT_ASSERT(roFlags.shape() == casacore::IPosition(3,it->nPol(), it->nChannel(), it->nRow()));
         for (casacore::uInt row=0; row < it->nRow(); ++row) {
              for (casacore::uInt chan=0; chan < it->nChannel(); ++chan) {
                   for (casacore::uInt pol =0; pol < it->nPol(); ++pol) {
@@ -766,7 +767,7 @@ void TableDataAccessTest::originalFlagRewriteTest()
                   for (casacore::uInt pol =0; pol < it->nPol(); ++pol) {
                        // the test dataset uses row-based flagging mechanism, so can't just flip
                        // the flag to opposite - just flag all samples for the test
-                       rwFlags(row,chan,pol) = true;
+                       rwFlags(pol,chan,row) = true;
                   }
              }
         }
@@ -781,9 +782,11 @@ void TableDataAccessTest::originalFlagRewriteTest()
              for (casacore::uInt chan=0; chan < it->nChannel(); ++chan) {
                   for (casacore::uInt pol =0; pol < it->nPol(); ++pol) {
                        // check that the flag is now always set,  then reset if it was unflagged originally
-                       CPPUNIT_ASSERT_EQUAL(true, roFlags(row,chan,pol));
+                       //CPPUNIT_ASSERT_EQUAL(true, roFlags(row,chan,pol));
+                       CPPUNIT_ASSERT_EQUAL(true, roFlags(pol,chan,row));
                        if (!memoryBuffer[iterCntr](row,chan,pol)) {
-                           rwFlags(row,chan,pol) = false;
+                           //rwFlags(row,chan,pol) = false;
+                           rwFlags(pol,chan,row) = false;
                        }
                   }
              }

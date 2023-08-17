@@ -48,6 +48,7 @@ class DataAccessorAdapterTest : public CppUnit::TestFixture {
   CPPUNIT_TEST(onDemandBufferDATest);
   CPPUNIT_TEST(daAdapterTest);
   CPPUNIT_TEST_EXCEPTION(daAdapterDetachTest, AskapError);
+
   CPPUNIT_TEST_EXCEPTION(daAdapterVoidTest, AskapError);
   CPPUNIT_TEST(daAdapterAssociationTest);
   CPPUNIT_TEST(daAdapterConstTest);
@@ -293,9 +294,9 @@ public:
   /// @param[in] acc accessor  
   static void doConstAccessTest(const IConstDataAccessor &acc) 
   {
-      CPPUNIT_ASSERT(acc.visibility().nrow() == acc.antenna1().nelements());
+      CPPUNIT_ASSERT(acc.visibility().nplane() == acc.antenna1().nelements());
       CPPUNIT_ASSERT(acc.visibility().ncolumn() == acc.frequency().nelements());
-      CPPUNIT_ASSERT(acc.visibility().nplane() == acc.stokes().nelements());
+      CPPUNIT_ASSERT(acc.visibility().nrow() == acc.stokes().nelements());
       CPPUNIT_ASSERT(acc.antenna1().nelements() == acc.feed2().nelements());
       CPPUNIT_ASSERT(acc.noise().shape() == acc.visibility().shape());
       CPPUNIT_ASSERT(acc.nPol() == 2);

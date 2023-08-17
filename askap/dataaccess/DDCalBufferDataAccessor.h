@@ -80,25 +80,25 @@ public:
   /// @param[in] acc a reference to the associated accessor
   explicit DDCalBufferDataAccessor(const IConstDataAccessor &acc);
   
-  /// Read-only visibilities (a cube is nRow x nChannel x nPol; 
+  /// Read-only visibilities (a cube is nPol x nChannel x nRow; 
   /// each element is a complex visibility)
   ///
-  /// @return a reference to nRow x nChannel x nPol cube, containing
+  /// @return a reference to nPol x nChannel x nRow cube, containing
   /// all visibility data
   ///
   virtual const casacore::Cube<casacore::Complex>& visibility() const;
 
 	
-  /// Read-write access to visibilities (a cube is nRow x nChannel x nPol;
+  /// Read-write access to visibilities (a cube is nPol x nChannel x nRow; 
   /// each element is a complex visibility)
   ///
-  /// @return a reference to nRow x nChannel x nPol cube, containing
+  /// @return a reference to nPol x nChannel x nRow cube, containing
   /// all visibility data
   ///
   virtual casacore::Cube<casacore::Complex>& rwVisibility();
    
   /// Set the number of DD calibration directions for increased buffer size
-  /// (a cube is (nDir*nRow) x nChannel x nPol; each element is a complex visibility)
+  /// (a cube is nPol x nChannel x  (nDir*nRow); each element is a complex visibility)
   ///
   void setNDir(casacore::uInt nDir) { itsNDir = nDir; }
  

@@ -211,7 +211,7 @@ const casacore::Vector<casacore::MVDirection>& DataAccessorAdapter::dishPointing
 }
 
 /// Cube of flags corresponding to the output of visibility() 
-/// @return a reference to nRow x nChannel x nPol cube with flag 
+/// @return a reference to nPol x nChannel x nRow cube with flag 
 ///         information. If True, the corresponding element is flagged.
 const casacore::Cube<casacore::Bool>& DataAccessorAdapter::flag() const
 {
@@ -255,7 +255,7 @@ const casacore::Vector<casacore::Double>& DataAccessorAdapter::uvwRotationDelay(
 }	
 
 /// @brief Noise level required for a proper weighting
-/// @return a reference to nRow x nChannel x nPol cube with
+/// @return a reference to nPol x nChannel x nRow cube with
 ///         complex noise estimates. Elements correspond to the
 ///         visibilities in the data cube.
 const casacore::Cube<casacore::Complex>& DataAccessorAdapter::noise() const
@@ -306,10 +306,10 @@ const casacore::Vector<casacore::Stokes::StokesTypes>& DataAccessorAdapter::stok
 }
 
 /// @brief read-only visibilities 
-/// @details (a cube is nRow x nChannel x nPol; 
+/// @details (a cube is nPol x nChannel x nRow; 
 /// each element is a complex visibility)
 ///
-/// @return a reference to nRow x nChannel x nPol cube, containing
+/// @return a reference to nPol x nChannel x nRow cube, containing
 /// all visibility data
 ///
 const casacore::Cube<casacore::Complex>& DataAccessorAdapter::visibility() const
@@ -318,10 +318,10 @@ const casacore::Cube<casacore::Complex>& DataAccessorAdapter::visibility() const
 }
 	
 /// @brief Read-write access to visibilities 
-/// @details (a cube is nRow x nChannel x nPol;
+/// @details (a cube is nPol x nChannel x nRow;
 /// each element is a complex visibility)
 ///
-/// @return a reference to nRow x nChannel x nPol cube, containing
+/// @return a reference to nPol x nChannel x nRow cube, containing
 /// all visibility data
 ///
 casacore::Cube<casacore::Complex>& DataAccessorAdapter::rwVisibility()

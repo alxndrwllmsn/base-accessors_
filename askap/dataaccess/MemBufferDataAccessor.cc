@@ -81,9 +81,11 @@ void MemBufferDataAccessor::resizeBufferIfNeeded() const
   #endif
   
   const IConstDataAccessor &acc = getROAccessor();
-  if (itsBuffer.nrow() != acc.nRow() || itsBuffer.ncolumn() != acc.nChannel() ||
-                                        itsBuffer.nplane() != acc.nPol()) {
-      itsBuffer.resize(acc.nRow(), acc.nChannel(), acc.nPol());
+  //if (itsBuffer.nrow() != acc.nRow() || itsBuffer.ncolumn() != acc.nChannel() ||
+  //                                      itsBuffer.nplane() != acc.nPol()) {
+  if (itsBuffer.nplane() != acc.nRow() || itsBuffer.ncolumn() != acc.nChannel() ||
+                                        itsBuffer.nrow() != acc.nPol()) {
+      itsBuffer.resize(acc.nPol(), acc.nChannel(), acc.nRow());
   }
 }
 
