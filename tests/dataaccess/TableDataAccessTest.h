@@ -656,6 +656,8 @@ void TableDataAccessTest::channelSelectionTest()
 /// test read/write with frequency selection
 void TableDataAccessTest::freqSelectionTest()
 {
+  CPPUNIT_ASSERT(false);
+
   TableDataSource tds(TableTestRunner::msName(), TableDataSource::WRITE_PERMITTED);
   IDataSource &ds=tds; // to have all interface methods available without
                        // ambiguity (otherwise methods overridden in
