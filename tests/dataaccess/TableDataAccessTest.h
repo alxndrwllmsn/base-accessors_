@@ -670,7 +670,8 @@ void TableDataAccessTest::freqSelectionTest()
   conv->setEpochFrame();
 
   casacore::Vector<casacore::Double> freqs;
-  for (IDataSharedIter it=ds.createIterator(sel,conv); it!=it.end(); ++it) {
+//  for (IDataSharedIter it=ds.createIterator(sel,conv); it!=it.end(); ++it) {
+  for (IDataSharedIter it=ds.createIterator(); it!=it.end(); ++it) {
        // store original visibilities in a buffer
        it.buffer("BACKUP").rwVisibility() = it->visibility();
        // set new values for all spectral channels, rows and pols
