@@ -659,9 +659,18 @@ void TableDataAccessTest::freqSelectionTest()
   TableDataSource tds(TableTestRunner::msName(), TableDataSource::WRITE_PERMITTED);
   IDataSource &ds=tds; // to have all interface methods available without
                        // ambiguity (otherwise methods overridden in
-                       // TableDataSource would get a priority)
+                       // TableDataSource would get a priority
+  IDataSelectorPtr sel=ds.createSelector();
+  ASKAPASSERT(sel);
+  IDataConverterPtr conv=ds.createConverter();
+  ASKAPASSERT(conv);
+  conv->setFrequencyFrame(casa::MFrequency::Ref(casa::MFrequency::TOPO), "Hz");
+  conv->setDirectionFrame(casa::MDirection::Ref(casa::MDirection::J2000));
+  // ensure that time is counted in seconds since 0 MJD
+  conv->setEpochFrame();
+
   casacore::Vector<casacore::Double> freqs;
-  for (IDataSharedIter it=ds.createIterator(); it!=it.end(); ++it) {
+  for (IDataSharedIter it=ds.createIterator(sel,conv); it!=it.end(); ++it) {
        // store original visibilities in a buffer
        it.buffer("BACKUP").rwVisibility() = it->visibility();
        // set new values for all spectral channels, rows and pols
@@ -671,18 +680,15 @@ void TableDataAccessTest::freqSelectionTest()
        }
   }
 
-
-  IDataSelectorPtr sel = ds.createSelector();
-  ASKAPASSERT(sel);
   // choose 3rd freq (i.e. freq(2)), note only 0 width is supported at present
-  sel->chooseFrequencies(1, casacore::MVFrequency(freqs(2)), 0.);
-  for (IDataSharedIter it=ds.createIterator(sel); it!=it.end(); ++it) {
+  sel->chooseFrequencies(1, casacore::MFrequency(casacore::MVFrequency(freqs(2)),casacore::MFrequency::TOPO), 0.);
+  for (IDataSharedIter it=ds.createIterator(sel,conv); it!=it.end(); ++it) {
        // different value corresponding to selected channels
        it->rwVisibility().set(casacore::Complex(-0.5,1.0));
   }
 
   // check that the visibilities are set to a required constant for the selected subset of channels
-  for (IConstDataSharedIter cit = ds.createConstIterator(sel);
+  for (IConstDataSharedIter cit = ds.createConstIterator(sel,conv);
                                         cit != cit.end(); ++cit) {
        const casacore::Cube<casacore::Complex> &vis = cit->visibility();
        // selected just two channels
