@@ -57,5 +57,6 @@ int main(int argc, char *argv[])
  }
  catch (const askap::AskapError &ce) {
 	 std::cerr<<ce.what()<<std::endl;
+     return 1;
  }
 }
