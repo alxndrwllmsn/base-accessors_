@@ -52,8 +52,11 @@ int main(int argc, char *argv[])
    runner.addTest(askap::accessors::DataAccessorAdapterTest::suite()); 
    runner.addTest(askap::accessors::CachedAccessorFieldTest::suite()); 
    runner.addTest(askap::accessors::TimeChunkIteratorAdapterTest::suite());
-   runner.run();
-   return 0;
+   if ( runner.run() ) {
+        return 0;
+    } else {
+        return 1;
+    }
  }
  catch (const askap::AskapError &ce) {
 	 std::cerr<<ce.what()<<std::endl;
