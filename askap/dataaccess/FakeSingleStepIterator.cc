@@ -33,7 +33,7 @@
 ///
 
 #include <askap/dataaccess/FakeSingleStepIterator.h>
-#include <askap/dataaccess/MemBufferDataAccessor.h>
+#include <askap/dataaccess/DDCalBufferDataAccessor.h>
 #include <askap/askap/AskapError.h>
 
 // we need it just for NullDeleter
@@ -44,29 +44,29 @@ using namespace askap::accessors;
 
 /// @brief initialize stubbed iterator
 FakeSingleStepIterator::FakeSingleStepIterator() : itsOriginFlag(true) {}
-	
-	
-/// @details 
+
+
+/// @details
 /// operator* delivers a reference to data accessor (current chunk)
 ///
 /// @return a reference to the current chunk
 IDataAccessor& FakeSingleStepIterator::operator*() const
-{ 
+{
   ASKAPCHECK(itsDataAccessor,
               "Data accessor has to be assigned first to FakeSingleStepIterator");
   ASKAPDEBUGASSERT(itsOriginFlag);
   ASKAPDEBUGASSERT(itsActiveAccessor);
   return *itsActiveAccessor;
 }
-		
-/// Switch the output of operator* and operator-> to one of 
-/// the buffers. This is meant to be done to provide the same 
-/// interface for a buffer access as exists for the original 
+
+/// Switch the output of operator* and operator-> to one of
+/// the buffers. This is meant to be done to provide the same
+/// interface for a buffer access as exists for the original
 /// visibilities (e.g. it->visibility() to get the cube).
-/// It can be used for an easy substitution of the original 
+/// It can be used for an easy substitution of the original
 /// visibilities to ones stored in a buffer, when the iterator is
-/// passed as a parameter to mathematical algorithms. 
-/// 
+/// passed as a parameter to mathematical algorithms.
+///
 /// The operator* and operator-> will refer to the chosen buffer
 /// until a new buffer is selected or the chooseOriginal() method
 /// is executed to revert operators to their default meaning
@@ -81,12 +81,12 @@ void FakeSingleStepIterator::chooseBuffer(const std::string &bufferID)
   std::map<std::string,
      boost::shared_ptr<IDataAccessor> >::const_iterator bufferIt =
                       itsBuffers.find(bufferID);
-		      
+
   if (bufferIt==itsBuffers.end()) {
       // deal with new buffer
       itsActiveAccessor = itsBuffers[bufferID] =
-            boost::shared_ptr<MemBufferDataAccessor>(
-	          new MemBufferDataAccessor(*itsDataAccessor));
+            boost::shared_ptr<DDCalBufferDataAccessor>(
+	          new DDCalBufferDataAccessor(*itsDataAccessor));
   } else {
       itsActiveAccessor=bufferIt->second;
   }
@@ -94,7 +94,7 @@ void FakeSingleStepIterator::chooseBuffer(const std::string &bufferID)
 }
 
 /// Switch the output of operator* and operator-> to the original
-/// state (present after the iterator is just constructed) 
+/// state (present after the iterator is just constructed)
 /// where they point to the primary visibility data. This method
 /// is indended to cancel the results of chooseBuffer(casacore::uInt)
 ///
@@ -106,10 +106,10 @@ void FakeSingleStepIterator::chooseOriginal()
   itsActiveBufferName.clear();
 }
 
-/// return any associated buffer for read/write access. The 
-/// buffer is identified by its bufferID. The method 
+/// return any associated buffer for read/write access. The
+/// buffer is identified by its bufferID. The method
 /// ignores a chooseBuffer/chooseOriginal setting.
-/// 
+///
 /// @param[in] bufferID the name of the buffer requested
 /// @return a reference to writable data accessor to the
 ///         buffer requested
@@ -131,23 +131,23 @@ IDataAccessor& FakeSingleStepIterator::buffer(const std::string &bufferID) const
   }
   // this is a request for a new buffer
   return *(itsBuffers[bufferID] =
-      boost::shared_ptr<IDataAccessor>(new MemBufferDataAccessor(
+      boost::shared_ptr<IDataAccessor>(new DDCalBufferDataAccessor(
                                        *itsDataAccessor)));
 }
-	
+
 /// Restart the iteration from the beginning
 void FakeSingleStepIterator::init()
 {
   itsOriginFlag = true;
 }
-	
+
 /// Checks whether there are more data available.
 /// @return True if there are more data available
 casacore::Bool FakeSingleStepIterator::hasMore() const throw()
 {
   return itsOriginFlag;
 }
-	
+
 /// advance the iterator one step further
 /// @return True if there are more data (so constructions like
 ///         while(it.next()) {} are possible)
@@ -168,14 +168,14 @@ void FakeSingleStepIterator::reassignBuffers()
   std::map<std::string,
       boost::shared_ptr<IDataAccessor> >::iterator it =
                       itsBuffers.begin();
-                      
+
   #ifdef ASKAP_DEBUG
   bool activeBufferEncountered = false;
-  #endif              
-        
+  #endif
+
   for (; it!=itsBuffers.end(); ++it) {
        if (itsDataAccessor) {
-           it->second.reset(new MemBufferDataAccessor(*itsDataAccessor));
+           it->second.reset(new DDCalBufferDataAccessor(*itsDataAccessor));
        } else {
            it->second.reset();
        }
@@ -183,7 +183,7 @@ void FakeSingleStepIterator::reassignBuffers()
            itsActiveAccessor = it->second;
            #ifdef ASKAP_DEBUG
            activeBufferEncountered = true;
-           #endif                 
+           #endif
        }
   }
   ASKAPDEBUGASSERT(!itsActiveBufferName.size() || activeBufferEncountered);
@@ -203,16 +203,16 @@ void FakeSingleStepIterator::assignDataAccessor(IDataAccessor &acc)
 
 /// @brief assign a const accessor to this iterator
 /// @details itsDataAccessor is initialized with a new instance of
-/// MemBufferDataAccessor initialized with the reference to the given
+/// DDCalBufferDataAccessor initialized with the reference to the given
 /// const data accessor. Note that the reference semantics is still
-/// used, since MemBufferDataAccessor is invalid without a valid
-/// const accessor it refers to. 
+/// used, since DDCalBufferDataAccessor is invalid without a valid
+/// const accessor it refers to.
 /// Data accessor passed as a parameter is not destroyed when this
 /// class goes out of scope.
 /// @param[in] acc a const reference to const data accessor
 void FakeSingleStepIterator::assignConstDataAccessor(const IConstDataAccessor &acc)
 {
-  itsDataAccessor.reset(new MemBufferDataAccessor(acc));
+  itsDataAccessor.reset(new DDCalBufferDataAccessor(acc));
   reassignBuffers();
 }
 
@@ -222,7 +222,7 @@ void FakeSingleStepIterator::assignConstDataAccessor(const IConstDataAccessor &a
 /// Otherwise, it is possible that the accessor becomes invalid first.
 /// This method is intended to be called when all access operations to
 /// the given accessor are completed. This makes the code safer, although
-/// nothing bad would happen if this iterator is not accessed when 
+/// nothing bad would happen if this iterator is not accessed when
 /// associated accessor is not valid (i.e. there is no logical error in the
 /// other places of the code).
 void FakeSingleStepIterator::detachAccessor()
