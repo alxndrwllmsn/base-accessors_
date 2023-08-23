@@ -1,6 +1,6 @@
 /// @file
 /// @brief Implementation of ITableSpWindowHolder
-/// @details This file contains a class, which reads and stores 
+/// @details This file contains a class, which reads and stores
 /// the content of the SPECTRAL_WINDOW subtable (which provides
 /// frequencies for each channel). The table is indexed with the
 /// spectral window ID.
@@ -60,7 +60,7 @@ MemTableSpWindowHolder::MemTableSpWindowHolder(const casacore::Table &ms)
 {
   Table spWindowSubtable=ms.keywordSet().asTable("SPECTRAL_WINDOW");
 
-  // load units 
+  // load units
   const Array<String> &tabUnits=spWindowSubtable.tableDesc().
           columnDesc("CHAN_FREQ").keywordSet().asArrayString("QuantumUnits");
   if (tabUnits.nelements()!=1 || tabUnits.ndim()!=1) {
@@ -69,21 +69,21 @@ MemTableSpWindowHolder::MemTableSpWindowHolder(const casacore::Table &ms)
 		  "It should be an 1D Array of 1 String element and it has "<<
 		  tabUnits.nelements()<<" elements and "<<tabUnits.ndim()<<
 		  " dimensions");
-  }  
+  }
   itsFreqUnits=casacore::Unit(tabUnits(IPosition(1,0)));
-  
+
   // load reference frame ids
   ROScalarColumn<Int> measRefCol(spWindowSubtable,"MEAS_FREQ_REF");
   measRefCol.getColumn(itsMeasRefIDs,True);
-  
+
   // load channel frequencies
   ROArrayColumn<Double> chanFreqCol(spWindowSubtable,"CHAN_FREQ");
   ASKAPDEBUGASSERT(measRefCol.nrow()==chanFreqCol.nrow());
   itsChanFreqs.resize(spWindowSubtable.nrow());
   for (casacore::rownr_t row=0;row<spWindowSubtable.nrow();++row) {
        ASKAPASSERT(chanFreqCol.ndim(row)==1u);
-       chanFreqCol.get(row,itsChanFreqs[row]); 
-  }  
+       chanFreqCol.get(row,itsChanFreqs[row]);
+  }
 }
 
 /// obtain the reference frame used in the spectral window table
@@ -108,7 +108,7 @@ const casacore::Unit& MemTableSpWindowHolder::getFrequencyUnit() const throw()
 /// @brief obtain frequencies for each spectral channel
 /// @details All frequencies for each spectral channel are retreived as
 /// Doubles at once. The units and reference frame can be obtained
-/// via getReferenceFrame and getFrequencyUnit methods of this class.  
+/// via getReferenceFrame and getFrequencyUnit methods of this class.
 /// @param[in] spWindowID an index into spectral window table
 /// @return freqs a const reference to a vector with result
 const casacore::Vector<casacore::Double>&
@@ -128,7 +128,7 @@ MemTableSpWindowHolder::getFrequencies(casacore::uInt spWindowID) const
 casacore::MFrequency MemTableSpWindowHolder::getFrequency(casacore::uInt spWindowID,
                           casacore::uInt channel) const
 {
-  ASKAPDEBUGASSERT(spWindowID<itsChanFreqs.nelements());  
+  ASKAPDEBUGASSERT(spWindowID<itsChanFreqs.nelements());
   ASKAPDEBUGASSERT(channel<itsChanFreqs[spWindowID].nelements());
   const casacore::Double freqAsDouble=itsChanFreqs[spWindowID][channel];
   const casacore::MVFrequency result(Quantity(freqAsDouble,itsFreqUnits));
