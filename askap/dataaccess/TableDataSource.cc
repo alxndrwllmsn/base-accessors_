@@ -1,9 +1,9 @@
-/// @file 
+/// @file
 /// @brief Implementation of IDataSource in the table-based case
 /// @details
 /// TableDataSource: Allow read-write access to the data stored in the
 /// measurement set. This class implements IConstDataSource interface.
-/// 
+///
 /// @copyright (c) 2007 CSIRO
 /// Australia Telescope National Facility (ATNF)
 /// Commonwealth Scientific and Industrial Research Organisation (CSIRO)
@@ -28,7 +28,6 @@
 ///
 /// @author Max Voronkov <maxim.voronkov@csiro.au>
 ///
-
 // casa includes
 #include <casacore/tables/Tables/TableRecord.h>
 
@@ -46,13 +45,14 @@ using namespace askap::accessors;
 /// construct a read-write data source object
 /// @param[in] fname file name of the measurement set to use
 /// @param[in] opt options from TableDataSourceOptions, can be or'ed
-/// removed, if it already exists.   
+/// removed, if it already exists.
 /// @param[in] dataColumn a name of the data column used by default
 ///                       (default is DATA)
 TableDataSource::TableDataSource(const std::string &fname,
                 int opt, const std::string &dataColumn) :
-         TableInfoAccessor(casacore::Table(fname, (opt & MEMORY_BUFFERS) && 
-				  !(opt & REMOVE_BUFFERS) && !(opt & WRITE_PERMITTED) ? 
+                TableInfoAccessor(casacore::Table(fname, casacore::TableLock(casacore::TableLock::NoLocking), // try without locking
+                   (opt & MEMORY_BUFFERS) &&
+				  !(opt & REMOVE_BUFFERS) && !(opt & WRITE_PERMITTED) ?
 				      casacore::Table::Old : casacore::Table::Update),
 						opt & MEMORY_BUFFERS, dataColumn)
 {
@@ -68,16 +68,16 @@ TableDataSource::TableDataSource(const std::string &fname,
 }
 
 /// @brief obtain a read/write iterator
-/// @details 
-/// get a read/write iterator over a selected part of the dataset 
-/// represented by this DataSource object with an explicitly 
-/// specified conversion policy. This is the most general 
+/// @details
+/// get a read/write iterator over a selected part of the dataset
+/// represented by this DataSource object with an explicitly
+/// specified conversion policy. This is the most general
 /// createIterator(...) call, which
 /// is used as a default implementation for all less general cases
-/// (although they can be overriden in the derived classes, if it 
+/// (although they can be overriden in the derived classes, if it
 ///  will be necessary because of the performance issues)
 ///
-/// @param[in] sel a shared pointer to the selector object defining 
+/// @param[in] sel a shared pointer to the selector object defining
 ///            which subset of the data is used
 /// @param[in] conv a shared pointer to the converter object defining
 ///            reference frames and units to be used
@@ -96,12 +96,12 @@ boost::shared_ptr<IDataIterator> TableDataSource::createIterator(const
            boost::dynamic_pointer_cast<ITableDataSelectorImpl const>(sel);
    boost::shared_ptr<IDataConverterImpl const> implConv=
            boost::dynamic_pointer_cast<IDataConverterImpl const>(conv);
-   	   
+
    if (!implSel || !implConv) {
        ASKAPTHROW(DataAccessLogicError, "Incompatible selector and/or "<<
                  "converter are received by the createIterator method");
    }
    return boost::shared_ptr<IDataIterator>(new TableDataIterator(
                 getTableManager(),implSel,implConv,uvwMachineCacheSize(),
-                uvwMachineCacheTolerance(), maxChunkSize())); 
+                uvwMachineCacheTolerance(), maxChunkSize()));
 }
