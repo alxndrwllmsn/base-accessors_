@@ -53,7 +53,7 @@
 namespace askap {
 
 namespace accessors {
-	
+
 /// @brief An implementation of ITableDataSelectorImpl for simple (scalar) fields, like feed ID.
 /// @details This class represents a selection of visibility
 ///         data according to some criterion. This is an
@@ -73,7 +73,7 @@ class TableScalarFieldSelector : virtual public ITableDataSelectorImpl,
 				 virtual protected ITableInfoAccessor
 {
 public:
-  
+
   /// Choose a single feed, the same for both antennae
   /// @param[in] feedID the sequence number of feed to choose
   virtual void chooseFeed(casacore::uInt feedID);
@@ -96,13 +96,13 @@ public:
   /// @param[in] column column name in the measurement set for a user-defined index
   /// @param[in] value index value
   virtual void chooseUserDefinedIndex(const std::string &column, const casacore::uInt value);
-  
+
   /// @brief Choose autocorrelations only
   virtual void chooseAutoCorrelations();
-  
+
   /// @brief Choose crosscorrelations only
   virtual void chooseCrossCorrelations();
-  
+
   /// @brief Choose samples corresponding to a uv-distance larger than threshold
   /// @details This effectively rejects the baselines giving a smaller
   /// uv-distance than the specified threshold
@@ -113,7 +113,7 @@ public:
   /// @details This effectively rejects the baselines giving a smaller
   /// uv-distance than the specified threshold (in metres), but unlike chooseMinUVDistance
   /// preserve samples with uvw equal to exatly zero. One example of such zero uvw samples is
-  /// auto-correlation (which can be filtered out separately by another selector call), but the 
+  /// auto-correlation (which can be filtered out separately by another selector call), but the
   /// main motivation behind such method is to preserve completely flagged samples which may not
   /// have uvw defined (and therefore it could be set to zero)
   /// @param[in] uvDist threshold
@@ -125,11 +125,16 @@ public:
   /// @param[in] uvDist threshold (in metres)
   virtual void chooseMaxUVDistance(casacore::Double uvDist);
 
-  /// Choose a single scan number
+  /// @brief Choose a single scan number
   /// @param[in] scanNumber the scan number to choose
   virtual void chooseScanNumber(casacore::uInt scanNumber);
 
-  /// @brief Obtain a table expression node for selection. 
+  /// @brief Choose row numbers
+  /// @param[in] numRows number of rows to select
+  /// @param[in] startRow first row to select
+  void chooseRows(const casacore::rownr_t numRows, const casacore::rownr_t startRow);
+
+  /// @brief Obtain a table expression node for selection.
   /// @details This method is
   /// used in the implementation of the iterator to form a subtable
   /// obeying the selection criteria specified by the user via
@@ -140,7 +145,7 @@ public:
   /// @return a const reference to table expression node object
   virtual const casacore::TableExprNode& getTableSelector(const
                boost::shared_ptr<IDataConverterImpl const> &conv) const;
-      
+
 protected:
   /// @brief get read-write access to expression node
   /// @return a reference to the cached table expression node
@@ -149,11 +154,11 @@ protected:
 
 private:
   /// a current table selection expression (cache)
-  mutable casacore::TableExprNode  itsTableSelector;  
+  mutable casacore::TableExprNode  itsTableSelector;
 };
-  
+
 } // namespace accessors
-  
+
 } // namespace askap
-  
+
 #endif // #ifndef TABLE_SCALAR_FIELD_SELECTOR_H

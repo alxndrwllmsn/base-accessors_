@@ -37,6 +37,10 @@
 #include <askap/dataaccess/DataAccessError.h>
 #include <askap/dataaccess/TableTimeStampSelectorImpl.h>
 
+#include <casacore/tables/DataMan/TiledStManAccessor.h>
+#include <askap/askap/AskapLogging.h>
+ASKAP_LOGGER(logger, ".dataaccess.tabledataselector");
+
 using namespace askap;
 using namespace askap::accessors;
 using namespace casa;
@@ -144,7 +148,7 @@ void TableDataSelector::chooseFrequencies(casacore::uInt nChan,
          const casacore::MFrequency &start,
          const casacore::MVFrequency &freqInc)
 {
-   ASKAPDEBUGASSERT((nChan>0) && (start>=0));
+   ASKAPDEBUGASSERT((nChan>0) && (start.getValue()>=0));
    ASKAPCHECK(freqInc.near(casacore::MVFrequency(0)), "Non zero frequency increment not yet implemented");
    itsNFreq = nChan;
    itsFreqStart = start;
@@ -174,6 +178,61 @@ void TableDataSelector::chooseVelocities(casacore::uInt nChan,
 void TableDataSelector::choosePolarizations(const casacore::String &pols)
 {
    ASKAPTHROW(DataAccessLogicError, "choosePolarizations has not yet been implemented, requested pols="<<pols);
+}
+
+/// @brief work out the tiling of the column in the time/row direction
+/// @param[in] string column : name of column to inspect (usually DATA or FLAG)
+/// @param[out] tileShape : the tileShape of the column
+/// @param[out] hypercubeShape: the shape of the tiled hypercube
+/// @return uint: the number of tiles in the row direction, or 0 if invalid
+uint TableDataSelector::getTiling(const std::string& column,
+        casacore::IPosition& tileShape, casacore::IPosition& hypercubeShape) const
+{
+    // first check if data is tiled and only has a single non-empty hypercube
+    casacore::TableDesc td = table().actualTableDesc();
+    const casacore::ColumnDesc& cdesc = td[column];
+    const casacore::String dataManType = cdesc.dataManagerType();
+    const casacore::String dataManGroup = cdesc.dataManagerGroup();
+    if (!dataManType.contains("Tiled")) {
+        ASKAPLOG_WARN_STR(logger,"Column is not stored using a Tiled Storage Manager");
+        return 0;
+    }
+    casacore::ROTiledStManAccessor tsm(table(), dataManGroup);
+    // try to find first non-empty hypercube and count how many we have
+    int hypercube = -1;
+    uint nhyper = 0;
+    for (uint i = 0; i < tsm.nhypercubes(); i++) {
+        if (tsm.getTileShape(i).product() > 0 ) {
+            if (hypercube == -1) {
+                hypercube = i;
+            }
+            nhyper++;
+        }
+    }
+    if (nhyper != 1) {
+        ASKAPLOG_WARN_STR(logger,"Column does not have a single tiling scheme");
+        return 0;
+    }
+    tileShape = tsm.getTileShape(hypercube);
+    hypercubeShape = tsm.getHypercubeShape(hypercube);
+    // we implicitly assume that column is tiled over pol, chan and row
+    ASKAPDEBUGASSERT(tileShape.nelements()==3 && hypercubeShape.nelements()==3);
+    const uint nRowTiles = hypercubeShape(2) / tileShape(2) +
+        (hypercubeShape(2) % tileShape(2) ? 1 : 0);
+    return nRowTiles;
+}
+
+
+/// Choose Data Tiles (in time/row direction)
+/// @param[in] nTiles number of tiles to select
+/// @param[in] start Starting tile number (>=0)
+void TableDataSelector::chooseDataTiles(uint nTiles, uint start)
+{
+    casacore::IPosition tileShape, hyperCubeShape;
+    const uint nRowTiles = getTiling(getDataColumnName(),tileShape,hyperCubeShape);
+    ASKAPLOG_INFO_STR(logger,"Tile selection nTiles = " << nTiles << ", start = " << start << " -> " <<
+                 "row selection nRows = " << nTiles*tileShape(2)<<", start = "<<start*tileShape(2));
+    chooseRows(nTiles * tileShape(2), start * tileShape(2));
 }
 
 /// @brief choose data column
