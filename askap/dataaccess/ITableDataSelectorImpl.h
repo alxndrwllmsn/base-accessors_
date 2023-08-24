@@ -4,7 +4,7 @@
 /// to be used within the table-based implementation of the layer. The
 /// end user interacts with the IDataSelector interface only.
 ///
-/// If (or when) we have different data sources 
+/// If (or when) we have different data sources
 /// table-independent functionality can be split out into a
 /// separate interface (i.e. IDataSelectorImpl), which could
 /// be a base class for this one.
@@ -59,7 +59,7 @@ namespace accessors {
 /// to be used within the table-based implementation of the layer. The
 /// end user interacts with the IDataSelector interface only.
 ///
-/// @todo If (or when) we have different data sources 
+/// @todo If (or when) we have different data sources
 /// table-independent functionality can be split out into a
 /// separate interface (i.e. IDataSelectorImpl), which could
 /// be a base class for this one.
@@ -67,7 +67,7 @@ namespace accessors {
 class ITableDataSelectorImpl : virtual public IDataSelector
 {
 public:
-  /// @brief Obtain a table expression node for selection. 
+  /// @brief Obtain a table expression node for selection.
   /// @details This method is
   /// used in the implementation of the iterator to form a subtable
   /// obeying the selection criteria specified by the user via
@@ -78,16 +78,16 @@ public:
   /// @return a const reference to table expression node object
   virtual const casacore::TableExprNode& getTableSelector(const
                boost::shared_ptr<IDataConverterImpl const> &conv) const = 0;
-  
+
   /// @brief choose data column
   /// @details This method allows to choose any table column as the visibility
   /// data column (e.g. DATA, CORRECTED_DATA, etc). Because this is a
   /// table-specific operation, this method is defined in a table-specific
   /// selector interface and is not present in IDataSelector (therefore,
   /// a dynamic_pointer_cast is likely required).
-  /// @param[in] dataColumn column name, which contains visibility data 
-  virtual void chooseDataColumn(const std::string &dataColumn) = 0;  
-  
+  /// @param[in] dataColumn column name, which contains visibility data
+  virtual void chooseDataColumn(const std::string &dataColumn) = 0;
+
   /// @brief clone a selector
   /// @details The same selector can be used to create a number of iterators.
   /// Selector stores a name of the data column to use and, therefore, it can
@@ -97,35 +97,48 @@ public:
   /// normally interacts with the IDataSelector class only. This is because
   /// cloning is done at the low level (e.g. inside the iterator)
   virtual boost::shared_ptr<ITableDataSelectorImpl const> clone() const = 0;
-  
+
   /// @brief obtain the name of data column
   /// @details This method returns the current name of the data column.
   /// Exact handling is determined in derived classes
   /// @return the name of the data column
   virtual const std::string& getDataColumnName() const throw() = 0;
-  
+
   /// @brief check whether channel selection has been done
-  /// @details By default all channels are selected. However, if chooseChannels 
+  /// @details By default all channels are selected. However, if chooseChannels
   /// has been called, less channels are returned. This method returns true if
   /// this is the case and false otherwise.
   /// @return true, if a subset of channels has been selected
   virtual bool channelsSelected() const throw() = 0;
-  
+
+  /// @brief check whether frequency selection has been done
+  /// @details By default all channels are selected. However, if chooseFrequencies
+  /// has been called, less channels are returned. This method returns true if
+  /// this is the case and false otherwise.
+  /// @return true, if a subset of frequencies has been selected
+  virtual bool frequenciesSelected() const throw() = 0;
+
   /// @brief obtain channel selection
-  /// @details By default all channels are selected. However, if chooseChannels 
+  /// @details By default all channels are selected. However, if chooseChannels
   /// has been called, less channels are returned by the accessor. This method
-  /// returns the number of channels and the first channel (in the full sample) 
+  /// returns the number of channels and the first channel (in the full sample)
   /// selected. If the first element of the pair is negative, no channel-based
-  /// selection has been done. This is also checked by channelsSelected method, 
+  /// selection has been done. This is also checked by channelsSelected method,
   /// which is probably a prefered way to do this check to retain the code clarity.
   /// @return a pair, the first element gives the number of channels selected and
   /// the second element gives the start channel (0-based)
   virtual std::pair<int,int> getChannelSelection() const throw() = 0;
-  
+
+  /// @brief obtain frequency selection
+  /// @details By default all channels are selected. However, if chooseFrequencies
+  /// has been called, less channels are returned by the accessor. This method
+  /// returns the number of channels, the start frequency and the increment (Hz)
+  virtual std::tuple<int,casacore::MFrequency,double> getFrequencySelection() const throw() = 0;
+
 };
-  
+
 } // namespace accessors
-  
+
 } // namespace askap
-  
+
 #endif // #ifndef I_TABLE_DATA_SELECTOR_IMPL_H
