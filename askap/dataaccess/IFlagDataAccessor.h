@@ -51,12 +51,12 @@ class IFlagDataAccessor : virtual public IDataAccessor
 {
 public:
         /// Cube of flags corresponding to the output of visibility()
-        /// @return a reference to nRow x nChannel x nPol cube with the flag
+        /// @return a reference to nPol x nChannel x nRow cube with the flag
         ///         information. If True, the corresponding element is flagged.
         virtual const casacore::Cube<casacore::Bool>& flag() const = 0;
 
 	/// Non-const access to the cube of flags.
-        /// @return a reference to nRow x nChannel x nPol cube with the flag
+        /// @return a reference to nPol x nChannel x nRow cube with the flag
         ///         information. If True, the corresponding element is flagged.
         virtual casacore::Cube<casacore::Bool>& rwFlag() = 0;
 };
