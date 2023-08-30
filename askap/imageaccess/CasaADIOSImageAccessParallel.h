@@ -1,5 +1,5 @@
-/// @file CasaADIOSImageAccess.h
-/// @brief Access casa image via ADIOS Storage Manager
+/// @file CasaADIOSImageAccessParallel.h
+/// @brief Access casa image via ADIOS Storage Manager using parallel io
 /// @details This class implements IImageAccess interface for CASA image and specifies use of the ADIOS storage manager
 ///
 ///
@@ -26,21 +26,21 @@
 /// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 ///
 /// @author Alexander Williamson <alex.williamson@icrar.org>
-///
+/// @author Pascal Jahan Elahi <pascal.elahi@pawsey.org.au>
 
-#ifndef ASKAP_ACCESSORS_CASA_ADIOS_IMAGE_ACCESS_H
-#define ASKAP_ACCESSORS_CASA_ADIOS_IMAGE_ACCESS_H
+#ifndef ASKAP_ACCESSORS_CASA_ADIOS_IMAGE_ACCESS_PARALLEL_H
+#define ASKAP_ACCESSORS_CASA_ADIOS_IMAGE_ACCESS_PARALLEL_H
 
 #include <boost/shared_ptr.hpp>
 
 #include <askap/imageaccess/IImageAccess.h>
 #include <askap/imageaccess/ADIOSImage.h>
-
-#ifdef ADIOS_HAS_MPI
+#include <askap/imageaccess/CasaADIOSImageAccess.h>
 #include <mpi.h>
 #include <askap/askapparallel/MPIComms.h>
 #include <askap/askapparallel/AskapParallel.h>
-#endif
+
+//PJE - still a work in progress 
 
 namespace askap {
 namespace accessors {
@@ -50,12 +50,16 @@ namespace accessors {
 /// @ingroup imageaccess
 
 template <class T = casacore::Float>
-struct CasaADIOSImageAccess : public IImageAccess<T> {
+struct CasaADIOSImageAccessParallel : public CasaADIOS2ImageAccess<T> {
 
-    public:
+public:
     /// @brief constructor
+    /// @param[in] comms, MPI communicator
     /// @param[in] config, string pointing to adios configuration
-    template <class T> CasaADIOSImageAccess<T>(std::string config = "");
+    template <class T> CasaADIOSImageAccessParallel<T>(askapparallel::AskapParallel &comms, std::string configname = "");
+
+    // PJE -- uncertain how many functions would really require overwriting so as to 
+    // do something with the comms. 
 
     //////////////////
     // Reading methods
@@ -248,13 +252,23 @@ struct CasaADIOSImageAccess : public IImageAccess<T> {
     /// @param[in] name image name
     /// @param[in] info record with information
     virtual void setInfo(const std::string &name, const casacore::RecordInterface & info) override;
+
 private:
+    // PJE -- added some private functions to assist parallel IO 
+    /// @brief check if we can do parallel I/O on the file
+    bool canDoParallelIO(const std::string &name) const;
+
+    // add the parallel comms and the name associated with it, and whether parallel can be done
+    int itsParallel;
+    askapparallel::AskapParallel& itsComms;
+    std::string itsName;
     mutable std::unique_ptr<ADIOSImage<T>> imagePtr_p;
     std::string configname;
+      
 };
 
 } // namespace accessors
 } // namespace askap
 
-#include "CasaADIOSImageAccess.tcc"
+#include "CasaADIOSImageAccessParallel.tcc"
 #endif

@@ -47,16 +47,23 @@ ADIOSImage<T>::ADIOSImage()
 {}
 
 template <class T> 
-ADIOSImage<T>::ADIOSImage (const casacore::TiledShape& shape, 
-			   const casacore::CoordinateSystem& coordinateInfo, 
-			   const casacore::String& filename, 
-         casacore::String configname, 
-			   casacore::uInt rowNumber)
+ADIOSImage<T>::ADIOSImage (
+#ifdef ADIOS_HAS_MPI
+  askapparallel::AskapParallel &comms,
+#endif
+  const casacore::TiledShape& shape, 
+  const casacore::CoordinateSystem& coordinateInfo, 
+  const casacore::String& filename, 
+  casacore::String configname, 
+  casacore::uInt rowNumber)
 : casacore::ImageInterface<T>(casacore::RegionHandlerTable(getTable, this)),
   regionPtr_p   (0), 
 {
   config = configname;
   row_p = rowNumber;
+#ifdef ADIOS_HAS_MPI
+  adios_comm = comm;
+#endif
   makeNewTable(shape, rowNumber, filename);
   attach_logtable();
   AlwaysAssert(setCoordinateInfo(coordinateInfo), casacore::AipsError);
@@ -64,10 +71,14 @@ ADIOSImage<T>::ADIOSImage (const casacore::TiledShape& shape,
 }
 
 template <class T>
-ADIOSImage<T>::ADIOSImage (const casacore::String& filename,
-                          casacore::String configname, 
-                          casacore::MaskSpecifier spec,
-                          casacore::uInt rowNumber)
+ADIOSImage<T>::ADIOSImage (
+#ifdef ADIOS_HAS_MPI
+  askapparallel::AskapParallel &comms,
+#endif
+  const casacore::String& filename,
+  casacore::String configname, 
+  casacore::MaskSpecifier spec,
+  casacore::uInt rowNumber)
 : casacore::ImageInterface<T>(casacore::RegionHandlerTable(getTable, this)),
   regionPtr_p   (0)
 {
@@ -75,6 +86,9 @@ ADIOSImage<T>::ADIOSImage (const casacore::String& filename,
   map_p = casacore::ArrayColumn<T>(tab_p, "map");
   row_p = rowNumber;
   config = configname;
+#ifdef ADIOS_HAS_MPI
+  adios_comm = comm;
+#endif
   attach_logtable();
   restoreAll (tab_p.keywordSet());
   applyMaskSpecifier (spec);
@@ -107,20 +121,36 @@ void ADIOSImage<T>::makeNewTable(const casacore::TiledShape& shape, casacore::uI
   casacore::SetupNewTable newtab(filename, description, casacore::Table::New);
 
   // now invoke the Adios2 storage manager
+  // PJE - the issue here is that the constructors are only valid if ADIOS has not be compiled
+  // with MPI. Not obvious how to best catch that and whether ADIOS can be passed a null 
+  // communicator if compiled with ADIOS but don't want parallel accessors. 
   if (config == "") {
     // invoke Adios2StMan(engineType, engineParams, transportParams, operatorParams)
     // with default engine type and parameters 
+#ifdef ADIOS_HAS_MPI
+    // if mpi then using MPI_COMM_SELF for writing
+    casacore::Adios2StMan stman(adios_comm, 
+                              "",
+                              {},
+                              {{}},
+                              {{{"Variable", "map"},{},{}}});
+#else
     casacore::Adios2StMan stman("",
                               {},
                               {{}},
                               {{{"Variable", "map"},{},{}}});
+#endif
   }
   else 
   {
     // invoke configuration based call 
     //PJE - question on whether we also need to include the operatorParams {{{"Varaible", "map"}}}
     struct from_config_t {}; 
+#ifdef ADIOS_HAS_MPI
+    casacore::Adios2StMan stman(adios_comm, config, from_config_t);
+#else   
     casacore::Adios2StMan stman(config, from_config_t);
+#endif
   }
   
   newtab.bindColumn("map", stman);
