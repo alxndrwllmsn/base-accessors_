@@ -2,7 +2,7 @@ cmake_minimum_required (VERSION 3.12.0)
 
 include_guard()
 
-set (VERSION "1.9.0")
+set (VERSION "1.11.0")
 project(base-accessors VERSION ${VERSION} LANGUAGES C CXX)
 
 find_package(Git REQUIRED)
@@ -75,7 +75,7 @@ FetchContent_Declare(base-askap
 # -------- base-askapparallel --------
 FetchContent_Declare(base-askapparallel
   GIT_REPOSITORY    ${ASKAPSDP_GIT_URL}/base-askapparallel.git
-  GIT_TAG           ${BASE_ASKAPPARRALLEL_TAG}
+  GIT_TAG           ${BASE_ASKAPPARALLEL_TAG}
   SOURCE_DIR        base-askapparallel
 )
 
@@ -104,7 +104,7 @@ configure_file(askap_accessors.cc.in ${CMAKE_CURRENT_BINARY_DIR}/askap_accessors
 # Required Version of ASKAP dependencies is the MAJOR and MINOR version
 # of this package. This allows the PATCH versions to change on everything
 # but the version number cannot be less or more than the current version
-# 
+#
 set(REQUIRED_VERSION "${VERSION_MAJOR}.${VERSION_MINOR}")
 
 
@@ -122,7 +122,7 @@ option (ENABLE_OPENMP "Build with OPENMP Support" NO)
 #find_package(askap-askap REQUIRED)
 #find_package(askap-scimath REQUIRED)
 #find_package(askap-parallel REQUIRED)
-find_package(Boost REQUIRED COMPONENTS thread chrono)
+find_package(Boost REQUIRED COMPONENTS filesystem system thread chrono)
 find_package(log4cxx REQUIRED)
 find_package(Casacore REQUIRED COMPONENTS  ms images mirlib coordinates fits lattices measures scimath scimath_f tables casa)
 find_package(XercesC REQUIRED)
@@ -171,7 +171,6 @@ if (CASACORE3 OR CXX11)
 	set(CMAKE_CXX_STANDARD_REQUIRED ON)
 endif()
 
-
 add_library(accessors SHARED
 	${CMAKE_CURRENT_BINARY_DIR}/askap_accessors.cc
 )
@@ -209,6 +208,7 @@ target_link_libraries(accessors
 	${CASACORE_LIBRARIES}
 	${log4cxx_LIBRARY}
 	${XercesC_LIBRARY}
+    ${Boost_LIBRARIES}
 )
 
 if (OPENMP_FOUND)
@@ -260,6 +260,17 @@ if (BUILD_TESTING)
   add_subdirectory(tests/votable)
   add_subdirectory(tests/imageaccess)
 endif ()
+
+# look for dataOnly member in Table.h
+# (tried and failed to get CheckCXXSymbolExists and CheckCXXSourceCompiles working)
+file (READ "${CASACORE_INCLUDE_DIR}/casacore/tables/Tables/Table.h" TMPTXT)
+string (FIND "${TMPTXT}" "dataOnly" FOUND)
+message(STATUS "dataonly flag: ${FOUND}")
+unset (TMPTXT)
+if (FOUND GREATER 0)
+    message(STATUS "Found casacore::Table::dataOnly: adding HAVE_CASACORE_TABLE_DATAONLY" )
+    add_compile_definitions(HAVE_CASACORE_TABLE_DATAONLY)
+endif()
 
 
 #include(yanda_export)

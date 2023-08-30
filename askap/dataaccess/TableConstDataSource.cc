@@ -3,7 +3,7 @@
 /// @details
 /// TableConstDataSource: Allow read-only access to the data stored in the
 /// measurement set. This class implements IConstDataSource interface.
-/// 
+///
 /// @copyright (c) 2007 CSIRO
 /// Australia Telescope National Facility (ATNF)
 /// Commonwealth Scientific and Industrial Research Organisation (CSIRO)
@@ -63,12 +63,12 @@ TableConstDataSource::TableConstDataSource(const std::string &fname,
 /// it is table-specific and cannot be implemented in general in the streaming model where such metadata
 /// should be provided some other way (i.e. not in the stream). However, in the table-based case it can
 /// be used directly as the type is created explicitly at some point (or one could dynamic cast and
-/// test whether this operation is supported). Same information can be extracted manually via the 
+/// test whether this operation is supported). Same information can be extracted manually via the
 /// getTableManager() method of table-based iterators, essentially the same code used in this
 /// shortcut, but this method is public for iterators.
 const casacore::MPosition& TableConstDataSource::getAntennaPosition(casacore::uInt antID) const
 {
-  // the validity of indicies and initialisation of caches is checked inside these methods, 
+  // the validity of indicies and initialisation of caches is checked inside these methods,
   // but only in the debug mode
   return subtableInfo().getAntenna().getPosition(antID);
 }
@@ -77,15 +77,15 @@ const casacore::MPosition& TableConstDataSource::getAntennaPosition(casacore::uI
 /// @details This is another method specific to the table-based implementation (in the streaming approach
 /// this has to be provided some other way, through configuration). Therefore, similarly to getAntennaPosition,
 /// it is not exposed via the IConstDataSource interface making its use more explicit in the code. In principle,
-/// the number of antennas should rarely be needed in the user code as only valid indices are returned by the 
-/// the accessor. 
-/// @note Strictly speaking, this is not the number of antennas, in general, but the number of entries in the 
+/// the number of antennas should rarely be needed in the user code as only valid indices are returned by the
+/// the accessor.
+/// @note Strictly speaking, this is not the number of antennas, in general, but the number of entries in the
 /// ANTENNA table of the measurement set which may not match (and the actual data may only use a subset of indices -
 /// this is yet another indication that ideally the user-level code should avoid this implementation-specific information).
 /// @return number of antennas in the measurement set (all antenna indices are less than this number)
 casacore::uInt TableConstDataSource::getNumberOfAntennas() const
 {
-  // the validity of indicies and initialisation of caches is checked inside these methods, 
+  // the validity of indicies and initialisation of caches is checked inside these methods,
   // but only in the debug mode
   return subtableInfo().getAntenna().getNumberOfAntennas();
 }
@@ -103,13 +103,13 @@ void TableConstDataSource::configureMaxChunkSize(casacore::uInt maxNumRows)
 /// @brief configure caching of the uvw-machines
 /// @details A number of uvw machines can be cached at the same time. This can
 /// result in a significant performance improvement in the mosaicing case. By default
-/// only single machine is cached and this method should be called to change it. 
+/// only single machine is cached and this method should be called to change it.
 /// All subsequent iterators will be created with the parameters set in this method until
 /// it is called again. Call this method without parameters to revert to default settings.
-/// @note This method is a feature of this implementation and is not available via the 
+/// @note This method is a feature of this implementation and is not available via the
 /// general interface (intentionally)
 /// @param[in] cacheSize a number of uvw machines in the cache (default is 1)
-/// @param[in] tolerance pointing direction tolerance in radians, exceeding which leads 
+/// @param[in] tolerance pointing direction tolerance in radians, exceeding which leads
 /// to initialisation of a new UVW Machine
 void TableConstDataSource::configureUVWMachineCache(size_t cacheSize, double tolerance)
 {
@@ -125,7 +125,7 @@ void TableConstDataSource::configureUVWMachineCache(size_t cacheSize, double tol
 TableConstDataSource::TableConstDataSource() :
          TableInfoAccessor(boost::shared_ptr<ITableManager const>()),
          itsUVWCacheSize(1), itsUVWCacheTolerance(1e-6),
-         itsMaxChunkSize(INT_MAX) {} 
+         itsMaxChunkSize(INT_MAX) {}
 
 /// create a converter object corresponding to this type of the
 /// DataSource. The user can change converting policies (units,
@@ -149,12 +149,12 @@ IDataConverterPtr TableConstDataSource::createConverter() const
 
 /// get iterator over a selected part of the dataset represented
 /// by this DataSource object with an explicitly specified conversion
-/// policy. This is the most general createConstIterator(...) call, 
-/// which is used as a default implementation for all less general 
-/// cases (although they can be overriden in the derived classes, if it 
+/// policy. This is the most general createConstIterator(...) call,
+/// which is used as a default implementation for all less general
+/// cases (although they can be overriden in the derived classes, if it
 /// will be necessary because of the performance issues)
 ///
-/// @param[in] sel a shared pointer to the selector object defining 
+/// @param[in] sel a shared pointer to the selector object defining
 ///            which subset of the data is used
 /// @param[in] conv a shared pointer to the converter object defining
 ///            reference frames and units to be used
@@ -173,7 +173,7 @@ TableConstDataSource::createConstIterator(const IDataSelectorConstPtr &sel,
            boost::dynamic_pointer_cast<ITableDataSelectorImpl const>(sel);
    boost::shared_ptr<IDataConverterImpl const> implConv=
            boost::dynamic_pointer_cast<IDataConverterImpl const>(conv);
-   	   
+
    if (!implSel || !implConv) {
        ASKAPTHROW(DataAccessLogicError, "Incompatible selector and/or "<<
                  "converter are received by the createConstIterator method");
@@ -192,7 +192,7 @@ TableConstDataSource::createConstIterator(const IDataSelectorConstPtr &sel,
 ///
 /// This method acts as a factory by creating a new DataSelector
 /// appropriate to the given DataSource. The lifetime of the
-/// DataSelector is the same as the lifetime of the DataSource 
+/// DataSelector is the same as the lifetime of the DataSource
 /// object. Therefore, it can be reused multiple times,
 /// if necessary. However, the behavior of iterators already obtained
 /// with this DataSelector is undefined, if one changes the selection
@@ -202,4 +202,3 @@ IDataSelectorPtr TableConstDataSource::createSelector() const
 {
   return IDataSelectorPtr(new TableDataSelector(getTableManager()));
 }
-

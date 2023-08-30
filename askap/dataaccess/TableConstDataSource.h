@@ -3,7 +3,7 @@
 /// @details
 /// TableConstDataSource: Allow read-only access to the data stored in the
 /// measurement set. This class implements IConstDataSource interface.
-/// 
+///
 /// @copyright (c) 2007 CSIRO
 /// Australia Telescope National Facility (ATNF)
 /// Commonwealth Scientific and Industrial Research Organisation (CSIRO)
@@ -64,9 +64,9 @@ public:
   /// @param[in] fname file name of the measurement set to use
   /// @param[in] dataColumn a name of the data column used by default
   ///                       (default is DATA)
-  explicit TableConstDataSource(const std::string &fname, 
+  explicit TableConstDataSource(const std::string &fname,
                                 const std::string &dataColumn = "DATA");
-  
+
   /// create a converter object corresponding to this type of the
   /// DataSource. The user can change converting policies (units,
   /// reference frames) by appropriate calls to this converter object
@@ -83,15 +83,15 @@ public:
   /// the DataConverter after the creation of an iterator, unless you
   /// call init() of the iterator (and start a new iteration loop).
   virtual IDataConverterPtr createConverter() const;
-  
+
   /// get iterator over a selected part of the dataset represented
   /// by this DataSource object with an explicitly specified conversion
-  /// policy. This is the most general createConstIterator(...) call, 
-  /// which is used as a default implementation for all less general 
-  /// cases (although they can be overriden in the derived classes, if it 
+  /// policy. This is the most general createConstIterator(...) call,
+  /// which is used as a default implementation for all less general
+  /// cases (although they can be overriden in the derived classes, if it
   /// will be necessary because of the performance issues)
   ///
-  /// @param[in] sel a shared pointer to the selector object defining 
+  /// @param[in] sel a shared pointer to the selector object defining
   ///            which subset of the data is used
   /// @param[in] conv a shared pointer to the converter object defining
   ///            reference frames and units to be used
@@ -104,10 +104,10 @@ public:
   virtual boost::shared_ptr<IConstDataIterator> createConstIterator(const
              IDataSelectorConstPtr &sel,
              const IDataConverterConstPtr &conv) const;
-  
-  // we need this to get access to the overloaded syntax in the base class 
+
+  // we need this to get access to the overloaded syntax in the base class
   using IConstDataSource::createConstIterator;
- 
+
   /// create a selector object corresponding to this type of the
   /// DataSource
   ///
@@ -117,24 +117,24 @@ public:
   ///
   /// This method acts as a factory by creating a new DataSelector
   /// appropriate to the given DataSource. The lifetime of the
-  /// DataSelector is the same as the lifetime of the DataSource 
+  /// DataSelector is the same as the lifetime of the DataSource
   /// object. Therefore, it can be reused multiple times,
   /// if necessary. However, the behavior of iterators already obtained
   /// with this DataSelector is undefined, if one changes the selection
   /// unless the init method is called for the iterator (and the new
   /// iteration loop is started).
   virtual IDataSelectorPtr createSelector() const;
-  
+
   /// @brief configure caching of the uvw-machines
   /// @details A number of uvw machines can be cached at the same time. This can
   /// result in a significant performance improvement in the mosaicing case. By default
-  /// only single machine is cached and this method should be called to change it. 
+  /// only single machine is cached and this method should be called to change it.
   /// All subsequent iterators will be created with the parameters set in this method until
   /// it is called again. Call this method without parameters to revert to default settings.
-  /// @note This method is a feature of this implementation and is not available via the 
+  /// @note This method is a feature of this implementation and is not available via the
   /// general interface (intentionally)
   /// @param[in] cacheSize a number of uvw machines in the cache (default is 1)
-  /// @param[in] tolerance pointing direction tolerance in radians, exceeding which leads 
+  /// @param[in] tolerance pointing direction tolerance in radians, exceeding which leads
   /// to initialisation of a new UVW Machine
   void configureUVWMachineCache(size_t cacheSize = 1, double tolerance = 1e-6);
 
@@ -152,7 +152,7 @@ public:
   /// it is table-specific and cannot be implemented in general in the streaming model where such metadata
   /// should be provided some other way (i.e. not in the stream). However, in the table-based case it can
   /// be used directly as the type is created explicitly at some point (or one could dynamic cast and
-  /// test whether this operation is supported). Same information can be extracted manually via the 
+  /// test whether this operation is supported). Same information can be extracted manually via the
   /// getTableManager() method of table-based iterators, essentially the same code used in this
   /// shortcut, but this method is public for iterators.
   const casacore::MPosition& getAntennaPosition(casacore::uInt antID) const;
@@ -161,38 +161,38 @@ public:
   /// @details This is another method specific to the table-based implementation (in the streaming approach
   /// this has to be provided some other way, through configuration). Therefore, similarly to getAntennaPosition,
   /// it is not exposed via the IConstDataSource interface making its use more explicit in the code. In principle,
-  /// the number of antennas should rarely be needed in the user code as only valid indices are returned by the 
-  /// the accessor. 
-  /// @note Strictly speaking, this is not the number of antennas, in general, but the number of entries in the 
+  /// the number of antennas should rarely be needed in the user code as only valid indices are returned by the
+  /// the accessor.
+  /// @note Strictly speaking, this is not the number of antennas, in general, but the number of entries in the
   /// ANTENNA table of the measurement set which may not match (and the actual data may only use a subset of indices -
   /// this is yet another indication that ideally the user-level code should avoid this implementation-specific information).
   /// @return number of antennas in the measurement set (all antenna indices are less than this number)
   casacore::uInt getNumberOfAntennas() const;
-  
+
 protected:
   /// construct a part of the read only object for use in the
   /// derived classes
   TableConstDataSource();
-  
+
   /// @brief UVW machine cache size
   /// @return size of the uvw machine cache
   inline size_t uvwMachineCacheSize() const {return itsUVWCacheSize;}
-  
+
   /// @brief direction tolerance used for UVW machine cache
   /// @return direction tolerance used for UVW machine cache (in radians)
-  inline double uvwMachineCacheTolerance() const {return itsUVWCacheTolerance;}   
+  inline double uvwMachineCacheTolerance() const {return itsUVWCacheTolerance;}
 
   /// @brief current restriction on the chunk size
   /// @return maximum number of rows in the accessor (the current setting, affects future iterators)
   inline casacore::uInt maxChunkSize() const {return itsMaxChunkSize;}
-  
+
 private:
   /// @brief a number of uvw machines in the cache (default is 1)
   /// @details To speed up mosaicing it is possible to cache any number of uvw machines
-  /// as it takes time to setup the transformation which depends on the phase centre. 
-  /// A change to this parameter applies to all iterators created afterwards. 
+  /// as it takes time to setup the transformation which depends on the phase centre.
+  /// A change to this parameter applies to all iterators created afterwards.
   size_t itsUVWCacheSize;
-  
+
   /// @brief pointing direction tolerance in radians (for uvw machine cache)
   /// @details Exceeding this tolerance leads to initialisation of a new UVW Machine in the cache
   double itsUVWCacheTolerance;
@@ -206,7 +206,7 @@ private:
   /// stay long term in the ideal case).
   casacore::uInt itsMaxChunkSize;
 };
- 
+
 } // namespace accessors
 
 } // namespace askap
