@@ -46,10 +46,10 @@ using namespace askap::accessors;
 OnDemandBufferDataAccessor::OnDemandBufferDataAccessor(const IConstDataAccessor &acc) :
       MetaDataAccessor(acc), itsUseBuffer(false) {}
   
-/// Read-only visibilities (a cube is nRow x nChannel x nPol; 
+/// Read-only visibilities (a cube is nPol x nChannel x nRow; 
 /// each element is a complex visibility)
 ///
-/// @return a reference to nRow x nChannel x nPol cube, containing
+/// @return a reference to nPol x nChannel x nRow cube, containing
 /// all visibility data
 ///
 const casacore::Cube<casacore::Complex>& OnDemandBufferDataAccessor::visibility() const
@@ -71,10 +71,10 @@ const casacore::Cube<casacore::Complex>& OnDemandBufferDataAccessor::visibility(
   return getROAccessor().visibility();
 }
 	
-/// Read-write access to visibilities (a cube is nRow x nChannel x nPol;
+/// Read-write access to visibilities (a cube is nPol x nChannel x nRow;
 /// each element is a complex visibility)
 ///
-/// @return a reference to nRow x nChannel x nPol cube, containing
+/// @return a reference to nPol x nChannel x nRow cube, containing
 /// all visibility data
 ///
 casacore::Cube<casacore::Complex>& OnDemandBufferDataAccessor::rwVisibility()

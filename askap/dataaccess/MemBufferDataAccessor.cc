@@ -49,10 +49,10 @@ using namespace askap::accessors;
 MemBufferDataAccessor::MemBufferDataAccessor(const IConstDataAccessor &acc) :
       MetaDataAccessor(acc) {}
   
-/// Read-only visibilities (a cube is nRow x nChannel x nPol; 
+/// Read-only visibilities (a cube is nPol x nChannel x nRow; 
 /// each element is a complex visibility)
 ///
-/// @return a reference to nRow x nChannel x nPol cube, containing
+/// @return a reference to nPol x nChannel x nRow cube, containing
 /// all visibility data
 ///
 const casacore::Cube<casacore::Complex>& MemBufferDataAccessor::visibility() const
@@ -61,10 +61,10 @@ const casacore::Cube<casacore::Complex>& MemBufferDataAccessor::visibility() con
   return itsBuffer;
 }
 	
-/// Read-write access to visibilities (a cube is nRow x nChannel x nPol;
+/// Read-write access to visibilities (a cube is nPol x nChannel x nRow;
 /// each element is a complex visibility)
 ///
-/// @return a reference to nRow x nChannel x nPol cube, containing
+/// @return a reference to nPol x nChannel x nRow cube, containing
 /// all visibility data
 ///
 casacore::Cube<casacore::Complex>& MemBufferDataAccessor::rwVisibility()
