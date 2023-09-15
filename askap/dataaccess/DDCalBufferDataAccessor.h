@@ -4,7 +4,7 @@
 /// @details It is sometimes necessary to use a simple cube instead of
 /// the full functionality of buffers provided by the read-write accessor.
 /// Typically, the need for such class arises if one needs a buffering
-/// on each individual iteration and the content of buffers is not required 
+/// on each individual iteration and the content of buffers is not required
 /// to be preserved when the corresponding iterator advances. In most cases,
 /// a casacore::Cube with the same dimensions as that returned by the visibility
 /// method can be used. However, it can also be desireable to be able to
@@ -52,7 +52,7 @@
 #endif
 
 namespace askap {
-	
+
 namespace accessors {
 
 /// @brief an adapter to most methods of IConstDataAccessor
@@ -60,7 +60,7 @@ namespace accessors {
 /// @details It is sometimes necessary to use a simple cube instead of
 /// the full functionality of buffers provided by the read-write accessor.
 /// Typically, the need for such class arises if one needs a buffering
-/// on each individual iteration and the content of buffers is not required 
+/// on each individual iteration and the content of buffers is not required
 /// to be preserved when the corresponding iterator advances. In most cases,
 /// a casacore::Cube with the same dimensions as that returned by the visibility
 /// method can be used. However, it can also be desireable to be able to
@@ -70,7 +70,7 @@ namespace accessors {
 /// It acts as a read-only accessor supplied at the construction stage for
 /// all metadata requests and returns a reference to the internal buffer for
 /// both read-only and read-write visibility access methods (the buffer is
-/// resized automatically to match the cube provided by the accessor). 
+/// resized automatically to match the cube provided by the accessor).
 /// @ingroup dataaccess_hlp
 class DDCalBufferDataAccessor : virtual public MetaDataAccessor,
                                 virtual public IDataAccessor
@@ -96,22 +96,27 @@ public:
   /// all visibility data
   ///
   virtual casacore::Cube<casacore::Complex>& rwVisibility();
-   
+
   /// Set the number of DD calibration directions for increased buffer size
   /// (a cube is nPol x nChannel x  (nDir*nRow); each element is a complex visibility)
   ///
   void setNDir(casacore::uInt nDir) { itsNDir = nDir; }
- 
-  
+
+  /// Get the number of DD calibration directions
+  /// (a cube is (nDir*nRow) x nChannel x nPol; each element is a complex visibility)
+  ///
+  casacore::uInt getNDir() const { return itsNDir; }
+
+
 private:
   /// @brief a helper method to ensure the buffer has appropriate shape
   void resizeBufferIfNeeded() const;
- 
+
   mutable casacore::uInt itsNDir;
- 
+
   /// @brief actual buffer
   mutable casacore::Cube<casacore::Complex> itsBuffer;
-  
+
   #ifdef _OPENMP
   /// @brief synchronisation lock for resizing of the buffer
   mutable boost::mutex itsMutex;

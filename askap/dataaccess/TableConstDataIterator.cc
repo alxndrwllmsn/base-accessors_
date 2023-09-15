@@ -717,7 +717,7 @@ std::pair<casacore::uInt, casacore::uInt> TableConstDataIterator::getChannelRang
           const casacore::MFrequency::Ref refin(dataType,frame); // the frame of the input channels
           const casacore::MFrequency::Ref refout(selType,frame); // the frame desired
           casacore::MFrequency::Convert backw(refout,refin); // from desired to input
-          
+
           const MVFrequency requiredFreq = backw(std::get<1>(freqSel)).getValue();
           // Now find corresponding channel
           const casacore::Vector<casacore::Double> dataFreqs(spWindowSubtable.getFrequencies(currentSpWindowID()));
