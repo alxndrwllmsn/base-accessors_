@@ -127,7 +127,6 @@ bool WholeRowFlagger<casacore::Bool>::copyRequired(casacore::uInt row,
   ASKAPDEBUGASSERT(!itsFlagRowCol.isNull());
   if (itsHasFlagRow) {
       if (itsFlagRowCol.asBool(row)) {
-          //cube.yzPlane(row) = true; // old code
           cube.xyPlane(row) = true; 
           return false;
       }
@@ -441,7 +440,6 @@ void TableConstDataIterator::fillCube(casacore::Cube<T> &cube,
   // Setup a slicer to extract the specified channel range only
   const Slicer chanSlicer(Slice(),Slice(startChan,nChan));
 
-  // cube.resize(itsNumberOfRows, nChan, itsNumberOfPols); // old code
   cube.resize(itsNumberOfPols, nChan, itsNumberOfRows);
   ROArrayColumn<T> tableCol(itsCurrentIteration,columnName);
 
@@ -450,7 +448,7 @@ void TableConstDataIterator::fillCube(casacore::Cube<T> &cube,
   WholeRowFlagger<T> wrFlagger(itsCurrentIteration);
 
   // temporary buffer declared outside the loop
-  casacore::Matrix<T> buf(itsNumberOfPols, nChan); // old code
+  casacore::Matrix<T> buf(itsNumberOfPols, nChan); 
   for (uInt row=0; row<itsNumberOfRows; ++row) {
        const casacore::IPosition shape = tableCol.shape(row);
        ASKAPASSERT(shape.size() && (shape.size()<3));
@@ -475,14 +473,12 @@ void TableConstDataIterator::fillCube(casacore::Cube<T> &cube,
            tableCol.getSlice(row + itsCurrentTopRow, chanSlicer, buf, False);
 
            // Copy the slice into the cube
-           //for (uInt chan = 0; chan < nChan; ++chan) {
-           //    for (uInt pol = 0; pol < itsNumberOfPols; ++pol) {
-           for (uInt pol = 0; pol < itsNumberOfPols; ++pol) {
-              for (uInt chan = 0; chan < nChan; ++chan) {
-                   // cube(row,chan,pol) = buf(pol,chan); // code code
-                   cube(pol,chan,row) = buf(pol,chan);
-               }
-           }
+           //for (uInt pol = 0; pol < itsNumberOfPols; ++pol) {
+           //   for (uInt chan = 0; chan < nChan; ++chan) {
+           //        cube(pol,chan,row) = buf(pol,chan);
+           //    }
+           //}
+           cube(Slice(),Slice(),Slice(row)) = buf;
        }
   }
 }
@@ -521,7 +517,6 @@ void TableConstDataIterator::fillNoise(casacore::Cube<casacore::Complex> &noise)
   const casacore::uInt startChan = startChannel();
 
   // default action first - just resize the cube and assign 1.
-  // noise.resize(itsNumberOfRows, nChan, itsNumberOfPols); // code code
   noise.resize(itsNumberOfPols, nChan, itsNumberOfRows); 
   noise.set(casacore::Complex(1.,1.));
   // if the sigma spectrum exists, use those sigmas to fill the noise cube
@@ -545,7 +540,6 @@ void TableConstDataIterator::fillNoise(casacore::Cube<casacore::Complex> &noise)
                 for (casa::uInt pol=0; pol<itsNumberOfPols; pol++) {
                      // same noise for both real and imaginary parts
                      const casa::Float val = buf(pol,chan);
-                     // noise(row,chan,pol) = casa::Complex(val,val); // old code
                      noise(pol,chan,row) = casa::Complex(val,val);
                 }
            }
@@ -563,7 +557,6 @@ void TableConstDataIterator::fillNoise(casacore::Cube<casacore::Complex> &noise)
                ASKAPDEBUGASSERT(shape[0] == casacore::Int(itsNumberOfPols));
                //casacore::Array<Float> buf(casacore::IPosition(1,itsNumberOfPols));
                sigmaCol.get(row+itsCurrentTopRow,buf,False);
-               //casacore::Matrix<casacore::Complex> slice = noise.yzPlane(row); // commented out by old(exisitng) code
                for (uInt chan = 0; chan< nChan; ++chan) {
                     //ASKAPDEBUGASSERT(chan< slice.nrow());
                     //casacore::Vector<casacore::Complex> polNoise = slice.row(chan);
@@ -571,7 +564,6 @@ void TableConstDataIterator::fillNoise(casacore::Cube<casacore::Complex> &noise)
                          //ASKAPDEBUGASSERT(pol<buf.nelements());
                          // same polarisation for both real and imaginary parts
                          const casacore::Float val = buf(pol);
-                         // noise(row,chan,pol) = casacore::Complex(val,val); // old code
                          noise(pol,chan,row) = casacore::Complex(val,val);
                     }
                }
@@ -589,7 +581,6 @@ void TableConstDataIterator::fillNoise(casacore::Cube<casacore::Complex> &noise)
                // case is not present in any available measurement set
                const IPosition blc(2,startChan,0);
                const IPosition trc(2,startChan+nChan-1,itsNumberOfPols-1);
-               // casacore::Matrix<casacore::Complex> rowNoise = noise.yzPlane(row); // old code
                casacore::Matrix<casacore::Complex> rowNoise = noise.xyPlane(row);
                const casacore::Matrix<casacore::Float> inVals = buf(blc,trc);
                //convertArray(rowNoise, buf(blc,trc));

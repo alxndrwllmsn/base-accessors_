@@ -239,8 +239,6 @@ void TableDataIterator::readBuffer(casacore::Cube<casacore::Complex> &vis,
 {
   const IBufferManager &bufManager=subtableInfo().getBufferManager();
   const TableConstDataAccessor &accessor=getAccessor();
-  //const casacore::IPosition requiredShape(3, accessor.nRow(),
-  //        accessor.nChannel(), accessor.nPol()); // old code
   const casacore::IPosition requiredShape(3, accessor.nPol(),
           accessor.nChannel(), accessor.nRow());
   if (bufManager.bufferExists(name,itsIterationCounter)) {
@@ -360,13 +358,11 @@ void TableDataIterator::writeOriginalFlag() const
        casacore::ROScalarColumn<casacore::Bool> rowFlagCol(getCurrentIteration(), "FLAG_ROW");
        const casacore::Vector<casacore::Bool> rowBasedFlag = rowFlagCol.getColumn();
        const casacore::rownr_t topRow = getCurrentTopRow();
-       //ASKAPDEBUGASSERT(static_cast<casacore::rownr_t>(rowBasedFlag.nelements()) >= topRow+flags.nrow()); // old code
-       ASKAPDEBUGASSERT(static_cast<casacore::rownr_t>(rowBasedFlag.nelements()) >= topRow+flags.nplane()); // old code
+       ASKAPDEBUGASSERT(static_cast<casacore::rownr_t>(rowBasedFlag.nelements()) >= topRow+flags.nplane()); 
        //for (casacore::uInt row = 0; row < flags.nrow(); ++row) { // old code
        for (casacore::uInt row = 0; row < flags.nplane(); ++row) { 
             if (rowBasedFlag[row + topRow]) {
                 bool oneUnflagged = false;
-                //casacore::Matrix<casacore::Bool> thisRow = flags.yzPlane(row); // old code
                 casacore::Matrix<casacore::Bool> thisRow = flags.xyPlane(row);
                 for (casacore::Matrix<casacore::Bool>::const_iterator ci = thisRow.begin();
                      ci != thisRow.end(); ++ci) {

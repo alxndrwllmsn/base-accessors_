@@ -79,17 +79,17 @@ const casacore::Cube<casacore::Complex>& TableConstDataAccessor::visibility() co
                         &TableConstDataIterator::fillVisibility);
 }
 
-// Cube of flags corresponding to the output of visibility() 
-// @return a reference to nPol x nChannel x nRow cube with flag 
-//         information. If True, the corresponding element is flagged.
+/// Cube of flags corresponding to the output of visibility() 
+/// @return a reference to nPol x nChannel x nRow cube with flag 
+///         information. If True, the corresponding element is flagged.
 const casacore::Cube<casacore::Bool>& TableConstDataAccessor::flag() const
 {
  return itsFlag.value(itsIterator, &TableConstDataIterator::fillFlag);
 }
 
-// UVW
-// @return a reference to vector containing uvw-coordinates
-// packed into a 3-D rigid vector
+/// UVW
+/// @return a reference to vector containing uvw-coordinates
+/// packed into a 3-D rigid vector
 const casacore::Vector<casacore::RigidVector<casacore::Double, 3> >&
 TableConstDataAccessor::uvw() const
 {

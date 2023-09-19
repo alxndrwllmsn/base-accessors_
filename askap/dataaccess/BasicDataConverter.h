@@ -115,7 +115,7 @@ public:
     /// @param[in] unit frequency units to use (frequencies will be returned
     ///             as Doubles)
     ///
-    /// Class defaults to LSRK, GHz// old doco
+    /// Class defaults to LSRK, GHz
     virtual void setFrequencyFrame(const casacore::MFrequency::Ref &ref,
 	        const casacore::Unit &unit = "GHz");
 

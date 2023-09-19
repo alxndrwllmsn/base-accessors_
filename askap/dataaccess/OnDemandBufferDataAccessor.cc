@@ -111,8 +111,6 @@ void OnDemandBufferDataAccessor::checkBufferSize() const
   boost::shared_lock<boost::shared_mutex> lock(itsMutex);
   #endif
   const IConstDataAccessor &acc = getROAccessor();
-  //if (itsBuffer.nrow() != acc.nRow() || itsBuffer.ncolumn() != acc.nChannel() ||
-  //                                      itsBuffer.nplane() != acc.nPol()) {
   if (itsBuffer.nplane() != acc.nRow() || itsBuffer.ncolumn() != acc.nChannel() ||
                                         itsBuffer.nrow() != acc.nPol()) {
       // couple the class to the original accessor

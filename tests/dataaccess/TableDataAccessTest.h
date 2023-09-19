@@ -782,10 +782,8 @@ void TableDataAccessTest::originalFlagRewriteTest()
              for (casacore::uInt chan=0; chan < it->nChannel(); ++chan) {
                   for (casacore::uInt pol =0; pol < it->nPol(); ++pol) {
                        // check that the flag is now always set,  then reset if it was unflagged originally
-                       //CPPUNIT_ASSERT_EQUAL(true, roFlags(row,chan,pol));
                        CPPUNIT_ASSERT_EQUAL(true, roFlags(pol,chan,row));
                        if (!memoryBuffer[iterCntr](row,chan,pol)) {
-                           //rwFlags(row,chan,pol) = false;
                            rwFlags(pol,chan,row) = false;
                        }
                   }

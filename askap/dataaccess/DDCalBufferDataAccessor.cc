@@ -82,8 +82,6 @@ void DDCalBufferDataAccessor::resizeBufferIfNeeded() const
   #endif
   
   const IConstDataAccessor &acc = getROAccessor();
-  //if (itsBuffer.nrow() != itsNDir*acc.nRow() || itsBuffer.ncolumn() != acc.nChannel() ||
-  //                                      itsBuffer.nplane() != acc.nPol()) {
   if (itsBuffer.nplane() != itsNDir*acc.nRow() || itsBuffer.ncolumn() != acc.nChannel() ||
                                         itsBuffer.nrow() != acc.nPol()) {
       itsBuffer.resize(acc.nPol(), acc.nChannel(), itsNDir*acc.nRow());
