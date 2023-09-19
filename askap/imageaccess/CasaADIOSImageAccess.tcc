@@ -262,7 +262,8 @@ void CasaADIOSImageAccess<T>::create(const std::string &name, const casacore::IP
                              const casacore::CoordinateSystem &csys)
 {
     ASKAPLOG_INFO_STR(casaADIOSImAccessLogger, "Creating a new CASA ADIOS image " << name << " with the shape " << shape);
-    imagePtr_p.reset(new ADIOSImage<T>(casacore::TiledShape(shape), csys, name));
+    imagePtr_p.reset(new ADIOSImage<T>(
+        casacore::TiledShape(shape), csys, name));
 }
 
 /// @brief write full image
@@ -394,8 +395,6 @@ void CasaADIOSImageAccess<T>::setBeamInfo(const std::string &name, const BeamLis
 template <class T>
 void CasaADIOSImageAccess<T>::makeDefaultMask(const std::string &name)
 {
-
-
     // Create a mask and make it default region.
     // need to assert sizes etc ...
     imagePtr_p->makeMask("mask", casacore::True, casacore::True);
@@ -415,8 +414,6 @@ template <class T>
 void CasaADIOSImageAccess<T>::setMetadataKeyword(const std::string &name, const std::string &keyword,
         const std::string value, const std::string &desc)
 {
-
-
     casacore::TableRecord miscinfo = imagePtr_p->miscInfo();
     miscinfo.define(keyword, value);
     miscinfo.setComment(keyword, desc);
@@ -427,7 +424,6 @@ void CasaADIOSImageAccess<T>::setMetadataKeyword(const std::string &name, const 
 template <class T>
 void CasaADIOSImageAccess<T>::setMetadataKeywords(const std::string &name, const LOFAR::ParameterSet &keywords)
 {
-
     casacore::TableRecord miscinfo = imagePtr_p->miscInfo();
     // Note: we could sort through the keywords here and pick out ones that need to go in places
     // other than miscInfo to be more compatible with casacore
@@ -477,8 +473,6 @@ void CasaADIOSImageAccess<T>::setMetadataKeywords(const std::string &name, const
 template <class T>
 void CasaADIOSImageAccess<T>::addHistory(const std::string &name, const std::vector<std::string> &historyLines)
 {
-
-
     casacore::LogIO log = imagePtr_p->logSink();
     for (const auto& history : historyLines) {
         log << history << casacore::LogIO::POST;
@@ -493,7 +487,6 @@ void CasaADIOSImageAccess<T>::addHistory(const std::string &name, const std::vec
 template <class T>
 void CasaADIOSImageAccess<T>::setInfo(const std::string &name, const casacore::RecordInterface & info)
 {
-
     // make a copy of the table record
     casacore::TableRecord updateTableRecord = imagePtr_p->miscInfo();
     // find the name of the info table.  this is the name field of the info sub record
@@ -524,7 +517,6 @@ template <class T>
 void CasaADIOSImageAccess<T>::getInfo(const std::string &name, const std::string& tableName, casacore::Record &info)
 {
     ADIOSImage<T> img(name);
-
     //casacore::TableRecord tableRecord = imagePtr_p->miscInfo().toRecord();
     casacore::Record tableRecord = img.miscInfo().toRecord();
     casacore::uInt nFields = tableRecord.nfields();

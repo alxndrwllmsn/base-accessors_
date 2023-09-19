@@ -13,7 +13,7 @@
 //# Forward Declarations
 #include <casacore/casa/iosfwd.h>
 
-#ifdef ADIOS_HAS_MPI
+#ifdef ADIOS2_USE_MPI
 #include <mpi.h>
 #include <askap/askapparallel/MPIComms.h>
 #include <askap/askapparallel/AskapParallel.h>
@@ -29,9 +29,6 @@ public:
 
   ADIOSImage ();
   ADIOSImage (
-#ifdef ADIOS2_HAS_MPI
-    askapparallel::AskapParallel &comms,
-#endif
     const casacore::TiledShape& mapShape,
     const casacore::CoordinateSystem& coordinateInfo,
     const casacore::String& nameOfNewFile,
@@ -39,14 +36,31 @@ public:
     casacore::uInt rowNumber = 0
     );
 
-  explicit ADIOSImage(
 #ifdef ADIOS2_HAS_MPI
+  ADIOSImage (
     askapparallel::AskapParallel &comms,
+    const casacore::TiledShape& mapShape,
+    const casacore::CoordinateSystem& coordinateInfo,
+    const casacore::String& nameOfNewFile,
+    casacore::String configname = "", 
+    casacore::uInt rowNumber = 0
+    );
 #endif
+
+  explicit ADIOSImage(
     const casacore::String &filename,
     casacore::String configname = "",
     casacore::MaskSpecifier spec = casacore::MaskSpecifier(),
     casacore::uInt rowNumber = 0);
+
+#ifdef ADIOS2_HAS_MPI
+  explicit ADIOSImage(
+    askapparallel::AskapParallel &comms,
+    const casacore::String &filename,
+    casacore::String configname = "",
+    casacore::MaskSpecifier spec = casacore::MaskSpecifier(),
+    casacore::uInt rowNumber = 0);
+#endif
 
   ADIOSImage (const ADIOSImage<T>& other);
 
@@ -116,9 +130,9 @@ private:
   // 
 
   // for MPI lets store a default MPI_COMM_SELF communicator
-  #ifdef ADIOS_HAS_MPI
+#ifdef ADIOS2_USE_MPI
   MPI_Comm adios_comm = MPI_COMM_SELF;
-  #endif
+#endif
 
 
 public:
@@ -134,12 +148,6 @@ public:
   using casacore::ImageInterface<T>::coordinates;
 
   using casacore::Lattice<T>::ndim;
-
-
-
-
-
-
 
 };
 
