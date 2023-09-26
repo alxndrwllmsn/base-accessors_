@@ -648,7 +648,7 @@ void TableDataAccessTest::channelSelectionTest()
 
   // set visibilities back to the original values
   for (IDataSharedIter it=ds.createIterator(); it!=it.end(); ++it) {
-       // store original visibilities in a buffer
+       // restore the original visibilities back from a buffer
        it->rwVisibility() = it.buffer("BACKUP").visibility();
   }
 }
@@ -724,7 +724,7 @@ void TableDataAccessTest::freqSelectionTest()
 
   // set visibilities back to the original values
   for (IDataSharedIter it=ds.createIterator(); it!=it.end(); ++it) {
-       // store original visibilities in a buffer
+       // restore the original visibilities back from tha buffer
        it->rwVisibility() = it.buffer("BACKUP").visibility();
   }
 }
@@ -828,7 +828,7 @@ void TableDataAccessTest::originalVisRewriteTest()
   }
   // set visibilities back to the original values
   for (IDataSharedIter it=ds.createIterator(); it!=it.end(); ++it) {
-       // store original visibilities in a buffer
+       // restore the original visibilities back from the buffer
        it->rwVisibility() = it.buffer("BACKUP").visibility();
   }
 
