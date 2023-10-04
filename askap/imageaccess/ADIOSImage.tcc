@@ -54,7 +54,7 @@ ADIOSImage<T>::ADIOSImage (
   casacore::String configname, 
   casacore::uInt rowNumber)
 : casacore::ImageInterface<T>(casacore::RegionHandlerTable(getTable, this)),
-  regionPtr_p   (0), 
+  regionPtr_p   (0) 
 {
   config = configname;
   row_p = rowNumber;
@@ -74,14 +74,14 @@ ADIOSImage<T>::ADIOSImage (
   casacore::String configname, 
   casacore::uInt rowNumber)
 : casacore::ImageInterface<T>(casacore::RegionHandlerTable(getTable, this)),
-  regionPtr_p   (0), 
+  regionPtr_p   (0) 
 {
   // assumes that only one communicator and that this is MPI_COMM_WORLD
   // could also hack to just use comm world
-  adios_comm = comm.interGroupCommIndex();
+  adios_comm = comms.interGroupCommIndex();
   config = configname;
   row_p = rowNumber;
-  adios_comm = comm;
+  // adios_comm = comms;
   makeNewTable(shape, rowNumber, filename);
   attach_logtable();
   AlwaysAssert(setCoordinateInfo(coordinateInfo), casacore::AipsError);
@@ -118,8 +118,8 @@ ADIOSImage<T>::ADIOSImage (
 : casacore::ImageInterface<T>(casacore::RegionHandlerTable(getTable, this)),
   regionPtr_p   (0)
 {
-  adios_comm = comm.interGroupCommIndex();;
-  tab_p = casacore::Table(filename,casacore::Table::TableOption::Old);
+  adios_comm = comms.interGroupCommIndex();;
+  tab_p = casacore::Table(adios_comm, filename,casacore::Table::TableOption::Old);
   map_p = casacore::ArrayColumn<T>(tab_p, "map");
   row_p = rowNumber;
   config = configname;
@@ -159,6 +159,10 @@ void ADIOSImage<T>::makeNewTable(const casacore::TiledShape& shape, casacore::uI
   // PJE - the issue here is that the constructors are only valid if ADIOS has not be compiled
   // with MPI. Not obvious how to best catch that and whether ADIOS can be passed a null 
   // communicator if compiled with ADIOS but don't want parallel accessors. 
+
+  // might want a unique pointer locally
+  // std::unique_ptr<casacore::Adios2StMan> stmanptr; 
+
   if (config == "") {
     // invoke Adios2StMan(engineType, engineParams, transportParams, operatorParams)
     // with default engine type and parameters 
@@ -169,28 +173,36 @@ void ADIOSImage<T>::makeNewTable(const casacore::TiledShape& shape, casacore::uI
                               {},
                               {{}},
                               {{{"Variable", "map"},{},{}}});
+    newtab.bindColumn("map", stman);
 #else
     casacore::Adios2StMan stman("",
                               {},
                               {{}},
                               {{{"Variable", "map"},{},{}}});
+    newtab.bindColumn("map", stman);
 #endif
   }
   else 
   {
     // invoke configuration based call 
     //PJE - question on whether we also need to include the operatorParams {{{"Varaible", "map"}}}
-    struct from_config_t {}; 
+    casacore::Adios2StMan::from_config_t from_config {};
 #ifdef ADIOS2_USE_MPI
-    casacore::Adios2StMan stman(adios_comm, config, from_config_t);
+    casacore::Adios2StMan stman(adios_comm, config, from_config);
+    newtab.bindColumn("map", stman);
 #else   
-    casacore::Adios2StMan stman(config, from_config_t);
+    casacore::Adios2StMan stman(config, from_config);
+    newtab.bindColumn("map", stman);
 #endif
   }
   
-  newtab.bindColumn("map", stman);
-
+  // this call would be ideal but requires maybe use of pointer
+  // newtab.bindColumn("map", stman);
+#ifdef ADIOS2_USE_MPI
+  casacore::Table tab(adios_comm, newtab);
+#else
   casacore::Table tab(newtab);
+#endif
   tab_p = tab;
   casacore::ArrayColumn<T> arrayCol(tab_p, "map");
   const casacore::IPosition emptyShape(ndim, 1);

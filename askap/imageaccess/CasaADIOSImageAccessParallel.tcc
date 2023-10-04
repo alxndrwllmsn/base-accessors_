@@ -268,7 +268,7 @@ void CasaADIOSImageAccessParallel<T>::create(const std::string &name, const casa
 {
     ASKAPLOG_INFO_STR(casaADIOSImAccessParallelLogger, "Creating a new CASA ADIOS image " << name << " with the shape " << shape);
     imagePtr_p.reset(new ADIOSImage<T>(itsComms, 
-        casacore::TiledShape(shape), csys, name));
+        casacore::TiledShape(shape), csys, name, configname));
 }
 
 /// @brief write full image

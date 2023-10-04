@@ -36,7 +36,7 @@ public:
     casacore::uInt rowNumber = 0
     );
 
-#ifdef ADIOS2_HAS_MPI
+#ifdef ADIOS2_USE_MPI
   ADIOSImage (
     askapparallel::AskapParallel &comms,
     const casacore::TiledShape& mapShape,
@@ -53,7 +53,7 @@ public:
     casacore::MaskSpecifier spec = casacore::MaskSpecifier(),
     casacore::uInt rowNumber = 0);
 
-#ifdef ADIOS2_HAS_MPI
+#ifdef ADIOS2_USE_MPI
   explicit ADIOSImage(
     askapparallel::AskapParallel &comms,
     const casacore::String &filename,
@@ -68,7 +68,7 @@ public:
     { return tab_p; }
 
   static casacore::String className()
-    { return "PagedImage"; }
+    { return "ADIOSImage"; }
 
   virtual casacore::String imageType() const;
 

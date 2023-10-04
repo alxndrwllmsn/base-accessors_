@@ -45,13 +45,14 @@ using namespace askap::accessors;
 /// @brief constructor
 /// @param[in] config, configuration file name 
 template <class T>
-CasaADIOSImageAccess::CasaADIOSImageAccess<T>(std::string config):
+CasaADIOSImageAccess<T>::CasaADIOSImageAccess(std::string config)
 {
     if (config != "") {
-        ASKAPLOG_INFO_STR(logger, "Creating ADIOS accessor with configuration file " << config);
+        ASKAPLOG_INFO_STR(casaADIOSImAccessLogger, "Creating ADIOS accessor with configuration file " << config);
+        configname = config;
     }
     else {
-        ASKAPLOG_INFO_STR(logger, "Creating ADIOS accessor with default configuration");
+        ASKAPLOG_INFO_STR(casaADIOSImAccessLogger, "Creating ADIOS accessor with default configuration");
     }
 }
 
@@ -263,7 +264,7 @@ void CasaADIOSImageAccess<T>::create(const std::string &name, const casacore::IP
 {
     ASKAPLOG_INFO_STR(casaADIOSImAccessLogger, "Creating a new CASA ADIOS image " << name << " with the shape " << shape);
     imagePtr_p.reset(new ADIOSImage<T>(
-        casacore::TiledShape(shape), csys, name));
+        casacore::TiledShape(shape), csys, name, configname));
 }
 
 /// @brief write full image

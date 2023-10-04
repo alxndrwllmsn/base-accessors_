@@ -55,7 +55,7 @@ struct CasaADIOSImageAccess : public IImageAccess<T> {
     public:
     /// @brief constructor
     /// @param[in] config, string pointing to adios configuration
-    template <class T> CasaADIOSImageAccess<T>(std::string config = "");
+    CasaADIOSImageAccess(std::string config = "");
 
     //////////////////
     // Reading methods
