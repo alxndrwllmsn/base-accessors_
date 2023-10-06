@@ -27,6 +27,9 @@
 ///
 /// @author Max Voronkov <maxim.voronkov@csiro.au>
 
+#include <iostream>
+#include <fstream>
+
 #include <askap/imageaccess/ImageAccessFactory.h>
 #include <cppunit/extensions/HelperMacros.h>
 
@@ -51,15 +54,31 @@ class CasaADIOSImageAccessTest : public CppUnit::TestFixture
 {
    CPPUNIT_TEST_SUITE(CasaADIOSImageAccessTest);
    CPPUNIT_TEST(testReadWrite);
-   CPPUNIT_TEST(testWriteTable);
-   // CPPUNIT_TEST(testReadTable);
+   CPPUNIT_TEST(testReadWriteConfig);
+   // CPPUNIT_TEST(testWriteTable);
+   // CPPUNIT_TEST(testWriteTableConfig);
    CPPUNIT_TEST_SUITE_END();
 public:
    void setUp() {
       LOFAR::ParameterSet parset;
       parset.add("imagetype","adios");
       itsImageAccessor = imageAccessFactory(parset);
+      parset.add("adiosconfig","adios_config.yaml");
+      
+      std::ofstream config_file;
+      config_file.open("adios_config.yaml");
+      config_file << "# adios2 adios_config.yaml\n";
+      config_file << "- IO: \"Adios2StMan\"\n";
+      config_file << "  Variables:\n";
+      config_file << "    - Variable: \"map\"\n";
+      config_file << "      Operations:\n";
+      config_file << "        - Type: \"mgard\"\n";
+      config_file << "          accuracy: 0.01\n";
+      config_file.close();
+
+      itsImageAccessor_wconfig = imageAccessFactory(parset);
       name = "tmp.testimage";
+      name_wconfig = "tmp.testimage_wconfig";
    }
 
    void testWriteTable() {
@@ -72,6 +91,18 @@ public:
       auto rec2 = create_dummy_record("table 2");
       itsImageAccessor->setInfo(name,rec2);
    }
+
+   void testWriteTableConfig() {
+      auto rec = create_dummy_record("table 1");
+      name = "tmp.testaddtabletoimageconfig";
+      testReadWrite();
+      
+      //itsImageAccessor->setInfo("tmp.testimage",rec);
+      itsImageAccessor_wconfig->setInfo(name,rec);
+      auto rec2 = create_dummy_record("table 2");
+      itsImageAccessor_wconfig->setInfo(name,rec2);
+   }
+
    void testReadTable() {
       name = "tmp.testaddtabletoimage";
       casacore::Record rec;
@@ -156,6 +187,88 @@ public:
       // mask tests
 
       itsImageAccessor->makeDefaultMask(name);
+
+   }
+
+   void testReadWriteConfig() {
+      //const std::string name = "tmp.testimage";
+      CPPUNIT_ASSERT(itsImageAccessor_wconfig);
+      const casacore::IPosition shape(3,10,10,5);
+      casacore::Array<float> arr(shape);
+      arr.set(1.);
+      casacore::CoordinateSystem coordsys(makeCoords());
+
+      // create and write a constant into image
+      itsImageAccessor_wconfig->create(name_wconfig, shape, coordsys);
+      itsImageAccessor_wconfig->write(name_wconfig,arr);
+
+      arr(casacore::IPosition(3,0,3,0), casacore::IPosition(3,9,3,0)) = 2.;
+
+      // write a slice
+      casacore::Vector<float> vec(10,2.);
+      itsImageAccessor_wconfig->write(name_wconfig,vec,casacore::IPosition(3,0,3,0));
+
+      // check shape
+      CPPUNIT_ASSERT(itsImageAccessor_wconfig->shape(name_wconfig) == shape);
+      // read the whole array and check
+      casacore::Array<float> readBack = itsImageAccessor_wconfig->read(name_wconfig);
+      CPPUNIT_ASSERT(readBack.shape() == shape);
+      for (int x=0; x<shape[0]; ++x) {
+           for (int y=0; y<shape[1]; ++y) {
+                const casacore::IPosition index(3,x,y,0);
+                CPPUNIT_ASSERT(fabs(readBack(index)-arr(index))<1e-7);
+           }
+      }
+
+      // read a slice
+      vec = itsImageAccessor_wconfig->read(name_wconfig,casacore::IPosition(3,0,1,0),casacore::IPosition(3,9,1,0));
+      CPPUNIT_ASSERT(vec.nelements() == 10);
+      for (int x=0; x<10; ++x) {
+           CPPUNIT_ASSERT(fabs(vec[x] - arr(casacore::IPosition(3,x,1,0)))<1e-7);
+      }
+      vec = itsImageAccessor_wconfig->read(name_wconfig,casacore::IPosition(3,0,3,0),casacore::IPosition(3,9,3,0));
+      CPPUNIT_ASSERT(vec.nelements() == 10);
+      for (int x=0; x<10; ++x) {
+           CPPUNIT_ASSERT(fabs(vec[x] - 2.)<1e-7);
+      }
+      // read the whole array and check
+      readBack = itsImageAccessor_wconfig->read(name_wconfig);
+      CPPUNIT_ASSERT(readBack.shape() == shape);
+      for (int x=0; x<shape[0]; ++x) {
+           for (int y=0; y<shape[1]; ++y) {
+                const casacore::IPosition index(3,x,y,0);
+                CPPUNIT_ASSERT(fabs(readBack(index) - (y == 3 ? 2. : 1.))<1e-7);
+           }
+      }
+      CPPUNIT_ASSERT(itsImageAccessor_wconfig->coordSys(name_wconfig).nCoordinates() == 2);
+      CPPUNIT_ASSERT(itsImageAccessor_wconfig->coordSys(name_wconfig).type(0) == casacore::CoordinateSystem::LINEAR);
+      CPPUNIT_ASSERT(itsImageAccessor_wconfig->coordSys(name_wconfig).type(1) == casacore::CoordinateSystem::SPECTRAL);
+
+      // auxilliary methods
+      itsImageAccessor_wconfig->setUnits(name_wconfig,"Jy/pixel");
+      itsImageAccessor_wconfig->setBeamInfo(name_wconfig,0.02,0.01,1.0);
+      // set per plane beam information
+      BeamList beamlist;
+      int nchan = 5;
+      for (int chan = 0; chan < nchan; chan++) {
+        casacore::Vector<casacore::Quantum<double> > currentbeam(3);
+        currentbeam[0] = casacore::Quantum<double>(10+chan*0.1, "arcsec");
+        currentbeam[1] = casacore::Quantum<double>(5+chan*0.1, "arcsec");
+        currentbeam[2] = casacore::Quantum<double>(12.0+chan, "deg");
+        beamlist[chan] = currentbeam;
+      }
+      itsImageAccessor_wconfig->setBeamInfo(name_wconfig, beamlist);
+
+      BeamList beamlist2 = itsImageAccessor_wconfig->beamList(name_wconfig);
+      for (int chan = 0; chan < nchan; chan++) {
+        CPPUNIT_ASSERT(beamlist[chan][0] == beamlist2[chan][0]);
+        CPPUNIT_ASSERT(beamlist[chan][1] == beamlist2[chan][1]);
+        CPPUNIT_ASSERT(beamlist[chan][2] == beamlist2[chan][2]);
+      }
+
+      // mask tests
+
+      itsImageAccessor_wconfig->makeDefaultMask(name);
 
    }
 
@@ -265,7 +378,9 @@ protected:
 private:
    /// @brief method to access image
    boost::shared_ptr<IImageAccess<casacore::Float> > itsImageAccessor;
+   boost::shared_ptr<IImageAccess<casacore::Float> > itsImageAccessor_wconfig;
    std::string name = "";
+   std::string name_wconfig = "";
 };
 
 } // namespace accessors
