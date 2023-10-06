@@ -47,34 +47,87 @@ ADIOSImage<T>::ADIOSImage()
 {}
 
 template <class T> 
-ADIOSImage<T>::ADIOSImage (const casacore::TiledShape& shape, 
-			   const casacore::CoordinateSystem& coordinateInfo, 
-			   const casacore::String& filename, 
-			   casacore::uInt rowNumber)
+ADIOSImage<T>::ADIOSImage (
+  const casacore::TiledShape& shape, 
+  const casacore::CoordinateSystem& coordinateInfo, 
+  const casacore::String& filename, 
+  casacore::String configname, 
+  casacore::uInt rowNumber)
 : casacore::ImageInterface<T>(casacore::RegionHandlerTable(getTable, this)),
-  regionPtr_p   (0)
+  regionPtr_p   (0) 
 {
-  makeNewTable(shape, rowNumber, filename);
+  config = configname;
   row_p = rowNumber;
+  makeNewTable(shape, rowNumber, filename);
   attach_logtable();
   AlwaysAssert(setCoordinateInfo(coordinateInfo), casacore::AipsError);
   setTableType();
 }
 
+#ifdef ADIOS2_USE_MPI
+template <class T> 
+ADIOSImage<T>::ADIOSImage (
+  askapparallel::AskapParallel &comms,
+  const casacore::TiledShape& shape, 
+  const casacore::CoordinateSystem& coordinateInfo, 
+  const casacore::String& filename, 
+  casacore::String configname, 
+  casacore::uInt rowNumber)
+: casacore::ImageInterface<T>(casacore::RegionHandlerTable(getTable, this)),
+  regionPtr_p   (0) 
+{
+  // assumes that only one communicator and that this is MPI_COMM_WORLD
+  // could also hack to just use comm world
+  adios_comm = comms.interGroupCommIndex();
+  config = configname;
+  row_p = rowNumber;
+  // adios_comm = comms;
+  makeNewTable(shape, rowNumber, filename);
+  attach_logtable();
+  AlwaysAssert(setCoordinateInfo(coordinateInfo), casacore::AipsError);
+  setTableType();
+}
+#endif 
+
 template <class T>
-ADIOSImage<T>::ADIOSImage (const casacore::String& filename,
-                          casacore::MaskSpecifier spec,
-                          casacore::uInt rowNumber)
+ADIOSImage<T>::ADIOSImage (
+  const casacore::String& filename,
+  casacore::String configname, 
+  casacore::MaskSpecifier spec,
+  casacore::uInt rowNumber)
 : casacore::ImageInterface<T>(casacore::RegionHandlerTable(getTable, this)),
   regionPtr_p   (0)
 {
   tab_p = casacore::Table(filename,casacore::Table::TableOption::Old);
   map_p = casacore::ArrayColumn<T>(tab_p, "map");
   row_p = rowNumber;
+  config = configname;
   attach_logtable();
   restoreAll (tab_p.keywordSet());
   applyMaskSpecifier (spec);
 }
+
+#ifdef ADIOS2_USE_MPI
+template <class T>
+ADIOSImage<T>::ADIOSImage (
+  askapparallel::AskapParallel &comms,
+  const casacore::String& filename,
+  casacore::String configname, 
+  casacore::MaskSpecifier spec,
+  casacore::uInt rowNumber)
+: casacore::ImageInterface<T>(casacore::RegionHandlerTable(getTable, this)),
+  regionPtr_p   (0)
+{
+  adios_comm = comms.interGroupCommIndex();;
+  tab_p = casacore::Table(adios_comm, filename,casacore::Table::TableOption::Old);
+  map_p = casacore::ArrayColumn<T>(tab_p, "map");
+  row_p = rowNumber;
+  config = configname;
+  attach_logtable();
+  restoreAll (tab_p.keywordSet());
+  applyMaskSpecifier (spec);
+}
+#endif
 
 template <class T> 
 ADIOSImage<T>::ADIOSImage (const ADIOSImage<T>& other)
@@ -95,28 +148,69 @@ void ADIOSImage<T>::makeNewTable(const casacore::TiledShape& shape, casacore::uI
   const casacore::uInt ndim = latShape.nelements();
 
   casacore::TableDesc description;
+  //PJE - why are we adding a hard-coded string???
   description.addColumn(casacore::ArrayColumnDesc<T>("map",
                                                       casacore::String("version 4.0"),
                                                       latShape, casacore::ColumnDesc::FixedShape));
 
   casacore::SetupNewTable newtab(filename, description, casacore::Table::New);
 
-  casacore::Adios2StMan stman("",
+  // now invoke the Adios2 storage manager
+  // PJE - the issue here is that the constructors are only valid if ADIOS has not be compiled
+  // with MPI. Not obvious how to best catch that and whether ADIOS can be passed a null 
+  // communicator if compiled with ADIOS but don't want parallel accessors. 
+
+  // might want a unique pointer locally
+  // std::unique_ptr<casacore::Adios2StMan> stmanptr; 
+
+  if (config == "") {
+    // invoke Adios2StMan(engineType, engineParams, transportParams, operatorParams)
+    // with default engine type and parameters 
+#ifdef ADIOS2_USE_MPI
+    // if mpi then using MPI_COMM_SELF for writing
+    casacore::Adios2StMan stman(adios_comm, 
+                              "",
                               {},
                               {{}},
                               {{{"Variable", "map"},{},{}}});
+    newtab.bindColumn("map", stman);
+#else
+    casacore::Adios2StMan stman("",
+                              {},
+                              {{}},
+                              {{{"Variable", "map"},{},{}}});
+    newtab.bindColumn("map", stman);
+#endif
+  }
+  else 
+  {
+    // invoke configuration based call 
+    //PJE - question on whether we also need to include the operatorParams {{{"Varaible", "map"}}}
+    casacore::Adios2StMan::from_config_t from_config {};
+#ifdef ADIOS2_USE_MPI
+    casacore::Adios2StMan stman(adios_comm, config, from_config);
+    newtab.bindColumn("map", stman);
+#else   
+    casacore::Adios2StMan stman(config, from_config);
+    newtab.bindColumn("map", stman);
+#endif
+  }
   
-  newtab.bindColumn("map", stman);
-
+  // this call would be ideal but requires maybe use of pointer
+  // newtab.bindColumn("map", stman);
+#ifdef ADIOS2_USE_MPI
+  casacore::Table tab(adios_comm, newtab);
+#else
   casacore::Table tab(newtab);
+#endif
   tab_p = tab;
   casacore::ArrayColumn<T> arrayCol(tab_p, "map");
-  const casacore::IPosition emptyShape(ndim, 1);
   const casacore::uInt rows = tab_p.nrow();
-  casacore::Array<T> array(latShape, 0);
   if ((rowNumber + 1) > rows) {
     tab_p.addRow(rowNumber - rows + 1);
-    arrayCol.fillColumn(array);
+    for (casacore::rownr_t row = rows; row <= rowNumber - rows; row++){
+      arrayCol.setShape(row, latShape);
+    }
   } 
   map_p = arrayCol;
 }

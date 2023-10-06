@@ -58,7 +58,8 @@ boost::shared_ptr<IImageAccess<casacore::Float> > askap::accessors::imageAccessF
        // optional parameter setting may come here
        result = iaCASA;
    } else if (imageType == "adios"){
-       boost::shared_ptr<CasaADIOSImageAccess<casacore::Float> > iaADIOS(new CasaADIOSImageAccess<casacore::Float>());
+       std::string config = parset.getString("adiosconfig", "");
+       boost::shared_ptr<CasaADIOSImageAccess<casacore::Float> > iaADIOS(new CasaADIOSImageAccess<casacore::Float>(config));
        result = iaADIOS; 
    } else if (imageType == "fits"){
        boost::shared_ptr<FitsImageAccess> iaFITS(new FitsImageAccess());

@@ -13,6 +13,12 @@
 //# Forward Declarations
 #include <casacore/casa/iosfwd.h>
 
+#ifdef ADIOS2_USE_MPI
+#include <mpi.h>
+#include <askap/askapparallel/MPIComms.h>
+#include <askap/askapparallel/AskapParallel.h>
+#endif
+
 namespace askap {
 
 namespace accessors {
@@ -22,24 +28,47 @@ template <class T> class ADIOSImage : public casacore::ImageInterface<T>
 public:
 
   ADIOSImage ();
+  ADIOSImage (
+    const casacore::TiledShape& mapShape,
+    const casacore::CoordinateSystem& coordinateInfo,
+    const casacore::String& nameOfNewFile,
+    casacore::String configname = "", 
+    casacore::uInt rowNumber = 0
+    );
 
-  ADIOSImage (const casacore::TiledShape& mapShape,
-	      const casacore::CoordinateSystem& coordinateInfo,
-	      const casacore::String& nameOfNewFile,
-	      casacore::uInt rowNumber = 0);
+#ifdef ADIOS2_USE_MPI
+  ADIOSImage (
+    askapparallel::AskapParallel &comms,
+    const casacore::TiledShape& mapShape,
+    const casacore::CoordinateSystem& coordinateInfo,
+    const casacore::String& nameOfNewFile,
+    casacore::String configname = "", 
+    casacore::uInt rowNumber = 0
+    );
+#endif
 
-  explicit ADIOSImage(const casacore::String &filename,
-                      casacore::MaskSpecifier spec = casacore::MaskSpecifier(),
-                      casacore::uInt rowNumber = 0);
+  explicit ADIOSImage(
+    const casacore::String &filename,
+    casacore::String configname = "",
+    casacore::MaskSpecifier spec = casacore::MaskSpecifier(),
+    casacore::uInt rowNumber = 0);
+
+#ifdef ADIOS2_USE_MPI
+  explicit ADIOSImage(
+    askapparallel::AskapParallel &comms,
+    const casacore::String &filename,
+    casacore::String configname = "",
+    casacore::MaskSpecifier spec = casacore::MaskSpecifier(),
+    casacore::uInt rowNumber = 0);
+#endif
 
   ADIOSImage (const ADIOSImage<T>& other);
-
 
   casacore::Table& table()
     { return tab_p; }
 
   static casacore::String className()
-    { return "PagedImage"; }
+    { return "ADIOSImage"; }
 
   virtual casacore::String imageType() const;
 
@@ -95,6 +124,15 @@ private:
   casacore::Table tab_p;
   casacore::LatticeRegion* regionPtr_p;
   casacore::uInt row_p;
+  casacore::String config;
+  // PJE - not certain how best to store the adios configuration besides
+  // a string containing the xml file of adios configuration
+  // 
+
+  // for MPI lets store a default MPI_COMM_SELF communicator
+#ifdef ADIOS2_USE_MPI
+  MPI_Comm adios_comm = MPI_COMM_SELF;
+#endif
 
 
 public:
@@ -110,12 +148,6 @@ public:
   using casacore::ImageInterface<T>::coordinates;
 
   using casacore::Lattice<T>::ndim;
-
-
-
-
-
-
 
 };
 
