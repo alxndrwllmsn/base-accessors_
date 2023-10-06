@@ -205,12 +205,12 @@ void ADIOSImage<T>::makeNewTable(const casacore::TiledShape& shape, casacore::uI
 #endif
   tab_p = tab;
   casacore::ArrayColumn<T> arrayCol(tab_p, "map");
-  const casacore::IPosition emptyShape(ndim, 1);
   const casacore::uInt rows = tab_p.nrow();
-  casacore::Array<T> array(latShape, 0);
   if ((rowNumber + 1) > rows) {
     tab_p.addRow(rowNumber - rows + 1);
-    arrayCol.fillColumn(array);
+    for (casacore::rownr_t row = rows; row <= rowNumber - rows; row++){
+      arrayCol.setShape(row, latShape);
+    }
   } 
   map_p = arrayCol;
 }
