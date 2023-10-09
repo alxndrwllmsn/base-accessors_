@@ -742,12 +742,11 @@ void TableDataAccessTest::originalFlagRewriteTest()
         IFlagDataAccessor& acc = dynamic_cast<IFlagDataAccessor&>(*it);
         const casacore::Cube<casacore::Bool>& rwFlags = acc.rwFlag();
         CPPUNIT_ASSERT(roFlags.shape() == rwFlags.shape());
-        //CPPUNIT_ASSERT(roFlags.shape() == casacore::IPosition(3,it->nRow(), it->nChannel(), it->nPol()));
         CPPUNIT_ASSERT(roFlags.shape() == casacore::IPosition(3,it->nPol(), it->nChannel(), it->nRow()));
         for (casacore::uInt row=0; row < it->nRow(); ++row) {
              for (casacore::uInt chan=0; chan < it->nChannel(); ++chan) {
                   for (casacore::uInt pol =0; pol < it->nPol(); ++pol) {
-                       CPPUNIT_ASSERT_EQUAL(roFlags(row,chan,pol), rwFlags(row,chan,pol));
+                       CPPUNIT_ASSERT_EQUAL(roFlags(pol,chan,row), rwFlags(pol,chan,row));
                   }
              }
         }

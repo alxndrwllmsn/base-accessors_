@@ -45,6 +45,7 @@
 #include <casacore/measures/Measures/MCFrequency.h>
 #include <casacore/casa/Arrays/Slicer.h>
 #include <casacore/casa/Arrays/IPosition.h>
+#include <casacore/casa/Arrays/MatrixMath.h>
 
 /// Local package
 #include <askap/dataaccess/TableConstDataIterator.h>
@@ -581,18 +582,12 @@ void TableConstDataIterator::fillNoise(casacore::Cube<casacore::Complex> &noise)
                // case is not present in any available measurement set
                const IPosition blc(2,startChan,0);
                const IPosition trc(2,startChan+nChan-1,itsNumberOfPols-1);
+               // nowNoise is pol x chan
                casacore::Matrix<casacore::Complex> rowNoise = noise.xyPlane(row);
-               const casacore::Matrix<casacore::Float> inVals = buf(blc,trc);
-               //convertArray(rowNoise, buf(blc,trc));
-               for (casacore::uInt x=0; x<rowNoise.nrow(); ++x) {
-                    for (casacore::uInt y=0; y<rowNoise.ncolumn(); ++y) {
-                         ASKAPDEBUGASSERT(x<inVals.nrow());
-                         ASKAPDEBUGASSERT(y<inVals.ncolumn());
-                         // same polarisation for both real and imaginary parts
-                         const casacore::Float val = inVals(x,y);
-                         rowNoise(x,y) = casacore::Complex(val,val);
-                    }
-               }
+               // inVals is chan x pol
+               casacore::Matrix<casacore::Float> temp = buf(blc,trc);
+               casacore::Matrix<casacore::Float> inVals = casacore::transpose(temp);
+               convertArray(rowNoise, inVals);
            }
       } // loop over rows
   } // if-statement checking that SIGMA column is present

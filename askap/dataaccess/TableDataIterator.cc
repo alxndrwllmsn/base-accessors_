@@ -300,14 +300,12 @@ void TableDataIterator::writeCube(const casacore::Cube<T> &cube,
   ASKAPDEBUGASSERT(getCurrentIteration().nrow() >= getCurrentTopRow()+
                     nRow());
   casacore::rownr_t tableRow = getCurrentTopRow();
-  casacore::Matrix<T> buf(nPol(),nChan);
-  //for (casacore::uInt row=0;row<cube.nrow();++row,++tableRow) { // old code
+  //casacore::Matrix<T> buf(nPol(),nChan);
   for (casacore::uInt row=0;row<cube.nplane();++row,++tableRow) {
        const casacore::IPosition shape = visCol.shape(row);
        ASKAPDEBUGASSERT(shape.size() && (shape.size()<3));
        const casacore::uInt thisRowNumberOfPols = shape[0];
        const casacore::uInt thisRowNumberOfChannels = shape.size()>1 ? shape[1] : 1;
-       //if (thisRowNumberOfPols != cube.nplane()) { old code
        if (thisRowNumberOfPols != cube.nrow()) {
            ASKAPTHROW(DataAccessError, "Current implementation of the writing to original "
                 "visibilities does not support partial selection of the data");
@@ -316,18 +314,19 @@ void TableDataIterator::writeCube(const casacore::Cube<T> &cube,
            ASKAPTHROW(DataAccessError, "Channel selection doesn't fit into exisiting visibility array");
        }
        // for now just copy
-       bool useSlicer = (startChan!=0) || (startChan+nChan!=thisRowNumberOfChannels);
+       const bool useSlicer = (startChan!=0) || (startChan+nChan!=thisRowNumberOfChannels);
 
-       for (casacore::uInt chan=0; chan<nChan; ++chan) {
-            for (casacore::uInt pol=0; pol<thisRowNumberOfPols; ++pol) {
-                 // buf(pol,chan) = cube(row,chan,pol); // old code
-                buf(pol,chan) = cube(pol,chan,row);
-            }
-       }
+       //for (casacore::uInt chan=0; chan<nChan; ++chan) {
+       //     for (casacore::uInt pol=0; pol<thisRowNumberOfPols; ++pol) {
+       //         buf(pol,chan) = cube(pol,chan,row);
+       //     }
+       //}
        if (useSlicer) {
-           visCol.putSlice(tableRow,chanSlicer,buf);
+           //visCol.putSlice(tableRow,chanSlicer,buf);
+           visCol.putSlice(tableRow,chanSlicer,cube.xyPlane(row));
        } else {
-           visCol.put(tableRow, buf);
+           //visCol.put(tableRow, buf);
+           visCol.put(tableRow,cube.xyPlane(row));
        }
   }
 }
@@ -359,7 +358,6 @@ void TableDataIterator::writeOriginalFlag() const
        const casacore::Vector<casacore::Bool> rowBasedFlag = rowFlagCol.getColumn();
        const casacore::rownr_t topRow = getCurrentTopRow();
        ASKAPDEBUGASSERT(static_cast<casacore::rownr_t>(rowBasedFlag.nelements()) >= topRow+flags.nplane()); 
-       //for (casacore::uInt row = 0; row < flags.nrow(); ++row) { // old code
        for (casacore::uInt row = 0; row < flags.nplane(); ++row) { 
             if (rowBasedFlag[row + topRow]) {
                 bool oneUnflagged = false;

@@ -103,7 +103,7 @@ public:
   void setNDir(casacore::uInt nDir) { itsNDir = nDir; }
 
   /// Get the number of DD calibration directions
-  /// (a cube is (nDir*nRow) x nChannel x nPol; each element is a complex visibility)
+  /// (a cube is nPol x nChannel x (nDir*nRow); each element is a complex visibility)
   ///
   casacore::uInt getNDir() const { return itsNDir; }
 
