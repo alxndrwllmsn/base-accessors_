@@ -62,7 +62,8 @@ FitsAuxImageSpectra::FitsAuxImageSpectra(const std::string& fitsFileName,
 {
     // we want to use image accessor to create the fits file and populate
     // the keywords for us.
-    casacore::IPosition dummyShape(2,1,1);
+    //casacore::IPosition dummyShape(2,1,1);
+    casacore::IPosition dummyShape(4,1,1,1,nChannels);
     itsIA->create(itsName,dummyShape,coord);
 
     // image accessor creates the file with the .fits extension even if the filename
