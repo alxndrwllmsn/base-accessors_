@@ -188,6 +188,18 @@ void TableScalarFieldSelector::chooseScanNumber(casacore::uInt scanNumber)
     }
 }
 
+/// @brief choose row numbers
+/// @param[in] numRows number of rows to select
+/// @param[in] startRow first row to select
+void TableScalarFieldSelector::chooseRows(const casacore::rownr_t numRows, const casacore::rownr_t startRow)
+{
+   if (itsTableSelector.isNull()) {
+       itsTableSelector = (table().nodeRownr() >= startRow && table().nodeRownr() < (startRow + numRows));
+   } else {
+       itsTableSelector = itsTableSelector && (table().nodeRownr() >= startRow && table().nodeRownr() < (startRow + numRows));
+   }
+}
+
 /// @brief Choose autocorrelations only
 void TableScalarFieldSelector::chooseAutoCorrelations()
 {

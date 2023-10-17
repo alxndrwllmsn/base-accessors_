@@ -129,6 +129,11 @@ public:
   /// @param[in] scanNumber the scan number to choose
   virtual void chooseScanNumber(casacore::uInt scanNumber);
 
+  /// @brief Choose row numbers
+  /// @param[in] numRows number of rows to select
+  /// @param[in] startRow first row to select
+  void chooseRows(const casacore::rownr_t numRows, const casacore::rownr_t startRow);
+
   /// @brief Obtain a table expression node for selection. 
   /// @details This method is
   /// used in the implementation of the iterator to form a subtable
