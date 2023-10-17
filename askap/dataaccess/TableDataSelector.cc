@@ -142,11 +142,11 @@ void TableDataSelector::chooseChannels(casacore::uInt nChan, casacore::uInt star
 /// @param[in] freqRef the reference type for the frequency
 ///        default is reference of DataSource
 void TableDataSelector::chooseFrequencies(casacore::uInt nChan,
-         const casacore::MVFrequency &start,
+         const casacore::MFrequency &start,
          const casacore::MVFrequency &freqInc,
          const casacore::MFrequency::Types freqType)
 {
-   ASKAPDEBUGASSERT((nChan>0) && (start>=0));
+   ASKAPDEBUGASSERT((nChan>0) && (start.getValue()>=0));
    ASKAPCHECK(freqInc.near(casacore::MVFrequency(0)), "Non zero frequency increment not yet implemented");
    itsNFreq = nChan;
    itsFreqStart = start.getValue();

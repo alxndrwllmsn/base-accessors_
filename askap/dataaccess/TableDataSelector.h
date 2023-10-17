@@ -113,7 +113,7 @@ public:
    /// @param[in] freqRef the reference type for the frequency
    ///        default is reference of DataSource
    virtual void chooseFrequencies(casacore::uInt nChan,
-            const casacore::MVFrequency &start,
+            const casacore::MFrequency &start,
             const casacore::MVFrequency &freqInc,
             const casacore::MFrequency::Types freqType = casacore::MFrequency::Undefined);
 

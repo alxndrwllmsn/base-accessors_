@@ -675,7 +675,7 @@ void TableDataAccessTest::freqSelectionTest()
   IDataSelectorPtr sel = ds.createSelector();
   ASKAPASSERT(sel);
   // choose 3rd freq (i.e. freq(2)), note only 0 width is supported at present
-  sel->chooseFrequencies(1, freqs(2), 0.);
+  sel->chooseFrequencies(1, casacore::MFrequency(casacore::MVFrequency(freqs(2)),casacore::MFrequency::TOPO), 0.);
   for (IDataSharedIter it=ds.createIterator(sel); it!=it.end(); ++it) {
        // different value corresponding to selected channels
        it->rwVisibility().set(casacore::Complex(-0.5,1.0));
