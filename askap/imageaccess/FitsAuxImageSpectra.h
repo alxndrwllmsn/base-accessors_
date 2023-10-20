@@ -116,6 +116,8 @@ class FitsAuxImageSpectra {
 
         /// name of the fits file
         std::string itsName;
+        // name without .fits extension
+        std::string itsBasename;
 
         /// how many channels in the array ie spectrum size
         int itsNChannels;
