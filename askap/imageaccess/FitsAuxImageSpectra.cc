@@ -62,8 +62,7 @@ FitsAuxImageSpectra::FitsAuxImageSpectra(const std::string& fitsFileName,
 {
     // we want to use image accessor to create the fits file and populate
     // the keywords for us.
-    //casacore::IPosition dummyShape(2,1,1);
-    casacore::IPosition dummyShape(4,1,1,1,nChannels);
+    casacore::IPosition dummyShape(4,1,1,1,1);
     itsIA->create(itsName,dummyShape,coord);
 
     // image accessor creates the file with the .fits extension even if the filename
@@ -71,6 +70,9 @@ FitsAuxImageSpectra::FitsAuxImageSpectra(const std::string& fitsFileName,
     if ( fitsFileName.rfind(".fits") == std::string::npos ) {
         itsName.append(".fits");
     }
+
+    auto index = itsName.rfind(".fits");
+    itsBasename = std::string(itsName,0,index);
 
     // open the file to create the binary table 
     if ( fits_open_file(&itsFitsPtr,itsName.c_str(), READWRITE, &itsStatus) )
@@ -135,6 +137,35 @@ FitsAuxImageSpectra::create(const casacore::RecordInterface &tableInfo,
     if ( fits_create_tbl(itsFitsPtr, BINARY_TBL, nrows, tfields,t,f,u,extname,&itsStatus) )
          PrintError(itsStatus);    
 
+
+    // Get the values of CRVAL4 and CDELT4 which are the reference and delta frequency respectively
+    std::pair<std::string,std::string> crval4 = itsIA->getMetadataKeyword(itsBasename,"CRVAL4");
+    std::pair<std::string,std::string> cdelt4 = itsIA->getMetadataKeyword(itsBasename,"CDELT4");
+    // Add these values to the binary table header as 
+    double refFreq = 0.0;
+    double deltFreq = 0.0;
+    if ( crval4.first != "" ) {
+        refFreq = std::stod(crval4.first);
+    } else {
+        ASKAPLOG_WARN_STR(logger,"CRVAL4 keyword is empty in " << itsName);
+    }
+    if ( cdelt4.first != "" ) {
+        deltFreq = std::stod(cdelt4.first);
+    } else {
+        ASKAPLOG_WARN_STR(logger,"CDELT4 keyword is empty in " << itsName);
+    }
+
+
+    int nchan = nChannels;
+    if ( fits_update_key(itsFitsPtr, TINT, "NCHAN", &nchan, "Number of Channels", &itsStatus) )
+        PrintError(itsStatus);
+
+    if ( fits_update_key(itsFitsPtr, TDOUBLE, "REF_FREQ", &refFreq, crval4.second.c_str(), &itsStatus) )
+        PrintError(itsStatus);
+
+    if ( fits_update_key(itsFitsPtr, TDOUBLE, "FREQ_INC", &deltFreq, cdelt4.second.c_str(), &itsStatus) )
+        PrintError(itsStatus);
+    
 }
 
 void 
