@@ -58,6 +58,15 @@ ADIOSImage<T>::ADIOSImage (
 {
   config = configname;
   row_p = rowNumber;
+#ifdef ADIOS2_USE_MPI
+// A Hack to force the use of MPI_COMM_WORLD
+  MPI_Comm comm = MPI_COMM_WORLD;
+  int size;
+  MPI_Comm_size(comm, &size);
+  if(size > 1){
+    adios_comm = comm;
+  }
+#endif
   makeNewTable(shape, rowNumber, filename);
   attach_logtable();
   AlwaysAssert(setCoordinateInfo(coordinateInfo), casacore::AipsError);
