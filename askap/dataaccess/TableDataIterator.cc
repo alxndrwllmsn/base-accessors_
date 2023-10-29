@@ -316,11 +316,6 @@ void TableDataIterator::writeCube(const casacore::Cube<T> &cube,
        // for now just copy
        const bool useSlicer = (startChan!=0) || (startChan+nChan!=thisRowNumberOfChannels);
 
-       //for (casacore::uInt chan=0; chan<nChan; ++chan) {
-       //     for (casacore::uInt pol=0; pol<thisRowNumberOfPols; ++pol) {
-       //         buf(pol,chan) = cube(pol,chan,row);
-       //     }
-       //}
        if (useSlicer) {
            //visCol.putSlice(tableRow,chanSlicer,buf);
            visCol.putSlice(tableRow,chanSlicer,cube.xyPlane(row));

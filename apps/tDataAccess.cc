@@ -134,7 +134,8 @@ void doReadWriteTest(const IDataSource &ds) {
             for (casacore::uInt chan=0; chan<it->nChannel(); ++chan) {
                  const double phase = 2.*casacore::C::pi*(it->uvw()(row)(0)*l+it->uvw()(row)(1)*m)/casacore::C::c*it->frequency()[chan]*1e6;
                  const casacore::Complex phasor(cos(phase),sin(phase));
-                 casacore::Array<casacore::Complex> tmp = it->rwVisibility().yzPlane(row).row(chan);
+                 //casacore::Array<casacore::Complex> tmp = it->rwVisibility().yzPlane(row).row(chan);
+                 casacore::Array<casacore::Complex> tmp = it->rwVisibility().xyPlane(row).column(chan);
                  tmp *= phasor;
             }
        }

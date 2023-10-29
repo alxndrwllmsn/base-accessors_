@@ -46,6 +46,7 @@
 #include <casacore/casa/Arrays/Slicer.h>
 #include <casacore/casa/Arrays/IPosition.h>
 #include <casacore/casa/Arrays/MatrixMath.h>
+#include <casacore/casa/Arrays/ArrayMath.h>
 
 /// Local package
 #include <askap/dataaccess/TableConstDataIterator.h>
@@ -585,9 +586,8 @@ void TableConstDataIterator::fillNoise(casacore::Cube<casacore::Complex> &noise)
                // nowNoise is pol x chan
                casacore::Matrix<casacore::Complex> rowNoise = noise.xyPlane(row);
                // inVals is chan x pol
-               casacore::Matrix<casacore::Float> temp = buf(blc,trc);
-               casacore::Matrix<casacore::Float> inVals = casacore::transpose(temp);
-               convertArray(rowNoise, inVals);
+               const casacore::Matrix<casacore::Float> inVals = buf(blc,trc);
+               casacore::convertArray(rowNoise,casacore::transpose(inVals));
            }
       } // loop over rows
   } // if-statement checking that SIGMA column is present
