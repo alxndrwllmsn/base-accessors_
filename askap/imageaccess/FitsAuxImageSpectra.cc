@@ -141,9 +141,12 @@ FitsAuxImageSpectra::create(const casacore::RecordInterface &tableInfo,
     // Get the values of CRVAL4 and CDELT4 which are the reference and delta frequency respectively
     std::pair<std::string,std::string> crval4 = itsIA->getMetadataKeyword(itsBasename,"CRVAL4");
     std::pair<std::string,std::string> cdelt4 = itsIA->getMetadataKeyword(itsBasename,"CDELT4");
+    // also get the CRPIX4
+    std::pair<std::string,std::string> crpix4 = itsIA->getMetadataKeyword(itsBasename,"CRPIX4");
     // Add these values to the binary table header as 
     double refFreq = 0.0;
     double deltFreq = 0.0;
+    double crpix = 0.0;
     if ( crval4.first != "" ) {
         refFreq = std::stod(crval4.first);
     } else {
@@ -154,7 +157,11 @@ FitsAuxImageSpectra::create(const casacore::RecordInterface &tableInfo,
     } else {
         ASKAPLOG_WARN_STR(logger,"CDELT4 keyword is empty in " << itsName);
     }
-
+    if ( crpix4.first != "" ) {
+        crpix = std::stod(crpix4.first);
+    } else {
+        ASKAPLOG_WARN_STR(logger,"CRPIX4 keyword is empty in " << itsName);
+    }
 
     int nchan = nChannels;
     if ( fits_update_key(itsFitsPtr, TINT, "NCHAN", &nchan, "Number of Channels", &itsStatus) )
@@ -166,6 +173,8 @@ FitsAuxImageSpectra::create(const casacore::RecordInterface &tableInfo,
     if ( fits_update_key(itsFitsPtr, TDOUBLE, "FREQ_INC", &deltFreq, cdelt4.second.c_str(), &itsStatus) )
         PrintError(itsStatus);
     
+    if ( fits_update_key(itsFitsPtr, TDOUBLE, "REF_PIX", &crpix, crpix4.second.c_str(), &itsStatus) )
+        PrintError(itsStatus);
 }
 
 void 
