@@ -173,7 +173,7 @@ FitsAuxImageSpectra::create(const casacore::RecordInterface &tableInfo,
     if ( fits_update_key(itsFitsPtr, TDOUBLE, "FREQ_INC", &deltFreq, cdelt4.second.c_str(), &itsStatus) )
         PrintError(itsStatus);
     
-    if ( fits_update_key(itsFitsPtr, TDOUBLE, "REF_PIX", &crpix, crpix4.second.c_str(), &itsStatus) )
+    if ( fits_update_key(itsFitsPtr, TDOUBLE, "REF_FPIX", &crpix, crpix4.second.c_str(), &itsStatus) )
         PrintError(itsStatus);
 }
 
