@@ -50,13 +50,13 @@ namespace accessors {
 /// @ingroup imageaccess
 
 template <class T = casacore::Float>
-struct CasaADIOSImageAccessParallel : public CasaADIOS2ImageAccess<T> {
+struct CasaADIOSImageAccessParallel : public CasaADIOSImageAccess<T> {
 
 public:
     /// @brief constructor
     /// @param[in] comms, MPI communicator
     /// @param[in] config, string pointing to adios configuration
-    template <class T> CasaADIOSImageAccessParallel<T>(askapparallel::AskapParallel &comms, std::string configname = "");
+    CasaADIOSImageAccessParallel(askapparallel::AskapParallel &comms, std::string config = "");
 
     // PJE -- uncertain how many functions would really require overwriting so as to 
     // do something with the comms. 
