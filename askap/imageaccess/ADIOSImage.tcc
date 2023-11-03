@@ -127,7 +127,7 @@ ADIOSImage<T>::ADIOSImage (
 : casacore::ImageInterface<T>(casacore::RegionHandlerTable(getTable, this)),
   regionPtr_p   (0)
 {
-  adios_comm = comms.interGroupCommIndex();;
+  adios_comm = comms.interGroupCommIndex();
   tab_p = casacore::Table(adios_comm, filename,casacore::Table::TableOption::Old);
   map_p = casacore::ArrayColumn<T>(tab_p, "map");
   row_p = rowNumber;

@@ -32,6 +32,7 @@
 #include <askap/imageaccess/ImageAccessFactory.h>
 #include <askap/imageaccess/CasaImageAccess.h>
 #include <askap/imageaccess/CasaADIOSImageAccess.h>
+#include <askap/imageaccess/CasaADIOSImageAccessParallel.h>
 #include <askap/imageaccess/FitsImageAccess.h>
 #include <askap/imageaccess/FitsImageAccessParallel.h>
 
@@ -90,6 +91,10 @@ boost::shared_ptr<IImageAccess<casacore::Float> > askap::accessors::imageAccessF
        boost::shared_ptr<CasaImageAccess<casacore::Float> > iaCASA(new CasaImageAccess<casacore::Float>());
        // optional parameter setting may come here
        result = iaCASA;
+   } else if (imageType == "adios"){
+       std::string config = parset.getString("adiosconfig", "");
+       boost::shared_ptr<CasaADIOSImageAccess<casacore::Float> > iaADIOS(new CasaADIOSImageAccessParallel<casacore::Float>(comms, config));
+       result = iaADIOS; 
    } else if (imageType == "fits"){
        const bool fast = (parset.getString("imagealloc","fast") == "fast");
        if (imageAccessType == "collective") {
