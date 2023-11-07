@@ -449,8 +449,6 @@ void TableConstDataIterator::fillCube(casacore::Cube<T> &cube,
   // FLAG_ROW for flagging
   WholeRowFlagger<T> wrFlagger(itsCurrentIteration);
 
-  // temporary buffer declared outside the loop
-  casacore::Matrix<T> buf(itsNumberOfPols, nChan); 
   for (uInt row=0; row<itsNumberOfRows; ++row) {
        const casacore::IPosition shape = tableCol.shape(row);
        ASKAPASSERT(shape.size() && (shape.size()<3));
@@ -472,15 +470,11 @@ void TableConstDataIterator::fillCube(casacore::Cube<T> &cube,
 
        if (wrFlagger.copyRequired(row + itsCurrentTopRow, cube)) {
            // Extract slice for this row
+           // Internally, buf and cube.xyPlane(row) point to the same memory
+           casacore::Matrix<T> buf = cube.xyPlane(row);
+           // Copy a slice into buf and hence xyPlane
            tableCol.getSlice(row + itsCurrentTopRow, chanSlicer, buf, False);
-
-           // Copy the slice into the cube
-           //for (uInt pol = 0; pol < itsNumberOfPols; ++pol) {
-           //   for (uInt chan = 0; chan < nChan; ++chan) {
-           //        cube(pol,chan,row) = buf(pol,chan);
-           //    }
-           //}
-           cube(Slice(),Slice(),Slice(row)) = buf;
+           
        }
   }
 }
