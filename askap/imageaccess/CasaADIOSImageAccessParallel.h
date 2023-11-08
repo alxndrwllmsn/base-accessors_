@@ -153,7 +153,7 @@ public:
     /// @param[in] shape full shape of the image
     /// @param[in] csys coordinate system of the full image
     virtual void create(const std::string &name, const casacore::IPosition &shape,
-                        const casacore::CoordinateSystem &csys) override;
+                        const casacore::CoordinateSystem &csys, size_t comm_index = 0) override;
 
     /// @brief write full image
     /// @param[in] name image name

@@ -77,6 +77,7 @@ ADIOSImage<T>::ADIOSImage (
 template <class T> 
 ADIOSImage<T>::ADIOSImage (
   askapparallel::AskapParallel &comms,
+  size_t comm_index,
   const casacore::TiledShape& shape, 
   const casacore::CoordinateSystem& coordinateInfo, 
   const casacore::String& filename, 
@@ -87,10 +88,9 @@ ADIOSImage<T>::ADIOSImage (
 {
   // assumes that only one communicator and that this is MPI_COMM_WORLD
   // could also hack to just use comm world
-  adios_comm = comms.interGroupCommIndex();
+  adios_comm = comms.getComm(comm_index);
   config = configname;
   row_p = rowNumber;
-  // adios_comm = comms;
   makeNewTable(shape, rowNumber, filename);
   attach_logtable();
   AlwaysAssert(setCoordinateInfo(coordinateInfo), casacore::AipsError);

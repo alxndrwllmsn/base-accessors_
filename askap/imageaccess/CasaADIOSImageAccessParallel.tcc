@@ -264,10 +264,10 @@ std::pair<std::string, std::string> CasaADIOSImageAccessParallel<T>::getMetadata
 /// @param[in] csys coordinate system of the full image
 template <class T>
 void CasaADIOSImageAccessParallel<T>::create(const std::string &name, const casacore::IPosition &shape,
-                             const casacore::CoordinateSystem &csys)
+                             const casacore::CoordinateSystem &csys, size_t comm_index)
 {
     ASKAPLOG_INFO_STR(casaADIOSImAccessParallelLogger, "Creating a new CASA ADIOS image " << name << " with the shape " << shape);
-    imagePtr_p.reset(new ADIOSImage<T>(itsComms, 
+    imagePtr_p.reset(new ADIOSImage<T>(itsComms, comm_index, 
         casacore::TiledShape(shape), csys, name, configname));
 }
 
