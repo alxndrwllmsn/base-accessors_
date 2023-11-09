@@ -40,6 +40,10 @@
 #include <casacore/casa/iostream.h>
 #include <casacore/casa/sstream.h>
 
+
+ASKAP_LOGGER(ADIOSImageLogger, ".ADIOSImage");
+
+
 template <class T>
 ADIOSImage<T>::ADIOSImage()
 : casacore::ImageInterface<T>(casacore::RegionHandlerTable(getTable, this)),
@@ -86,15 +90,23 @@ ADIOSImage<T>::ADIOSImage (
 : casacore::ImageInterface<T>(casacore::RegionHandlerTable(getTable, this)),
   regionPtr_p   (0) 
 {
-  // assumes that only one communicator and that this is MPI_COMM_WORLD
-  // could also hack to just use comm world
+
   adios_comm = comms.getComm(comm_index);
+  int size;
+  int result = MPI_Comm_size(adios_comm, &size);
+  ASKAPDEBUGASSERT(result == MPI_SUCCESS);
+  int rank;
+  result = MPI_Comm_rank(adios_comm, &rank);
+  ASKAPDEBUGASSERT(result == MPI_SUCCESS);
+  ASKAPLOG_INFO_STR(ADIOSImageLogger, "ADIOS received MPI Comm with size " << size << " and rank " << rank);
   config = configname;
   row_p = rowNumber;
   makeNewTable(shape, rowNumber, filename);
-  attach_logtable();
-  AlwaysAssert(setCoordinateInfo(coordinateInfo), casacore::AipsError);
-  setTableType();
+  if (rank == 0){
+    attach_logtable();
+    AlwaysAssert(setCoordinateInfo(coordinateInfo), casacore::AipsError);
+    setTableType();
+  }
 }
 #endif 
 
