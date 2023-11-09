@@ -50,7 +50,7 @@ ASKAP_LOGGER(logger, ".imageToFITS");
 
 class ConvertApp : public askap::Application {
     public:
-        virtual int run(int argc, char* argv[])
+        int run(int argc, char* argv[]) final
         {
             try {
                 StatReporter stats;

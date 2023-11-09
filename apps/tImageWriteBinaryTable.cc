@@ -77,7 +77,7 @@ namespace accessors {
 class TestImageWriteTableApp : public askap::Application {
 public:
 
-    void setup() 
+    void setup()
     {
         LOFAR::ParameterSet parset;
         //parset.add("imagetype","fits");
@@ -131,7 +131,7 @@ public:
             count *= 10;
         }
         subrecord.define("RA",raValues);
-        
+
         casacore::IPosition shapeDec(1);
         shapeDec(0) = 5;
         casacore::Array<casacore::Int64> decValues(shapeDec);
@@ -187,7 +187,7 @@ public:
 
         casacore::Vector<casacore::String> units(2); units = "deg";                        //  9
         radec.setWorldAxisUnits(units);
-        
+
         // Build a coordinate system for the spectral axis
         // SpectralCoordinate
         casacore::SpectralCoordinate spectral(casacore::MFrequency::TOPO,               // 27
@@ -210,10 +210,10 @@ public:
         casacore::Record info2 = create_dummy_record("Table2");
         itsImageAccessor->setInfo(itsName,info);
         itsImageAccessor->setInfo(itsName,info2);
-        
+
     }
- 
-   virtual int run(int argc, char* argv[])
+
+   int run(int argc, char* argv[]) final
    {
      try {
         setup();

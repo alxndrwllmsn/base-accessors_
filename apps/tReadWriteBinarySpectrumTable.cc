@@ -81,7 +81,7 @@ namespace accessors {
 class TestReadWriteSpectrumTableApp : public askap::Application {
 public:
 
-    void setup() 
+    void setup()
     {
         LOFAR::ParameterSet parset;
         //parset.add("imagetype","fits");
@@ -89,7 +89,7 @@ public:
         itsCol = 288;
         itsImageAccessor = accessors::imageAccessFactory(config());
     }
- 
+
     void printerror( int status)
     {
         if (status)
@@ -149,17 +149,17 @@ public:
             }
         }
    }
-   virtual int run(int argc, char* argv[])
+   int run(int argc, char* argv[]) final
    {
      try {
         askap::StatReporter stats;
         setup();
-        
+
         std::string srcDir = "/askapbuffer/payne/mvuong/emu";
         collectSpectraType(srcDir);
         for (const auto& m : itsSpectrumTypesMap) {
             std::string st = m.first;
-            
+
             // extract the spectrum type ie spec_I, noise_I etc
             auto pos1 = st.find_first_of("_");
             auto pos2 = st.find_last_of("_");
@@ -212,7 +212,7 @@ public:
                 casacore::Vector<float> data = mat.row(0);
                 std::cout << std::endl << "->[ ";
                 for (int i = 0; i < data.size(); i++) {
-                    std::cout << data(i) << std::endl;    
+                    std::cout << data(i) << std::endl;
                 }
                 std::cout << "] <-" << std::endl;
 
