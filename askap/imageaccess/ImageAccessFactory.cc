@@ -80,7 +80,7 @@ boost::shared_ptr<IImageAccess<casacore::Float> > askap::accessors::imageAccessF
 /// @return shared pointer to the image access object
 /// @note CASA images are used by default
 boost::shared_ptr<IImageAccess<casacore::Float> > askap::accessors::imageAccessFactory(
-    const LOFAR::ParameterSet &parset, askapparallel::AskapParallel &comms)
+    const LOFAR::ParameterSet &parset, askapparallel::AskapParallel &comms, size_t comm_index)
 {
    const std::string imageType = parset.getString("imagetype","casa");
    const std::string imageAccessType = parset.getString("imageaccess","individual");
@@ -93,7 +93,7 @@ boost::shared_ptr<IImageAccess<casacore::Float> > askap::accessors::imageAccessF
        result = iaCASA;
    } else if (imageType == "adios"){
        std::string config = parset.getString("adiosconfig", "");
-       boost::shared_ptr<CasaADIOSImageAccess<casacore::Float> > iaADIOS(new CasaADIOSImageAccessParallel<casacore::Float>(comms, config));
+       boost::shared_ptr<CasaADIOSImageAccessParallel<casacore::Float> > iaADIOS(new CasaADIOSImageAccessParallel<casacore::Float>(comms, config, comm_index));
        result = iaADIOS; 
    } else if (imageType == "fits"){
        const bool fast = (parset.getString("imagealloc","fast") == "fast");

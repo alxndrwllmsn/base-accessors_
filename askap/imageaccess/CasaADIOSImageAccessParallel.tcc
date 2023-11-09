@@ -50,8 +50,8 @@ using namespace askap::accessors;
 /// @param[in] comms, MPI communicator
 /// @param[in] config, configuration file name 
 template <class T>
-CasaADIOSImageAccessParallel<T>::CasaADIOSImageAccessParallel(askapparallel::AskapParallel &comms, std::string config):
-    itsComms(comms), itsParallel(-1)
+CasaADIOSImageAccessParallel<T>::CasaADIOSImageAccessParallel(askapparallel::AskapParallel &comms, std::string config, size_t comm_index):
+    itsComms(comms), itsParallel(-1), itsCommIndex(comm_index)
 {
     configname = config;
     if (config != "") {
@@ -264,10 +264,10 @@ std::pair<std::string, std::string> CasaADIOSImageAccessParallel<T>::getMetadata
 /// @param[in] csys coordinate system of the full image
 template <class T>
 void CasaADIOSImageAccessParallel<T>::create(const std::string &name, const casacore::IPosition &shape,
-                             const casacore::CoordinateSystem &csys, size_t comm_index)
+                             const casacore::CoordinateSystem &csys)
 {
     ASKAPLOG_INFO_STR(casaADIOSImAccessParallelLogger, "Creating a new CASA ADIOS image " << name << " with the shape " << shape);
-    imagePtr_p.reset(new ADIOSImage<T>(itsComms, comm_index, 
+    imagePtr_p.reset(new ADIOSImage<T>(itsComms, itsCommIndex, 
         casacore::TiledShape(shape), csys, name, configname));
 }
 
