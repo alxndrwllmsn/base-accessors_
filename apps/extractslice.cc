@@ -4,7 +4,7 @@
 ///                         performance for various access patterns
 ///                         At this stage implementation is rather basic without fancy
 ///                         distributed access (although nothing stops us running a
-///                         number of applications as an array job + it distributes multiple 
+///                         number of applications as an array job + it distributes multiple
 ///                         slices between ranks out of the box) and delegates all
 ///                         optimisation to the interface implementation (i.e. it just
 ///                         requests a slice it needs).
@@ -174,19 +174,19 @@ class ExtractSliceApp : public askap::Application {
                  const bool success = pc.toWorld(stokesVec[pol], pol);
                  ASKAPCHECK(success, "Unable to convert polarisation index into physical label for plane "<<pol);
             }
-            
+
             os <<"# polarisation axis (dimension "<<itsPolAxisIndex + 1<<"): " << scimath::PolConverter::toString(stokesVec) << std::endl;
         }
         itsHeader = os.str();
    }
-   
+
    /// @brief helper method to perform MPI scatter operation on a complex type
    /// @details It essentially scatters the blob across all available ranks according
-   /// to the per-rank length vector. 
+   /// to the per-rank length vector.
    /// @param[in] comms communication object
    /// @param[in] blob blob string object to scatter (modified on all ranks, rank 0 will have its portion)
    /// @param[in] lengths vector of lengths, one per rank need to be defined on the master rank (always zero)
-   /// @note Technical debt: we should move this method to AskapParallel/MPIComms, 
+   /// @note Technical debt: we should move this method to AskapParallel/MPIComms,
    /// this way it will have access to the active communicator (instead of using the world one),
    /// as well as provide better encapsulation of MPI calls / similar interface to other methods.
    static void scatterBlob(askap::askapparallel::AskapParallel &comms, LOFAR::BlobString &bs, const std::vector<int> &lengths = std::vector<int>()) {
@@ -213,24 +213,24 @@ class ExtractSliceApp : public askap::Application {
                 ASKAPCHECK(sum < bs.size() || (thisRankLength == 0 && sum == bs.size()), "Blob string length for rank "<<i<<" exceeds the bounds of the whole blob string");
                 sum += static_cast<size_t>(thisRankLength);
            }
-   
+
            // scattering the actual data
            const int status1 = MPI_Scatterv(bs.data(), lengths.data(), tempDisplacements.data(), MPI_BYTE, MPI_IN_PLACE, lengths[0], MPI_BYTE, 0, MPI_COMM_WORLD);
            ASKAPCHECK(status1 == MPI_SUCCESS, "Failed to scatter per-rank lengths, error = "<<status1);
-           
+
        } else {
            // first, receive the length to deal with on this particular rank
            int length = -1;
            const int status = MPI_Scatterv(NULL, NULL, NULL, MPI_INT, &length, 1, MPI_INT, 0, MPI_COMM_WORLD);
            ASKAPCHECK(status == MPI_SUCCESS, "Failed to receive scattered per-rank lengths, error = "<<status);
- 
+
            ASKAPCHECK(length >= 0, "Message length is supposed to be non-negative");
            bs.resize(length);
 
            const int status1 = MPI_Scatterv(NULL, NULL, NULL, MPI_BYTE, bs.data(), length, MPI_BYTE, 0, MPI_COMM_WORLD);
            ASKAPCHECK(status1 == MPI_SUCCESS, "Failed to receive scattered per-rank lengths, error = "<<status1);
-       }    
-       #else 
+       }
+       #else
        ASKAPTHROW(AskapError, "scatterBlob has been called, but the code appears to be built without MPI");
        #endif
    }
@@ -363,7 +363,7 @@ class ExtractSliceApp : public askap::Application {
                        }
                   }
                   os<<std::endl;
-             } 
+             }
         }
    }
 
@@ -396,7 +396,7 @@ class ExtractSliceApp : public askap::Application {
 
 
 public:
-   virtual int run(int argc, char* argv[])
+   int run(int argc, char* argv[]) final
    {
      // This class must have scope outside the main try/catch block
      askap::askapparallel::AskapParallel comms(argc, const_cast<const char**>(argv));
@@ -409,7 +409,7 @@ public:
         ASKAPCHECK(itsName != "", "Cube name is not supposed to be empty");
         // name prefix for the output slices
         itsPrefix = config().getString("prefix","");
-        // parameter used to setup the image accessor 
+        // parameter used to setup the image accessor
         const std::string mode = config().getString("mode",comms.isParallel() ? "parallel" : "serial");
         ASKAPCHECK(mode == "parallel" || mode == "serial", "Unsupported mode '"<<mode<<"', it should be either parallel or serial");
         if (mode == "serial") {
@@ -424,7 +424,7 @@ public:
             ASKAPLOG_INFO_STR(logger, "Obtaining image parameters, building list of slices to extract");
             timer.mark();
             initialiseExtraction();
-            ASKAPLOG_INFO_STR(logger, "Got "<<itsSlices.size()<<" slices to extract in "<<timer.real()<<" seconds"); 
+            ASKAPLOG_INFO_STR(logger, "Got "<<itsSlices.size()<<" slices to extract in "<<timer.real()<<" seconds");
         }
         if (comms.isParallel()) {
             ASKAPLOG_INFO_STR(logger, "Distributing the job across "<<comms.nProcs()<<" ranks");
@@ -435,7 +435,7 @@ public:
 
         timer.mark();
         // the following will work for the serial case too if done under MPI and will just cause a single iteration over slices
-        extractSlices(); 
+        extractSlices();
         ASKAPLOG_INFO_STR(logger, "Completed extraction in "<<timer.real()<<" seconds");
         comms.barrier();
         stats.logSummary();
@@ -478,7 +478,7 @@ private:
    /// (e.g. the name of the source or whatever the user gives in the parset)
    std::string itsPrefix;
 
-   /// @brief optional common header to be written at the start of each slice 
+   /// @brief optional common header to be written at the start of each slice
    std::string itsHeader;
 
    /// @brief spectral axis index in the cube
