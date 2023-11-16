@@ -79,7 +79,7 @@ namespace accessors {
 class TestWriteSpectrumTableApp : public askap::Application {
 public:
 
-    void setup() 
+    void setup()
     {
         LOFAR::ParameterSet parset;
         //parset.add("imagetype","fits");
@@ -92,7 +92,7 @@ public:
         itsFitsAuxImageSpectraTable.reset(new FitsAuxImageSpectra("spectrum_table.fits",itsCol,0,coord,record));
         srand((unsigned int)time(NULL));
     }
- 
+
    // random number beween id and id+1
    float generate(unsigned int id)
    {
@@ -133,7 +133,7 @@ public:
             if ( j == itsCol - 1) {
                 num += 1;
                 j = 0;
-            } else { 
+            } else {
                 j += 1;
             }
         }
@@ -154,7 +154,7 @@ public:
         //itsFitsAuxImageSpectraTable->get(id,spectrum);
    }
 
-   virtual int run(int argc, char* argv[])
+   int run(int argc, char* argv[]) final
    {
      try {
         askap::StatReporter stats;
@@ -174,7 +174,7 @@ public:
         for_each(stdVect.begin(),stdVect.end(),
                     [](float v) {std::cout << v << " ";});
         std::cout << "]" << std::endl;
-        
+
         stats.logSummary();
         return 0;
      }
