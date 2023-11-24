@@ -144,10 +144,7 @@ class ExtractSliceApp : public askap::Application {
                  }
              } else {
                 ASKAPCHECK(direction[2] == "J2000", "Only 'pixel' and 'J2000' are supported as possible frames, for "<<name<<" you have "<<direction);
-                const double ra = convertQuantity(direction[0],"rad");
-                const double dec = convertQuantity(direction[1],"rad");
-                const casacore::MVDirection radec(ra,dec);
-                const bool success = dc.toPixel(pixel, casacore::MDirection(radec, casacore::MDirection::J2000));
+                const bool success = dc.toPixel(pixel, asMDirection(direction));
                 ASKAPCHECK(success, "Failed to convert direction "<<direction<<" to pixel space, error = "<<dc.errorMessage());
              }
              ASKAPCHECK(pixel.nelements() == 2u, "Expected 2 elements in the pixel vector, you have "<<pixel);
