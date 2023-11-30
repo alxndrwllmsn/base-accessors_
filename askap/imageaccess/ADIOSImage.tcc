@@ -106,6 +106,8 @@ ADIOSImage<T>::ADIOSImage (
     attach_logtable();
     AlwaysAssert(setCoordinateInfo(coordinateInfo), casacore::AipsError);
     setTableType();
+  } else {
+    AlwaysAssert(casacore::ImageInterface<T>::setCoordinateInfo(coordinateInfo), casacore::AipsError);
   }
 }
 #endif 
@@ -127,28 +129,6 @@ ADIOSImage<T>::ADIOSImage (
   restoreAll (tab_p.keywordSet());
   applyMaskSpecifier (spec);
 }
-
-#ifdef ADIOS2_USE_MPI
-template <class T>
-ADIOSImage<T>::ADIOSImage (
-  askapparallel::AskapParallel &comms,
-  const casacore::String& filename,
-  casacore::String configname, 
-  casacore::MaskSpecifier spec,
-  casacore::uInt rowNumber)
-: casacore::ImageInterface<T>(casacore::RegionHandlerTable(getTable, this)),
-  regionPtr_p   (0)
-{
-  adios_comm = comms.interGroupCommIndex();
-  tab_p = casacore::Table(filename,casacore::Table::TableOption::Old);
-  map_p = casacore::ArrayColumn<T>(tab_p, "map");
-  row_p = rowNumber;
-  config = configname;
-  attach_logtable();
-  restoreAll (tab_p.keywordSet());
-  applyMaskSpecifier (spec);
-}
-#endif
 
 template <class T> 
 ADIOSImage<T>::ADIOSImage (const ADIOSImage<T>& other)

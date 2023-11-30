@@ -168,8 +168,14 @@ casacore::LogicalArray CasaADIOSImageAccess<T>::readMask(const std::string &name
 template <class T>
 casacore::CoordinateSystem CasaADIOSImageAccess<T>::coordSys(const std::string &name) const
 {
-    ADIOSImage<T> img(name);
-    return img.coordinates();
+    //If this is a created cube, don't try and open.
+    if (imagePtr_p) {
+        ASKAPDEBUGASSERT(itsName == name);
+        return imagePtr_p->coordinates();
+    } else {
+        ADIOSImage<T> img(name);
+        return img.coordinates();
+    }
 }
 
 template <class T>

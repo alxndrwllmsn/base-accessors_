@@ -251,6 +251,8 @@ struct CasaADIOSImageAccess : public IImageAccess<T> {
 private:
     mutable std::unique_ptr<ADIOSImage<T>> imagePtr_p;
     std::string configname;
+    std::string itsName;
+
 };
 
 } // namespace accessors
