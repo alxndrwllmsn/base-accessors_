@@ -64,16 +64,6 @@ CasaADIOSImageAccessParallel<T>::CasaADIOSImageAccessParallel(askapparallel::Ask
 
 // reading methods
 
-/// @brief obtain the shape
-/// @param[in] name image name
-/// @return full shape of the given image
-template <class T>
-casacore::IPosition CasaADIOSImageAccessParallel<T>::shape(const std::string &name) const
-{
-    ADIOSImage<T> img(itsComms, name);
-    return img.shape();
-}
-
 /// @brief read full image
 /// @param[in] name image name
 /// @return array with pixels
@@ -82,7 +72,7 @@ casacore::Array<T> CasaADIOSImageAccessParallel<T>::read(const std::string &name
 {
     ASKAPLOG_INFO_STR(casaADIOSImAccessParallelLogger, "Reading parallel CASA ADIOS image " << name);
     imagePtr_p.reset();
-    imagePtr_p.reset(new ADIOSImage<T>(itsComms, name));
+    imagePtr_p.reset(new ADIOSImage<T>(name));
     if (imagePtr_p->hasPixelMask()) {
         ASKAPLOG_INFO_STR(casaADIOSImAccessParallelLogger, " - setting unmasked pixels to zero");
         // generate an Array of zeros and copy the elements for which the mask is true
@@ -105,7 +95,7 @@ casacore::Array<T> CasaADIOSImageAccessParallel<T>::read(const std::string &name
 {
     ASKAPLOG_INFO_STR(casaADIOSImAccessParallelLogger, "Reading a slice of the parallel CASA ADIOS image " << name << " from " << blc << " to " << trc);
     imagePtr_p.reset();
-    imagePtr_p.reset(new ADIOSImage<T>(itsComms, name));
+    imagePtr_p.reset(new ADIOSImage<T>(name));
 
     if (imagePtr_p->hasPixelMask()) {
         ASKAPLOG_INFO_STR(casaADIOSImAccessParallelLogger, " - setting unmasked pixels to zero");
@@ -119,139 +109,21 @@ casacore::Array<T> CasaADIOSImageAccessParallel<T>::read(const std::string &name
     }
 }
 
-/// @brief Determine whether an image has a mask
-/// @param[in] nam image name
-/// @return True if image has a mask, False if not.
-template <class T>
-bool CasaADIOSImageAccessParallel<T>::isMasked(const std::string &name) const
-{
-    ADIOSImage<T> img(itsComms, name);
-    return img.hasPixelMask();
-}
-
-/// @brief read the mask for the full image
-/// @param[in] name image name
-/// @return bool array with mask values - 1=good, 0=bad
-template <class T>
-casacore::LogicalArray CasaADIOSImageAccessParallel<T>::readMask(const std::string &name) const
-{
-
-    ADIOSImage<T> img(itsComms, name);
-    if (img.hasPixelMask()) {
-        return img.getMask();
-    } else {
-        casacore::LogicalArray mask(img.shape(),true);
-        return mask;
-    }
-
-}
-
-/// @brief read the mask for part of the image
-/// @param[in] name image name
-/// @param[in] blc bottom left corner of the selection
-/// @param[in] trc top right corner of the selection
-/// @return bool array with mask values - 1=good, 0=bad
-template <class T>
-casacore::LogicalArray CasaADIOSImageAccessParallel<T>::readMask(const std::string &name, const casacore::IPosition &blc,
-                                                    const casacore::IPosition &trc) const
-{
-    ADIOSImage<T> img(itsComms, name);
-    const casacore::Slicer slicer(blc, trc, casacore::Slicer::endIsLast);
-    if (img.hasPixelMask()) {
-        return img.getMaskSlice(slicer);
-    } else {
-        casacore::LogicalArray mask(slicer.length(),true);
-        return mask;
-    }
-
-}
-
 /// @brief obtain coordinate system info
 /// @param[in] name image name
 /// @return coordinate system object
 template <class T>
 casacore::CoordinateSystem CasaADIOSImageAccessParallel<T>::coordSys(const std::string &name) const
 {
-    ADIOSImage<T> img(itsComms, name);
-    return img.coordinates();
-}
-
-template <class T>
-casacore::CoordinateSystem CasaADIOSImageAccessParallel<T>::coordSysSlice(const std::string &name, const casacore::IPosition &blc,
-        const casacore::IPosition &trc) const
-{
-    casacore::Slicer slc(blc, trc, casacore::Slicer::endIsLast);
-    ASKAPLOG_INFO_STR(casaADIOSImAccessParallelLogger, " CasaADIOSImageAccessParallel - Slicer " << slc);
-    casacore::PagedImage<T> img(name);
-    casacore::SubImage<T> si = casacore::SubImage<T>(img, slc, casacore::AxesSpecifier(casacore::True));
-    return si.coordinates();
-
-
-}
-/// @brief obtain beam info
-/// @param[in] name image name
-/// @return beam info vector
-template <class T>
-casacore::Vector<casacore::Quantum<double> > CasaADIOSImageAccessParallel<T>::beamInfo(const std::string &name) const
-{
-    ADIOSImage<T> img(itsComms, name);
-    casacore::ImageInfo ii = img.imageInfo();
-    if (!img.imageInfo().hasMultipleBeams()) {
-      return ii.restoringBeam().toVector();
+    //If this is a created cube, don't try and open.
+    if (imagePtr_p) {
+        ASKAPDEBUGASSERT(itsName == name);
+        return imagePtr_p->coordinates();
     } else {
-      return casacore::Vector<casacore::Quantum<double>>();
+        ADIOSImage<T> img(name);
+        return img.coordinates();
     }
 }
-
-/// @brief get restoring beam info
-/// @param[in] name image name
-/// @return beamlist  list of beams, beamlist will be empty if image only has a single beam
-template <class T>
-BeamList CasaADIOSImageAccessParallel<T>::beamList(const std::string &name) const
-{
-    ADIOSImage<T> img(itsComms, name);
-    casacore::ImageInfo ii = img.imageInfo();
-    BeamList bl;
-    if (img.imageInfo().hasMultipleBeams()) {
-      for (int chan = 0; chan < ii.nChannels(); chan++) {
-        casacore::GaussianBeam gb = ii.restoringBeam(chan,0);
-        bl[chan] = gb.toVector();
-      }
-    }
-    return bl;
-}
-
-template <class T>
-std::string CasaADIOSImageAccessParallel<T>::getUnits(const std::string &name) const
-{
-    casacore::Table tmpTable(name);
-    std::string units = tmpTable.keywordSet().asString("units");
-    return units;
-}
-
-/// @brief Get a particular keyword from the image metadata (A.K.A header)
-/// @details This reads a given keyword to the image metadata.
-/// @param[in] name Image name
-/// @param[in] keyword The name of the metadata keyword
-/// @return pair of strings - keyword value and comment
-template <class T>
-std::pair<std::string, std::string> CasaADIOSImageAccessParallel<T>::getMetadataKeyword(const std::string &name, const std::string &keyword) const
-{
-
-    ADIOSImage<T> img(itsComms, name);
-    casacore::TableRecord miscinfo = img.miscInfo();
-    std::string value = "";
-    std::string comment = "";
-    if (miscinfo.isDefined(keyword)) {
-        value = miscinfo.asString(keyword);
-        comment = miscinfo.comment(keyword);
-    } else {
-        ASKAPLOG_DEBUG_STR(casaADIOSImAccessParallelLogger, "Keyword " << keyword << " is not defined in metadata for image " << name);
-    }
-    return std::pair<std::string,std::string>(value,comment);
-
-}
-
 
 // writing methods
 
@@ -511,33 +383,4 @@ void CasaADIOSImageAccessParallel<T>::setInfo(const std::string &name, const cas
     updateTableRecord.defineRecord(infoTableName,info);
     // now set the updated record back to the image
     imagePtr_p->setMiscInfo(updateTableRecord);
-}
-
-/// @brief this methods retrieves the table(s) in the image and stores them in the casacore::Record
-/// @param[in] name - image name
-/// @param[in] tblName - name of the table to retrieve the data. if tblName = "All" then retrieve all
-///                      the tables in the image
-/// @param[out] info - casacore::Record to contain the tables' data.
-template <class T>
-void CasaADIOSImageAccessParallel<T>::getInfo(const std::string &name, const std::string& tableName, casacore::Record &info)
-{
-    ADIOSImage<T> img(itsComms, name);
-    //casacore::TableRecord tableRecord = imagePtr_p->miscInfo().toRecord();
-    casacore::Record tableRecord = img.miscInfo().toRecord();
-    casacore::uInt nFields = tableRecord.nfields();
-    for(casacore::uInt f = 0; f < nFields; f++) {
-        std::string name = tableRecord.name(f);
-        casacore::DataType type = tableRecord.dataType(f);
-        // we know tables are stored as sub records in the image
-        if ( type == casacore::DataType::TpRecord ) {
-            if ( (tableName != name) && (tableName != "All") ) {
-                // tableName is not the same as current sub record's name
-                // AND table is not "All", process the next field
-                continue;
-            }
-            // add the sub record which is a table data in this case to
-            // the info object
-            info.defineRecord(name,tableRecord.asRecord(f));
-        }
-    }
 }

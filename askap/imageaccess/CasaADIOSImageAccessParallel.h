@@ -65,11 +65,6 @@ public:
     // Reading methods
     //////////////////
 
-    /// @brief obtain the shape
-    /// @param[in] name image name
-    /// @return full shape of the given image
-    virtual casacore::IPosition shape(const std::string &name) const override;
-
     /// @brief read full image
     /// @param[in] name image name
     /// @return array with pixels
@@ -83,63 +78,10 @@ public:
     virtual casacore::Array<T> read(const std::string &name, const casacore::IPosition &blc,
                                     const casacore::IPosition &trc) const override;
 
-    /// @brief Determine whether an image has a mask
-    /// @param[in] nam image name
-    /// @return True if image has a mask, False if not.
-    virtual bool isMasked(const std::string &name) const override;
-
-    /// @brief read the mask for the full image
-    /// @param[in] name image name
-    /// @return bool array with mask values - 1=good, 0=bad
-    virtual casacore::LogicalArray readMask(const std::string &name) const override;
-
-    /// @brief read the mask for part of the image
-    /// @param[in] name image name
-    /// @param[in] blc bottom left corner of the selection
-    /// @param[in] trc top right corner of the selection
-    /// @return bool array with mask values - 1=good, 0=bad
-    virtual casacore::LogicalArray readMask(const std::string &name, const casacore::IPosition &blc,
-                                    const casacore::IPosition &trc) const override;
-
     /// @brief obtain coordinate system info
     /// @param[in] name image name
     /// @return coordinate system object
     virtual casacore::CoordinateSystem coordSys(const std::string &name) const override;
-
-    /// @brief obtain coordinate system info for part of an image
-    /// @param[in] name image name
-    /// @return coordinate system object
-    virtual casacore::CoordinateSystem coordSysSlice(const std::string &name, const casacore::IPosition &blc,
-            const casacore::IPosition &trc) const override;
-
-    /// @brief obtain beam info
-    /// @param[in] name image name
-    /// @return beam info vector
-    virtual casacore::Vector<casacore::Quantum<double> > beamInfo(const std::string &name) const override;
-
-    /// @brief obtain beam info
-    /// @param[in] name image name
-    /// @return beam info list
-    virtual BeamList beamList(const std::string &name) const override;
-
-    /// @brief obtain pixel units
-    /// @param[in] name image name
-    /// @return units string
-    virtual std::string getUnits(const std::string &name) const override;
-
-    /// @brief this methods retrieves the table(s) in the image and stores them in the casacore::Record
-    /// @param[in] name - image name
-    /// @param[in] tblName - name of the table to retrieve the data. if tblName = "All" then retrieve all
-    ///                      the tables in the image
-    /// @param[out] info - casacore::Record to contain the tables' data.
-    virtual void getInfo(const std::string &name, const std::string& tableName, casacore::Record &info) override;
-
-    /// @brief Get a particular keyword from the image metadata (A.K.A header)
-    /// @details This reads a given keyword from the image metadata.
-    /// @param[in] name Image name
-    /// @param[in] keyword The name of the metadata keyword
-    /// @return pair of strings - keyword value and comment
-    virtual std::pair<std::string, std::string> getMetadataKeyword(const std::string &name, const std::string &keyword) const override;
 
     //////////////////
     // Writing methods
