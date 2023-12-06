@@ -126,16 +126,16 @@ public:
 	/// visibility/row
 	virtual const casacore::Vector<casacore::MVDirection>& dishPointing2() const = 0;
 
-    /// Visibilities (a cube is nRow x nChannel x nPol; each element is
+    /// Visibilities (a cube is nPol x nChannel x nRow; each element is
 	/// a complex visibility)
-	/// @return a reference to nRow x nChannel x nPol cube, containing
+	/// @return a reference to nPol x nChannel x nRow cube, containing
 	/// all visibility data
 	/// TODO:
 	///     a non-const version to be able to subtract the model
 	virtual const casacore::Cube<casacore::Complex>& visibility() const = 0;
 
 	/// Cube of flags corresponding to the output of visibility() 
-	/// @return a reference to nRow x nChannel x nPol cube with flag 
+	/// @return a reference to nPol x nChannel x nRow cube with flag 
 	///         information. If True, the corresponding element is flagged.
 	virtual const casacore::Cube<casacore::Bool>& flag() const = 0;
 
@@ -167,7 +167,7 @@ public:
 	
 
     /// Noise level required for a proper weighting
-	/// @return a reference to nRow x nChannel x nPol cube with
+	/// @return a reference to nPol x nChannel x nRow cube with
 	///         complex noise estimates. Elements correspond to the
 	///         visibilities in the data cube.
 	virtual const casacore::Cube<casacore::Complex>& noise() const = 0;

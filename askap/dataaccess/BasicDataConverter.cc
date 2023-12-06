@@ -54,7 +54,7 @@ BasicDataConverter::BasicDataConverter() :
      itsDirectionConverter(new DirectionConverter),
      itsFrequencyConverter(new GenericConverter<casacore::MFrequency>(
                            casacore::MFrequency::Ref(casacore::MFrequency::LSRK),
-			   "GHz")),
+			 "GHz")),
      itsVelocityConverter(new GenericConverter<casacore::MRadialVelocity>(
                      casacore::MRadialVelocity::Ref(casacore::MRadialVelocity::LSRK),
 		     "km/s"))

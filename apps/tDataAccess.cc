@@ -61,11 +61,7 @@ using namespace accessors;
 void timeDependentSubtableTest(const string &ms, const IConstDataSource &ds) 
 {
   IDataConverterPtr conv=ds.createConverter();  
-  //conv->setEpochFrame(casacore::MEpoch(casacore::Quantity(53635.5,"d"),
-  //                    casacore::MEpoch::Ref(casacore::MEpoch::UTC)),"s");
   IDataSelectorPtr sel=ds.createSelector();
-  //sel->chooseFeed(1);
-  //sel<<LOFAR::ParameterSet("test.in").makeSubset("TestSelection.");
   const IDataConverterImpl &dci=dynamic_cast<const IDataConverterImpl&>(*conv);
   const TableManager tm(casacore::Table(ms),true);
   const IFeedSubtableHandler &fsh = tm.getFeed();  
@@ -78,8 +74,6 @@ void timeDependentSubtableTest(const string &ms, const IConstDataSource &ds)
 
 void doReadOnlyTest(const IConstDataSource &ds) {
   IDataSelectorPtr sel=ds.createSelector();
-  //sel->chooseFeed(1);
-  //sel<<LOFAR::ParameterSet("test.in").makeSubset("TestSelection.");
   IDataConverterPtr conv=ds.createConverter();  
   conv->setFrequencyFrame(casacore::MFrequency::Ref(casacore::MFrequency::BARY),"MHz");
   conv->setEpochFrame(casacore::MEpoch(casacore::Quantity(53635.5,"d"),
@@ -87,9 +81,6 @@ void doReadOnlyTest(const IConstDataSource &ds) {
   conv->setDirectionFrame(casacore::MDirection::Ref(casacore::MDirection::AZEL));                    
     
   for (IConstDataSharedIter it=ds.createConstIterator(sel,conv);it!=it.end();++it) {  
-       //cout<<"this is a test "<<it->visibility().nrow()<<" "<<it->frequency()<<endl;
-       //cout<<"flags: "<<it->flag()<<endl;
-       //cout<<"feed1 pa: "<<it->feed1PA()<<endl;
        cout<<"w: [";
        for (casacore::uInt row = 0; row<it->nRow(); ++row) {
             cout<<it->uvw()[row](2);
@@ -98,18 +89,12 @@ void doReadOnlyTest(const IConstDataSource &ds) {
 	    }
        }
        cout<<"]"<<endl;
-       //cout<<"noise: "<<it->noise().shape()<<endl;
-       //cout<<"direction: "<<it->pointingDir2()<<endl;
-       //cout<<"direction: "<<it->dishPointing2()<<endl;
-       //cout<<"ant1: "<<it->antenna1()<<endl;
-       //cout<<"ant2: "<<it->antenna2()<<endl;
        cout<<"time: "<<it->time()<<endl;
   }
 }
 
 void doReadWriteTest(const IDataSource &ds) {
   IDataSelectorPtr sel=ds.createSelector();
-  //sel->chooseFeed(1);  
   IDataConverterPtr conv=ds.createConverter();
   conv->setFrequencyFrame(casacore::MFrequency::Ref(casacore::MFrequency::TOPO),"MHz");
   conv->setEpochFrame(casacore::MEpoch(casacore::Quantity(53635.5,"d"),
@@ -117,16 +102,12 @@ void doReadWriteTest(const IDataSource &ds) {
   IDataSharedIter it=ds.createIterator(sel,conv);
   //for (size_t run=0;run<10;++run)
   for (it.init();it!=it.end();it.next()) {
-       //cout<<it.buffer("TEST").rwVisibility()<<endl;
        it->frequency();
        it->pointingDir1();
        it->time();
        it->antenna1();
        it->feed1();
        it->uvw();
-       //it.buffer("TEST").rwVisibility()=it->visibility();
-       //it.chooseBuffer("MODEL_DATA");
-       //it->rwVisibility()=it.buffer("TEST").visibility();
        it.chooseOriginal();
        it->rwVisibility().set(casacore::Complex(1.,0.0));
        const double l=0., m=0.003975472185;
@@ -134,7 +115,7 @@ void doReadWriteTest(const IDataSource &ds) {
             for (casacore::uInt chan=0; chan<it->nChannel(); ++chan) {
                  const double phase = 2.*casacore::C::pi*(it->uvw()(row)(0)*l+it->uvw()(row)(1)*m)/casacore::C::c*it->frequency()[chan]*1e6;
                  const casacore::Complex phasor(cos(phase),sin(phase));
-                 casacore::Array<casacore::Complex> tmp = it->rwVisibility().yzPlane(row).row(chan);
+                 casacore::Array<casacore::Complex> tmp = it->rwVisibility().xyPlane(row).column(chan);
                  tmp *= phasor;
             }
        }
@@ -151,15 +132,10 @@ int main(int argc, char **argv) {
      casacore::Timer timer;
 
      timer.mark();
-     //TableDataSource ds(argv[1],TableDataSource::REMOVE_BUFFERS |
-     //                           TableDataSource::MEMORY_BUFFERS);     
-     //TableDataSource ds(argv[1],TableDataSource::MEMORY_BUFFERS | TableDataSource::WRITE_PERMITTED);     
      TableDataSource ds(argv[1],TableDataSource::MEMORY_BUFFERS);     
      std::cerr<<"Initialization: "<<timer.real()<<std::endl;
-     //timeDependentSubtableTest(argv[1],ds);
      timer.mark();
      doReadOnlyTest(ds);
-     //doReadWriteTest(ds);    
      std::cerr<<"Job: "<<timer.real()<<std::endl;
      
   }
