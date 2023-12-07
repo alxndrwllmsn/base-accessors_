@@ -8,7 +8,6 @@
 #
 # You can affect the build content by manipulating the "tag/branch" column. Should be something that git expects for that 
 # repo.
-
 #     Identifier                   tag/branch       cache  type      description                        force it
 set ( ASKAP_CMAKE_TAG              tags/1.5.0       CACHE  STRING    "askap.cmake tools"                FORCE )
 set ( ASKAP_DEV_TAG                tags/2.12.0      CACHE  STRING    "askap dev tools"                  FORCE )
@@ -19,5 +18,4 @@ set ( BASE_LOGFILTERS_TAG          tags/1.4.0       CACHE  STRING    "base-logfi
 set ( BASE_IMAGEMATH_TAG           tags/1.12.0      CACHE  STRING    "base-imagemath version"           FORCE )
 set ( BASE_ASKAPPARALLEL_TAG       tags/1.7.0       CACHE  STRING    "base-askapparallel version"       FORCE )
 set ( BASE_SCIMATH_TAG             tags/1.12.0      CACHE  STRING    "base-scimath version"             FORCE )
- 
 # TOS related repos are not versioned yet, so pinned this build with commit hash values.
