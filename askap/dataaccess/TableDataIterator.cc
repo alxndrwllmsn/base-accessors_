@@ -239,8 +239,8 @@ void TableDataIterator::readBuffer(casacore::Cube<casacore::Complex> &vis,
 {
   const IBufferManager &bufManager=subtableInfo().getBufferManager();
   const TableConstDataAccessor &accessor=getAccessor();
-  const casacore::IPosition requiredShape(3, accessor.nRow(),
-          accessor.nChannel(), accessor.nPol());
+  const casacore::IPosition requiredShape(3, accessor.nPol(),
+          accessor.nChannel(), accessor.nRow());
   if (bufManager.bufferExists(name,itsIterationCounter)) {
       bufManager.readBuffer(vis,name,itsIterationCounter);
       if (vis.shape()!=requiredShape) {
@@ -293,20 +293,20 @@ void TableDataIterator::writeCube(const casacore::Cube<T> &cube,
   const casacore::Slicer chanSlicer(casacore::Slice(),casacore::Slice(startChan,nChan));
 
   // no change of shape is permitted
-  ASKAPASSERT(cube.nrow() == nRow() &&
+  ASKAPASSERT(cube.nplane() == nRow() &&
               cube.ncolumn() == nChan &&
-              cube.nplane() == nPol());
+              cube.nrow() == nPol());
   casacore::ArrayColumn<T> visCol(getCurrentIteration(), colName);
   ASKAPDEBUGASSERT(getCurrentIteration().nrow() >= getCurrentTopRow()+
                     nRow());
   casacore::rownr_t tableRow = getCurrentTopRow();
-  casacore::Matrix<T> buf(nPol(),nChan);
-  for (casacore::uInt row=0;row<cube.nrow();++row,++tableRow) {
+  //casacore::Matrix<T> buf(nPol(),nChan);
+  for (casacore::uInt row=0;row<cube.nplane();++row,++tableRow) {
        const casacore::IPosition shape = visCol.shape(row);
        ASKAPDEBUGASSERT(shape.size() && (shape.size()<3));
        const casacore::uInt thisRowNumberOfPols = shape[0];
        const casacore::uInt thisRowNumberOfChannels = shape.size()>1 ? shape[1] : 1;
-       if (thisRowNumberOfPols != cube.nplane()) {
+       if (thisRowNumberOfPols != cube.nrow()) {
            ASKAPTHROW(DataAccessError, "Current implementation of the writing to original "
                 "visibilities does not support partial selection of the data");
        }
@@ -314,17 +314,14 @@ void TableDataIterator::writeCube(const casacore::Cube<T> &cube,
            ASKAPTHROW(DataAccessError, "Channel selection doesn't fit into exisiting visibility array");
        }
        // for now just copy
-       bool useSlicer = (startChan!=0) || (startChan+nChan!=thisRowNumberOfChannels);
+       const bool useSlicer = (startChan!=0) || (startChan+nChan!=thisRowNumberOfChannels);
 
-       for (casacore::uInt chan=0; chan<nChan; ++chan) {
-            for (casacore::uInt pol=0; pol<thisRowNumberOfPols; ++pol) {
-                 buf(pol,chan) = cube(row,chan,pol);
-            }
-       }
        if (useSlicer) {
-           visCol.putSlice(tableRow,chanSlicer,buf);
+           //visCol.putSlice(tableRow,chanSlicer,buf);
+           visCol.putSlice(tableRow,chanSlicer,cube.xyPlane(row));
        } else {
-           visCol.put(tableRow, buf);
+           //visCol.put(tableRow, buf);
+           visCol.put(tableRow,cube.xyPlane(row));
        }
   }
 }
@@ -355,11 +352,11 @@ void TableDataIterator::writeOriginalFlag() const
        casacore::ROScalarColumn<casacore::Bool> rowFlagCol(getCurrentIteration(), "FLAG_ROW");
        const casacore::Vector<casacore::Bool> rowBasedFlag = rowFlagCol.getColumn();
        const casacore::rownr_t topRow = getCurrentTopRow();
-       ASKAPDEBUGASSERT(static_cast<casacore::rownr_t>(rowBasedFlag.nelements()) >= topRow+flags.nrow());
-       for (casacore::uInt row = 0; row < flags.nrow(); ++row) {
+       ASKAPDEBUGASSERT(static_cast<casacore::rownr_t>(rowBasedFlag.nelements()) >= topRow+flags.nplane()); 
+       for (casacore::uInt row = 0; row < flags.nplane(); ++row) { 
             if (rowBasedFlag[row + topRow]) {
                 bool oneUnflagged = false;
-                casacore::Matrix<casacore::Bool> thisRow = flags.yzPlane(row);
+                casacore::Matrix<casacore::Bool> thisRow = flags.xyPlane(row);
                 for (casacore::Matrix<casacore::Bool>::const_iterator ci = thisRow.begin();
                      ci != thisRow.end(); ++ci) {
                      if (!(*ci)) {
@@ -367,7 +364,6 @@ void TableDataIterator::writeOriginalFlag() const
                          break;
                      }
                 }
-                //std::cout<<row<<" "<<rowBasedFlag[row + topRow]<<" "<<oneUnflagged<<std::endl;
                 ASKAPCHECK(!oneUnflagged, "Flag modification attempted to unflag data for the row ("<<
                       row<<") which is flagged via row-based flagging mechanism. This is not supported");
             }

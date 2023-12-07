@@ -45,6 +45,8 @@
 #include <casacore/measures/Measures/MCFrequency.h>
 #include <casacore/casa/Arrays/Slicer.h>
 #include <casacore/casa/Arrays/IPosition.h>
+#include <casacore/casa/Arrays/MatrixMath.h>
+#include <casacore/casa/Arrays/ArrayMath.h>
 
 /// Local package
 #include <askap/dataaccess/TableConstDataIterator.h>
@@ -127,7 +129,7 @@ bool WholeRowFlagger<casacore::Bool>::copyRequired(casacore::uInt row,
   ASKAPDEBUGASSERT(!itsFlagRowCol.isNull());
   if (itsHasFlagRow) {
       if (itsFlagRowCol.asBool(row)) {
-          cube.yzPlane(row) = true;
+          cube.xyPlane(row) = true; 
           return false;
       }
   }
@@ -427,7 +429,7 @@ void TableConstDataIterator::makeUniformFieldID()
 /// @details populate the buffer provided with the information
 /// read in the current iteration. This method is templated and can be
 /// used for both visibility and flag data fillers.
-/// @param[in] cube a reference to the nRow x nChannel x nPol buffer
+/// @param[in] cube a reference to the nPol x nChannel x nRow buffer
 ///            cube to fill with the information from table
 /// @param[in] columnName a name of the column to read
 template<typename T>
@@ -440,15 +442,13 @@ void TableConstDataIterator::fillCube(casacore::Cube<T> &cube,
   // Setup a slicer to extract the specified channel range only
   const Slicer chanSlicer(Slice(),Slice(startChan,nChan));
 
-  cube.resize(itsNumberOfRows, nChan, itsNumberOfPols);
+  cube.resize(itsNumberOfPols, nChan, itsNumberOfRows);
   ROArrayColumn<T> tableCol(itsCurrentIteration,columnName);
 
   // helper class, which does nothing for visibility cube, but checks
   // FLAG_ROW for flagging
   WholeRowFlagger<T> wrFlagger(itsCurrentIteration);
 
-  // temporary buffer declared outside the loop
-  casacore::Matrix<T> buf(itsNumberOfPols, nChan);
   for (uInt row=0; row<itsNumberOfRows; ++row) {
        const casacore::IPosition shape = tableCol.shape(row);
        ASKAPASSERT(shape.size() && (shape.size()<3));
@@ -470,21 +470,18 @@ void TableConstDataIterator::fillCube(casacore::Cube<T> &cube,
 
        if (wrFlagger.copyRequired(row + itsCurrentTopRow, cube)) {
            // Extract slice for this row
+           // Internally, buf and cube.xyPlane(row) point to the same memory
+           casacore::Matrix<T> buf = cube.xyPlane(row);
+           // Copy a slice into buf and hence xyPlane
            tableCol.getSlice(row + itsCurrentTopRow, chanSlicer, buf, False);
-
-           // Copy the slice into the cube
-           for (uInt chan = 0; chan < nChan; ++chan) {
-               for (uInt pol = 0; pol < itsNumberOfPols; ++pol) {
-                   cube(row,chan,pol) = buf(pol,chan);
-               }
-           }
+           
        }
   }
 }
 
 /// populate the buffer of visibilities with the values of current
 /// iteration
-/// @param[out] vis a reference to the nRow x nChannel x nPol buffer
+/// @param[out] vis a reference to the nPol x nChannel x nRow buffer
 ///            cube to fill with the complex visibility data
 void TableConstDataIterator::fillVisibility(casacore::Cube<casacore::Complex> &vis) const
 {
@@ -494,7 +491,7 @@ void TableConstDataIterator::fillVisibility(casacore::Cube<casacore::Complex> &v
 /// @brief read flagging information
 /// @details populate the buffer of flags with the information
 /// read in the current iteration
-/// @param[in] flag a reference to the nRow x nChannel x nPol buffer
+/// @param[in] flag a reference to the nPol x nChannel x nRow buffer
 ///            cube to fill with the flag information (each element has
 ///            bool type)
 void TableConstDataIterator::fillFlag(casacore::Cube<casacore::Bool> &flag) const
@@ -507,7 +504,7 @@ void TableConstDataIterator::fillFlag(casacore::Cube<casacore::Bool> &flag) cons
 
 /// populate the buffer of noise figures with the values of current
 /// iteration
-/// @param[in] noise a reference to the nRow x nChannel x nPol buffer
+/// @param[in] noise a reference to the nPol x nChannel x nRow buffer
 ///            cube to be filled with the noise figures
 void TableConstDataIterator::fillNoise(casacore::Cube<casacore::Complex> &noise) const
 {
@@ -516,7 +513,7 @@ void TableConstDataIterator::fillNoise(casacore::Cube<casacore::Complex> &noise)
   const casacore::uInt startChan = startChannel();
 
   // default action first - just resize the cube and assign 1.
-  noise.resize(itsNumberOfRows, nChan, itsNumberOfPols);
+  noise.resize(itsNumberOfPols, nChan, itsNumberOfRows); 
   noise.set(casacore::Complex(1.,1.));
   // if the sigma spectrum exists, use those sigmas to fill the noise cube
   if (table().actualTableDesc().isColumn("SIGMA_SPECTRUM")) {
@@ -539,7 +536,7 @@ void TableConstDataIterator::fillNoise(casacore::Cube<casacore::Complex> &noise)
                 for (casa::uInt pol=0; pol<itsNumberOfPols; pol++) {
                      // same noise for both real and imaginary parts
                      const casa::Float val = buf(pol,chan);
-                     noise(row,chan,pol) = casa::Complex(val,val);
+                     noise(pol,chan,row) = casa::Complex(val,val);
                 }
            }
       } // loop over rows
@@ -556,7 +553,6 @@ void TableConstDataIterator::fillNoise(casacore::Cube<casacore::Complex> &noise)
                ASKAPDEBUGASSERT(shape[0] == casacore::Int(itsNumberOfPols));
                //casacore::Array<Float> buf(casacore::IPosition(1,itsNumberOfPols));
                sigmaCol.get(row+itsCurrentTopRow,buf,False);
-               //casacore::Matrix<casacore::Complex> slice = noise.yzPlane(row);
                for (uInt chan = 0; chan< nChan; ++chan) {
                     //ASKAPDEBUGASSERT(chan< slice.nrow());
                     //casacore::Vector<casacore::Complex> polNoise = slice.row(chan);
@@ -564,7 +560,7 @@ void TableConstDataIterator::fillNoise(casacore::Cube<casacore::Complex> &noise)
                          //ASKAPDEBUGASSERT(pol<buf.nelements());
                          // same polarisation for both real and imaginary parts
                          const casacore::Float val = buf(pol);
-                         noise(row,chan,pol) = casacore::Complex(val,val);
+                         noise(pol,chan,row) = casacore::Complex(val,val);
                     }
                }
            } else {
@@ -581,18 +577,11 @@ void TableConstDataIterator::fillNoise(casacore::Cube<casacore::Complex> &noise)
                // case is not present in any available measurement set
                const IPosition blc(2,startChan,0);
                const IPosition trc(2,startChan+nChan-1,itsNumberOfPols-1);
-               casacore::Matrix<casacore::Complex> rowNoise = noise.yzPlane(row);
+               // nowNoise is pol x chan
+               casacore::Matrix<casacore::Complex> rowNoise = noise.xyPlane(row);
+               // inVals is chan x pol
                const casacore::Matrix<casacore::Float> inVals = buf(blc,trc);
-               //convertArray(rowNoise, buf(blc,trc));
-               for (casacore::uInt x=0; x<rowNoise.nrow(); ++x) {
-                    for (casacore::uInt y=0; y<rowNoise.ncolumn(); ++y) {
-                         ASKAPDEBUGASSERT(x<inVals.nrow());
-                         ASKAPDEBUGASSERT(y<inVals.ncolumn());
-                         // same polarisation for both real and imaginary parts
-                         const casacore::Float val = inVals(x,y);
-                         rowNoise(x,y) = casacore::Complex(val,val);
-                    }
-               }
+               casacore::convertArray(rowNoise,casacore::transpose(inVals));
            }
       } // loop over rows
   } // if-statement checking that SIGMA column is present
@@ -721,6 +710,7 @@ std::pair<casacore::uInt, casacore::uInt> TableConstDataIterator::getChannelRang
               ASKAPDEBUGASSERT(freqInc != 0);
               ASKAPCHECK(abs((dataFreqs(nFreq-1)-dataFreqs(0))/((nFreq-1)*freqInc)-1)<0.001,
                 "Frequency axis non-linear, cannot do frequency selection with current code");
+              
               const double channel = (requiredFreq - dataFreqs(0)) / freqInc;
               // for now just use nearest channel, but could do linear interpolation between nearest two
               const int nearestChannel = std::lrint(channel);
@@ -803,7 +793,6 @@ void TableConstDataIterator::fillFrequency(casacore::Vector<casacore::Double> &f
       // enough to throw an exception if someone gives a VLBI measurement set.
       itsConverter->setMeasFrame(casacore::MeasFrame(epoch, subtableInfo().
                      getAntenna().getPosition(0), antReferenceDir));
-
       freq.resize(nChan);
       for (uInt ch=0;ch<nChan;++ch) {
            freq[ch]=itsConverter->frequency(spWindowSubtable.getFrequency(

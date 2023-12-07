@@ -69,9 +69,9 @@ casacore::uInt TableConstDataAccessor::nPol() const throw()
   return itsIterator.nPol();
 }
 
-/// Visibilities (a cube is nRow x nChannel x nPol; each element is
+/// Visibilities (a cube is nPol x nChannel x nRow; each element is
 /// a complex visibility)
-/// @return a reference to nRow x nChannel x nPol cube, containing
+/// @return a reference to nPol x nChannel x nRow cube, containing
 /// all visibility data
 const casacore::Cube<casacore::Complex>& TableConstDataAccessor::visibility() const
 {
@@ -79,12 +79,12 @@ const casacore::Cube<casacore::Complex>& TableConstDataAccessor::visibility() co
                         &TableConstDataIterator::fillVisibility);
 }
 
-/// Cube of flags corresponding to the output of visibility()
-/// @return a reference to nRow x nChannel x nPol cube with flag
+/// Cube of flags corresponding to the output of visibility() 
+/// @return a reference to nPol x nChannel x nRow cube with flag 
 ///         information. If True, the corresponding element is flagged.
 const casacore::Cube<casacore::Bool>& TableConstDataAccessor::flag() const
 {
-  return itsFlag.value(itsIterator, &TableConstDataIterator::fillFlag);
+ return itsFlag.value(itsIterator, &TableConstDataIterator::fillFlag);
 }
 
 /// UVW
@@ -243,7 +243,7 @@ const casacore::Vector<casacore::MVDirection>& TableConstDataAccessor::dishPoint
 }
 
 /// Noise level required for a proper weighting
-/// @return a reference to nRow x nChannel x nPol cube with
+/// @return a reference to nPol x nChannel x nRow cube with
 ///         complex noise estimates
 const casacore::Cube<casacore::Complex>& TableConstDataAccessor::noise() const
 {

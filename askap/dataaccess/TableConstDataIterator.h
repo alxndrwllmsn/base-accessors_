@@ -104,34 +104,34 @@ public:
   /// methods used in the accessor.
 
   /// @return number of rows in the current accessor
-  casacore::uInt inline nRow() const throw() { return itsNumberOfRows;}
+  casacore::uInt inline nRow() const throw() {return itsNumberOfRows;}
 
   /// temporary - access to number of channels and polarizations
   /// it will be determined by the selector, get them from the table
   /// for now
 
   /// @return number of channels in the current accessor
-  casacore::uInt inline nChannel() const throw() { return getChannelRange().first;}
+  casacore::uInt inline nChannel() const throw() {return getChannelRange().first;}
 
   /// @return number of channels in the current accessor
   casacore::uInt inline nPol() const throw() { return itsNumberOfPols;}
 
   /// populate the buffer of visibilities with the values of current
   /// iteration
-  /// @param[in] vis a reference to the nRow x nChannel x nPol buffer
+  /// @param[in] vis a reference to the nPol x nChannel x nRow buffer
   ///            cube to fill with the complex visibility data
   void fillVisibility(casacore::Cube<casacore::Complex> &vis) const;
 
   /// populate the buffer of noise figures with the values of current
   /// iteration
-  /// @param[in] noise a reference to the nRow x nChannel x nPol buffer
+  /// @param[in] noise a reference to the nPol x nChannel x nRow buffer
   ///            cube to be filled with the noise figures
   void fillNoise(casacore::Cube<casacore::Complex> &noise) const;
 
   /// @brief read flagging information
   /// @details populate the buffer of flags with the information
   /// read in the current iteration
-  /// @param[in] flag a reference to the nRow x nChannel x nPol buffer
+  /// @param[in] flag a reference to the nPol x nChannel x nRow buffer
   ///            cube to fill with the flag information (each element has
   ///            bool type)
   void fillFlag(casacore::Cube<casacore::Bool> &flag) const;
@@ -257,7 +257,7 @@ protected:
   /// @details populate the buffer provided with the information
   /// read in the current iteration. This method is templated and can be
   /// used for both visibility and flag data fillers.
-  /// @param[in] cube a reference to the nRow x nChannel x nPol buffer
+  /// @param[in] cube a reference to the nPol x nChannel x nRow buffer
   ///            cube to fill with the information from table
   /// @param[in] columnName a name of the column to read
   template<typename T>

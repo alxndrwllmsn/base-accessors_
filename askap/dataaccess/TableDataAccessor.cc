@@ -45,10 +45,10 @@ TableDataAccessor::TableDataAccessor(const TableDataIterator &iter) :
                  itsVisNeedsFlush(false), itsFlagNeedsFlush(false),
                  itsIterator(iter) {}
 
-/// Read-only visibilities (a cube is nRow x nChannel x nPol;
+/// Read-only visibilities (a cube is nPol x nChannel x nRow;
 /// each element is a complex visibility)
 ///
-/// @return a reference to nRow x nChannel x nPol cube, containing
+/// @return a reference to nPol x nChannel x nRow cube, containing
 /// all visibility data
 ///
 const casacore::Cube<casacore::Complex>& TableDataAccessor::visibility() const
@@ -56,10 +56,10 @@ const casacore::Cube<casacore::Complex>& TableDataAccessor::visibility() const
   return getROAccessor().visibility();
 }
 
-/// Read-write access to visibilities (a cube is nRow x nChannel x nPol;
+/// Read-write access to visibilities (a cube is nPol x nChannel x nRow;
 /// each element is a complex visibility)
 ///
-/// @return a reference to nRow x nChannel x nPol cube, containing
+/// @return a reference to nPol x nChannel x nRow cube, containing
 /// all visibility data
 ///
 casacore::Cube<casacore::Complex>& TableDataAccessor::rwVisibility()
@@ -87,7 +87,7 @@ casacore::Cube<casacore::Complex>& TableDataAccessor::rwVisibility()
 }
 
 /// Cube of flags corresponding to the output of visibility()
-/// @return a reference to nRow x nChannel x nPol cube with the flag
+/// @return a reference to nPol x nChannel x nRow cube with the flag
 ///         information. If True, the corresponding element is flagged.
 const casacore::Cube<casacore::Bool>& TableDataAccessor::flag() const
 {
@@ -95,7 +95,7 @@ const casacore::Cube<casacore::Bool>& TableDataAccessor::flag() const
 }
 
 /// Non-const access to the cube of flags.
-/// @return a reference to nRow x nChannel x nPol cube with the flag
+/// @return a reference to nPol x nChannel x nRow cube with the flag
 ///         information. If True, the corresponding element is flagged.
 casacore::Cube<casacore::Bool>& TableDataAccessor::rwFlag()
 {
@@ -136,3 +136,4 @@ void TableDataAccessor::sync() const
       itsIterator.writeOriginalFlag();
   }
 }
+ 

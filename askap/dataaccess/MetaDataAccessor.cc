@@ -164,7 +164,7 @@ const casacore::Vector<casacore::MVDirection>& MetaDataAccessor::dishPointing2()
 }
 
 /// Cube of flags corresponding to the output of visibility() 
-/// @return a reference to nRow x nChannel x nPol cube with flag 
+/// @return a reference to nPol x nChannel x nRow cube with flag 
 ///         information. If True, the corresponding element is flagged.
 const casacore::Cube<casacore::Bool>& MetaDataAccessor::flag() const
 {
@@ -208,7 +208,7 @@ const casacore::Vector<casacore::Double>& MetaDataAccessor::uvwRotationDelay(
 }	
 
 /// Noise level required for a proper weighting
-/// @return a reference to nRow x nChannel x nPol cube with
+/// @return a reference to nPol x nChannel x nRow cube with
 ///         complex noise estimates. Elements correspond to the
 ///         visibilities in the data cube.
 const casacore::Cube<casacore::Complex>& MetaDataAccessor::noise() const

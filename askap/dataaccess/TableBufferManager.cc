@@ -69,6 +69,7 @@ void TableBufferManager::writeBuffer(const casacore::Cube<casacore::Complex> &vi
 }
 
 
+
 /// @brief check whether the particular buffer exists
 /// @param[in] name a name of the buffer to query
 /// @param[in] index a sequential index in the buffer

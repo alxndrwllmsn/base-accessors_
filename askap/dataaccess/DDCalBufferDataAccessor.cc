@@ -50,10 +50,10 @@ using namespace askap::accessors;
 DDCalBufferDataAccessor::DDCalBufferDataAccessor(const IConstDataAccessor &acc) :
       MetaDataAccessor(acc), itsNDir(1) {}
   
-/// Read-only visibilities (a cube is nRow x nChannel x nPol; 
+/// Read-only visibilities (a cube is nPol x nChannel x nRow; 
 /// each element is a complex visibility)
 ///
-/// @return a reference to nRow x nChannel x nPol cube, containing
+/// @return a reference to nPol x nChannel x nRow cube, containing
 /// all visibility data
 ///
 const casacore::Cube<casacore::Complex>& DDCalBufferDataAccessor::visibility() const
@@ -62,10 +62,10 @@ const casacore::Cube<casacore::Complex>& DDCalBufferDataAccessor::visibility() c
   return itsBuffer;
 }
 	
-/// Read-write access to visibilities (a cube is nRow x nChannel x nPol;
+/// Read-write access to visibilities (a cube is nPol x nChannel x nRow;
 /// each element is a complex visibility)
 ///
-/// @return a reference to nRow x nChannel x nPol cube, containing
+/// @return a reference to nPol x nChannel x nRow cube, containing
 /// all visibility data
 ///
 casacore::Cube<casacore::Complex>& DDCalBufferDataAccessor::rwVisibility()
@@ -82,9 +82,9 @@ void DDCalBufferDataAccessor::resizeBufferIfNeeded() const
   #endif
   
   const IConstDataAccessor &acc = getROAccessor();
-  if (itsBuffer.nrow() != itsNDir*acc.nRow() || itsBuffer.ncolumn() != acc.nChannel() ||
-                                        itsBuffer.nplane() != acc.nPol()) {
-      itsBuffer.resize(itsNDir*acc.nRow(), acc.nChannel(), acc.nPol());
+  if (itsBuffer.nplane() != itsNDir*acc.nRow() || itsBuffer.ncolumn() != acc.nChannel() ||
+                                        itsBuffer.nrow() != acc.nPol()) {
+      itsBuffer.resize(acc.nPol(), acc.nChannel(), itsNDir*acc.nRow());
   }
 }
 

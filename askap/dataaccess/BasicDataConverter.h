@@ -117,7 +117,7 @@ public:
     ///
     /// Class defaults to LSRK, GHz
     virtual void setFrequencyFrame(const casacore::MFrequency::Ref &ref,
-	   const casacore::Unit &unit = "GHz");
+	        const casacore::Unit &unit = "GHz");
 
     /// set the reference frame for any velocity
     /// (e.g. in the velocity-based selection or spectral labelling)
