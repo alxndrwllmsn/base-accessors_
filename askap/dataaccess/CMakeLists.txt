@@ -10,6 +10,7 @@ DataAccessorStub.cc
 DataIteratorAdapter.cc
 DataIteratorStub.cc
 DDCalBufferDataAccessor.cc
+DDCalOnDemandNoiseAndFlagDA.cc
 DirectionConverter.cc
 DopplerConverter.cc
 EpochConverter.cc
@@ -71,6 +72,7 @@ DataAdapter.h
 DataIteratorAdapter.h
 DataIteratorStub.h
 DDCalBufferDataAccessor.h
+DDCalOnDemandNoiseAndFlagDA.h
 DirectionConverter.h
 DopplerConverter.h
 EpochConverter.h
