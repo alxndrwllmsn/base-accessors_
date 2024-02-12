@@ -104,9 +104,9 @@ ADIOSImage<T>::ADIOSImage (
   makeNewTable(shape, rowNumber, filename);
   if (rank == 0){
     attach_logtable();
-    AlwaysAssert(setCoordinateInfo(coordinateInfo), casacore::AipsError);
     setTableType();
   }
+  AlwaysAssert(setCoordinateInfo(coordinateInfo), casacore::AipsError);
 }
 #endif 
 
@@ -144,7 +144,7 @@ ADIOSImage<T>::ADIOSImage (
   map_p = casacore::ArrayColumn<T>(tab_p, "map");
   row_p = rowNumber;
   config = configname;
-  attach_logtable();
+  //attach_logtable();
   restoreAll (tab_p.keywordSet());
   applyMaskSpecifier (spec);
 }
