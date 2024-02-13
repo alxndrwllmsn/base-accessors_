@@ -144,7 +144,6 @@ ADIOSImage<T>::ADIOSImage (
   map_p = casacore::ArrayColumn<T>(tab_p, "map");
   row_p = rowNumber;
   config = configname;
-  //attach_logtable();
   restoreAll (tab_p.keywordSet());
   applyMaskSpecifier (spec);
 }
