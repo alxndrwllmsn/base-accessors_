@@ -746,7 +746,8 @@ casacore::Bool TableConstDataIterator::isSelected(const casacore::TableExprNode&
 {
     ASKAPASSERT(!ten.isNull());
     ASKAPASSERT(ten.nrow() == table().nrow());
-    const rownr_t baseRow = itsTabIterator.table().rowNumbers()(row + itsCurrentTopRow);
+    ASKAPASSERT(row + itsCurrentTopRow < itsCurrentIteration.nrow());
+    const rownr_t baseRow = itsCurrentIteration.rowNumbers()(row + itsCurrentTopRow);
     return ten.getBool(baseRow);
 }
 
