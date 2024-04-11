@@ -9,6 +9,7 @@ tImageReadBinaryTable
 extractslice
 tWriteBinarySpectrumTable
 tReadWriteBinarySpectrumTable
+tVOTable
 )
 
 

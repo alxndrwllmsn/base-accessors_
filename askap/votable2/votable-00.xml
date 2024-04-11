@@ -1,0 +1,321 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Produced with astropy.io.votable version 5.3.1
+http://www.astropy.org/ -->
+<VOTABLE version="1.3" xmlns="http://www.ivoa.net/xml/VOTable/v1.3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.ivoa.net/xml/VOTable/v1.3 http://www.ivoa.net/xml/VOTable/VOTable-1.3.xsd">
+<RESOURCE type="results">
+<TABLE>
+<FIELD ID="Gaussian_ID" arraysize="18" datatype="char" name="Gaussian_ID" ucd="meta.id;meta.main">
+<DESCRIPTION>
+Unique identifier based on the field the component is located in
+and the index assigned by PyBDSF.
+</DESCRIPTION>
+</FIELD>
+<FIELD ID="Source_ID" arraysize="17" datatype="char" name="Source_ID" ucd="meta.id">
+<DESCRIPTION>
+Unique identifier based on the field the source is located in and
+the index assigned by PyBDSF.
+</DESCRIPTION>
+</FIELD>
+<FIELD ID="Field_ID" arraysize="12" datatype="char" name="Field_ID" ucd="meta.id;obs.field">
+<DESCRIPTION>
+Field name: RACS_HHMM+/-DD.
+</DESCRIPTION>
+</FIELD>
+<FIELD ID="RA" datatype="double" name="RA" ucd="pos.eq.ra;meta.main" unit="deg">
+<DESCRIPTION>
+J2000 right ascension of the source.
+</DESCRIPTION>
+</FIELD>
+<FIELD ID="Dec" datatype="double" name="Dec" ucd="pos.eq.dec;meta.main" unit="deg">
+<DESCRIPTION>
+J2000 declination of the source.
+</DESCRIPTION>
+</FIELD>
+<FIELD ID="Dec_corr" datatype="double" name="Dec_corr" ucd="pos.eq.dec" unit="deg">
+<DESCRIPTION>
+J2000 declination of the source after declination-dependent
+offsets applied.
+</DESCRIPTION>
+</FIELD>
+<FIELD ID="E_RA" datatype="double" name="E_RA" ucd="stat.error;pos.eq.ra" unit="deg">
+<DESCRIPTION>
+Uncertainty on right ascension from fitting the source position.
+</DESCRIPTION>
+</FIELD>
+<FIELD ID="E_Dec" datatype="double" name="E_Dec" ucd="stat.error;pos.eq.dec" unit="deg">
+<DESCRIPTION>
+Uncertainty on declination from fitting the source position.
+</DESCRIPTION>
+</FIELD>
+<FIELD ID="E_Dec_corr" datatype="double" name="E_Dec_corr" ucd="stat.error;pos.eq.dec" unit="deg">
+<DESCRIPTION>
+Uncertainty on corrected declination from fitting.
+</DESCRIPTION>
+</FIELD>
+<FIELD ID="Total_flux" datatype="double" name="Total_flux" ucd="phot.flux.density;em.radio;stat.fit" unit="mJy">
+<DESCRIPTION>
+Total flux density of the source.
+</DESCRIPTION>
+</FIELD>
+<FIELD ID="E_Total_flux_PyBDSF" datatype="double" name="E_Total_flux_PyBDSF" ucd="stat.error;phot.flux.density;em.radio;stat.fit" unit="mJy">
+<DESCRIPTION>
+Uncertainty in the total flux density from PyBDSF fitting.
+</DESCRIPTION>
+</FIELD>
+<FIELD ID="E_Total_flux" datatype="double" name="E_Total_flux" ucd="stat.error;phot.flux.density;em.radio;stat.fit" unit="mJy">
+<DESCRIPTION>
+Quadrature sum of the brightness scale and PyBDSF uncertainties
+for total flux density.
+</DESCRIPTION>
+</FIELD>
+<FIELD ID="Peak_flux" datatype="double" name="Peak_flux" ucd="phot.flux.density;stat.max;em.radio;stat.fit" unit="mJy.beam-1">
+<DESCRIPTION>
+Peak flux density of the source.
+</DESCRIPTION>
+</FIELD>
+<FIELD ID="E_Peak_flux_PyBDSF" datatype="double" name="E_Peak_flux_PyBDSF" ucd="stat.error;phot.flux.density;stat.max;em.radio;stat.fit" unit="mJy.beam-1">
+<DESCRIPTION>
+Uncertainty in the peak flux density from PyBDSF fitting.
+</DESCRIPTION>
+</FIELD>
+<FIELD ID="E_Peak_flux" datatype="double" name="E_Peak_flux" ucd="stat.error;phot.flux.density;stat.max;em.radio;stat.fit" unit="mJy.beam-1">
+<DESCRIPTION>
+Quadrature sum of the brightness scale and PyBDSF uncertainties
+for peak flux density.
+</DESCRIPTION>
+</FIELD>
+<FIELD ID="Maj_axis" datatype="double" name="Maj_axis" ucd="phys.angSize.smajAxis;em.radio;stat.fit" unit="arcsec">
+<DESCRIPTION>
+Size of the major axis of the source.
+</DESCRIPTION>
+</FIELD>
+<FIELD ID="Min_axis" datatype="double" name="Min_axis" ucd="phys.angSize.sminAxis;em.radio;stat.fit" unit="arcsec">
+<DESCRIPTION>
+Size of the minor axis of the source.
+</DESCRIPTION>
+</FIELD>
+<FIELD ID="PA" datatype="double" name="PA" ucd="phys.angSize;pos.posAng;em.radio;stat.fit" unit="deg">
+<DESCRIPTION>
+Position angle of the source, east of north.
+</DESCRIPTION>
+</FIELD>
+<FIELD ID="E_Maj_axis" datatype="double" name="E_Maj_axis" ucd="stat.error;phys.angSize.smajAxis;em.radio" unit="arcsec">
+<DESCRIPTION>
+Uncertainty in the source major axis.
+</DESCRIPTION>
+</FIELD>
+<FIELD ID="E_Min_axis" datatype="double" name="E_Min_axis" ucd="stat.error;phys.angSize.sminAxis;em.radio" unit="arcsec">
+<DESCRIPTION>
+Uncertainty in the source minor axis.
+</DESCRIPTION>
+</FIELD>
+<FIELD ID="E_PA" datatype="double" name="E_PA" ucd="stat.error;phys.angSize;pos.posAng;em.radio" unit="deg">
+<DESCRIPTION>
+Uncertainty in the source PA.
+</DESCRIPTION>
+</FIELD>
+<FIELD ID="DC_Maj_axis" datatype="double" name="DC_Maj_axis" ucd="phys.angSize.smajAxis;em.radio" unit="arcsec">
+<DESCRIPTION>
+Deconvolved source major axis.
+</DESCRIPTION>
+</FIELD>
+<FIELD ID="DC_Min_axis" datatype="double" name="DC_Min_axis" ucd="phys.angSize.sminAxis;em.radio" unit="arcsec">
+<DESCRIPTION>
+Deconvolved source minor axis.
+</DESCRIPTION>
+</FIELD>
+<FIELD ID="DC_PA" datatype="double" name="DC_PA" ucd="phys.angSize;pos.posAng;em.radio" unit="deg">
+<DESCRIPTION>
+Deconvolved source PA.
+</DESCRIPTION>
+</FIELD>
+<FIELD ID="E_DC_Maj_axis" datatype="double" name="E_DC_Maj_axis" ucd="stat.error;phys.angSize.smajAxis;em.radio" unit="arcsec">
+<DESCRIPTION>
+Uncertainty in the deconvolved source major axis.
+</DESCRIPTION>
+</FIELD>
+<FIELD ID="E_DC_Min_axis" datatype="double" name="E_DC_Min_axis" ucd="stat.error;phys.angSize.sminAxis;em.radio" unit="arcsec">
+<DESCRIPTION>
+Uncertainty in the deconvolved source minor axis.
+</DESCRIPTION>
+</FIELD>
+<FIELD ID="E_DC_PA" datatype="double" name="E_DC_PA" ucd="stat.error;phys.angSize;pos.posAng;em.radio" unit="deg">
+<DESCRIPTION>
+Uncertainty in the deconvolved source PA.
+</DESCRIPTION>
+</FIELD>
+<FIELD ID="Noise" datatype="double" name="Noise" ucd="stat.stdev;phot.flux.density" unit="mJy.beam-1">
+<DESCRIPTION>
+Local estimate of the root-mean-square noise.
+</DESCRIPTION>
+</FIELD>
+<FIELD ID="Tile_l" datatype="double" name="Tile_l" ucd="pos.dirCos" unit="deg">
+<DESCRIPTION>
+Direction cosine l of the source with respect to the field
+centre.
+</DESCRIPTION>
+</FIELD>
+<FIELD ID="Tile_m" datatype="double" name="Tile_m" ucd="pos.dirCos" unit="deg">
+<DESCRIPTION>
+Direction cosine m of the source with respect to the field
+centre.
+</DESCRIPTION>
+</FIELD>
+<FIELD ID="Tile_sep" datatype="double" name="Tile_sep" ucd="pos.angDistance" unit="deg2">
+<DESCRIPTION>
+Angular separation from the field centre.
+</DESCRIPTION>
+</FIELD>
+<FIELD ID="Gal_lon" datatype="double" name="Gal_lon" ucd="pos.galactic.lon" unit="deg">
+<DESCRIPTION>
+Galactic longitude of the source.
+</DESCRIPTION>
+</FIELD>
+<FIELD ID="Gal_lat" datatype="double" name="Gal_lat" ucd="pos.galactic.lat" unit="deg">
+<DESCRIPTION>
+Galactic latitude of the source.
+</DESCRIPTION>
+</FIELD>
+<FIELD ID="PSF_Maj" datatype="double" name="PSF_Maj" ucd="instr.det.psf" unit="arcsec">
+<DESCRIPTION>
+Major axis FWHM of the PSF for the field.
+</DESCRIPTION>
+</FIELD>
+<FIELD ID="PSF_Min" datatype="double" name="PSF_Min" ucd="instr.det.psf" unit="arcsec">
+<DESCRIPTION>
+Minor axis FWHM of the PSF for the field.
+</DESCRIPTION>
+</FIELD>
+<FIELD ID="PSF_PA" datatype="double" name="PSF_PA" ucd="instr.det.psf" unit="deg">
+<DESCRIPTION>
+PA of the PSF for the field.
+</DESCRIPTION>
+</FIELD>
+<FIELD ID="S_Code" arraysize="1" datatype="char" name="S_Code" ucd="meta.code.class">
+<DESCRIPTION>
+Source structure classification by PyBDSF.
+</DESCRIPTION>
+</FIELD>
+<FIELD ID="Flag" datatype="long" name="Flag" ucd="meta.code">
+<DESCRIPTION>
+Source type flag. 0 == unresolved, 1 == resolved, 2 == spurious.
+</DESCRIPTION>
+</FIELD>
+<FIELD ID="Scan_start_MJD" datatype="double" name="Scan_start_MJD" ucd="time.start;obs" unit="yr">
+<DESCRIPTION>
+Observation start time in MJD of the field.
+</DESCRIPTION>
+</FIELD>
+<FIELD ID="Scan_length" datatype="double" name="Scan_length" ucd="time.duration;obs" unit="s">
+<DESCRIPTION>
+Observation length of the field.
+</DESCRIPTION>
+</FIELD>
+<FIELD ID="SBID" datatype="long" name="SBID" ucd="meta.id;obs.sequence">
+<DESCRIPTION>
+Scheduling block ID of the field.
+</DESCRIPTION>
+</FIELD>
+<FIELD ID="E_Flux_scale" datatype="double" name="E_Flux_scale" ucd="phot.calib">
+<DESCRIPTION>
+Fractional brightness scale uncertiainty.
+</DESCRIPTION>
+</FIELD>
+<PARAM ID="Catalogue_Name" arraysize="59" datatype="char" name="Catalogue Name" value="RACS_mid_components"/>
+<PARAM ID="Indexed_Fields" arraysize="255" datatype="char" name="Indexed Fields" value="Gaussian_ID,RA,Dec,Total_flux,Peak_flux,Maj_axis,Min_axis,PA,Flag,SBID,Field_ID,Gal_lat,Gal_lon,Scan_start_MJD"/>
+<PARAM ID="Principal_Fields" arraysize="255" datatype="char" name="Principal Fields" value="Gaussian_ID,RA,Dec,Total_flux,E_Total_flux,Maj_axis,Min_axis,PA,Noise"/>
+<DATA>
+<TABLEDATA>
+     <TR>
+      <TD>RACS_0000+37_85</TD>
+      <TD>RACS_0000+37_83</TD>
+      <TD>RACS_0000+37</TD>
+      <TD>4.299934542277633</TD>
+      <TD>37.10649432191221</TD>
+      <TD>37.10671544465749</TD>
+      <TD>0.00017836325324458748</TD>
+      <TD>0.0020731291514559788</TD>
+      <TD>0.0020826390239759417</TD>
+      <TD>2.1521046354334836</TD>
+      <TD>0.561215228166031</TD>
+      <TD>0.575878570558174</TD>
+      <TD>1.3262192743868015</TD>
+      <TD>0.19189768395374718</TD>
+      <TD>0.20774168656369968</TD>
+      <TD>66.4673286892261</TD>
+      <TD>14.637226072605522</TD>
+      <TD>0.6723559605760556</TD>
+      <TD>17.601815616570544</TD>
+      <TD>1.1572264755475146</TD>
+      <TD>9.28559005324503</TD>
+      <TD>46.49361560662079</TD>
+      <TD>7.411180410261602</TD>
+      <TD>0.5811305954563495</TD>
+      <TD>17.601815616570544</TD>
+      <TD>1.1572264755475146</TD>
+      <TD>9.28559005324503</TD>
+      <TD>0.25890651158988476</TD>
+      <TD>3.428092135103292</TD>
+      <TD>-0.06163316029025561</TD>
+      <TD>3.4286461370640944</TD>
+      <TD>115.38988737461287</TD>
+      <TD>-25.26333975258068</TD>
+      <TD>47.49999999999998</TD>
+      <TD>12.6</TD>
+      <TD>-1.79</TD>
+      <TD>S</TD>
+      <TD>1</TD>
+      <TD>59209.424927151034</TD>
+      <TD>905.748479394226</TD>
+      <TD>20376</TD>
+      <TD>0.06</TD>
+     </TR>
+     <TR>
+      <TD>RACS_0000+37_85</TD>
+      <TD>RACS_0000+37_83</TD>
+      <TD>RACS_0000+37</TD>
+      <TD>4.299934542277633</TD>
+      <TD>37.10649432191221</TD>
+      <TD>37.10671544465749</TD>
+      <TD>0.00017836325324458748</TD>
+      <TD>0.0020731291514559788</TD>
+      <TD>0.0020826390239759417</TD>
+      <TD>2.1521046354334836</TD>
+      <TD>0.561215228166031</TD>
+      <TD>0.575878570558174</TD>
+      <TD>1.3262192743868015</TD>
+      <TD>0.19189768395374718</TD>
+      <TD>0.20774168656369968</TD>
+      <TD>66.4673286892261</TD>
+      <TD>14.637226072605522</TD>
+      <TD>0.6723559605760556</TD>
+      <TD>17.601815616570544</TD>
+      <TD>1.1572264755475146</TD>
+      <TD>9.28559005324503</TD>
+      <TD>46.49361560662079</TD>
+      <TD>7.411180410261602</TD>
+      <TD>0.5811305954563495</TD>
+      <TD>17.601815616570544</TD>
+      <TD>1.1572264755475146</TD>
+      <TD>9.28559005324503</TD>
+      <TD>0.25890651158988476</TD>
+      <TD>3.428092135103292</TD>
+      <TD>-0.06163316029025561</TD>
+      <TD>3.4286461370640944</TD>
+      <TD>115.38988737461287</TD>
+      <TD>-25.26333975258068</TD>
+      <TD>47.49999999999998</TD>
+      <TD>12.6</TD>
+      <TD>-1.79</TD>
+      <TD>S</TD>
+      <TD>1</TD>
+      <TD>59209.424927151034</TD>
+      <TD>905.748479394226</TD>
+      <TD>20376</TD>
+      <TD>0.06</TD>
+     </TR>
+    </TABLEDATA>
+   </DATA>
+  </TABLE>
+  </RESOURCE>
+</VOTABLE>

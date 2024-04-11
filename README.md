@@ -5,3 +5,5 @@ In accordance with Gitflow workflow:
 * Development and fixes should only proceed in features/branches and then via pull requests into `develop`
 * Releases are prepared in `release` branches and then canonised to `master`
 * Official releases are tagged on `master`
+
+Note: The code in the votable2 directory contains 2 files (tinyxml2.h and tinyxml2.cpp) which are used for parsing, reading and writing the votable. These 2 files are taken from here - https://github.com/leethomason/tinyxml2. 
