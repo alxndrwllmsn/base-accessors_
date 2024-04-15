@@ -61,9 +61,11 @@ std::string TinyXml2Utils::getDescription(const tinyxml2::XMLElement& element)
     std::string description;
     const tinyxml2::XMLElement* desElem = getFirstElementByTagName(element,"DESCRIPTION");
     if ( desElem ) {
-        description = desElem->GetText();
+        if ( desElem->GetText() != nullptr ) {
+            description = desElem->GetText();
+        }
     }
-
+    
     return description;
 }
 

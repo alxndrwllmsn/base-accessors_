@@ -98,10 +98,10 @@ void VOTableTable2::addRow(const VOTableRow2& row)
     itsRows.push_back(row);
 }
 
-//std::vector<VOTableGroup2> VOTableTable2::getGroups() const
-//{
-//    return itsGroups;
-//}
+std::vector<VOTableGroup2> VOTableTable2::getGroups() const
+{
+    return itsGroups;
+}
 
 std::vector<VOTableField2> VOTableTable2::getFields() const
 {
@@ -125,7 +125,7 @@ VOTableTable2 VOTableTable2::fromXmlElement(const tinyxml2::XMLElement& tableEle
     tab.setDescription(TinyXml2Utils::getDescription(tableElement));
 
     // Process GROUP
-    const XMLElement* groupElement = tableElement.FirstChildElement("GRPUP");
+    const XMLElement* groupElement = tableElement.FirstChildElement("GROUP");
     while ( groupElement ) {
         const VOTableGroup2 group = VOTableGroup2::fromXmlElement(*groupElement);
         tab.addGroup(group);
@@ -155,7 +155,7 @@ VOTableTable2 VOTableTable2::fromXmlElement(const tinyxml2::XMLElement& tableEle
                 tab.addRow(row);
                 unsigned long r = k % 100000;
                 if ( r == 0 ) {
-                    ASKAPLOG_INFO_STR(logger,"Has proccessed more than " << k*100000 + 1 << " components");
+                    ASKAPLOG_DEBUG_STR(logger,"Has proccessed more than " << k*100000 + 1 << " components");
                 }
                 k += 1;
                 // process next TR element
@@ -169,4 +169,52 @@ VOTableTable2 VOTableTable2::fromXmlElement(const tinyxml2::XMLElement& tableEle
     } // no more ele ment to process
     
     return tab;
+}
+
+tinyxml2::XMLElement* VOTableTable2::toXmlElement(tinyxml2::XMLDocument& doc) const
+{
+    XMLElement* e = doc.NewElement("TABLE");
+
+    // Add attributes
+    if (itsID.length()) {
+        e->SetAttribute("ID", itsID.c_str());
+    }
+    if (itsName.length() > 0) {
+        e->SetAttribute("name", itsName.c_str());
+    }
+
+    // Create DESCRIPTION element
+    if (itsDescription.length() > 0) {
+        XMLElement* descElement = doc.NewElement("DESCRIPTION");
+        descElement->SetText(itsDescription.c_str());
+        e->InsertEndChild(descElement);
+    }
+
+    // Create GROUP elements
+    for (std::vector<VOTableGroup2>::const_iterator it = itsGroups.begin();
+            it != itsGroups.end(); ++it) {
+        e->InsertEndChild(it->toXmlElement(doc));
+    }
+
+    // Create FIELD elements
+    for (std::vector<VOTableField2>::const_iterator it = itsFields.begin();
+            it != itsFields.end(); ++it) {
+        e->InsertEndChild(it->toXmlElement(doc));
+    }
+
+    // Create DATA element
+    XMLElement* dataElement = doc.NewElement("DATA");
+    e->InsertEndChild(dataElement);
+
+    // Create TABLEDATA element
+    XMLElement* tableDataElement = doc.NewElement("TABLEDATA");
+    dataElement->InsertEndChild(tableDataElement);
+
+    // Add rows
+    for (std::vector<VOTableRow2>::const_iterator it = itsRows.begin();
+            it != itsRows.end(); ++it) {
+        tableDataElement->InsertEndChild(it->toXmlElement(doc));
+    }
+
+    return e;
 }

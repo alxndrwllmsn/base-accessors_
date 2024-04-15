@@ -76,13 +76,28 @@ VOTableRow2 VOTableRow2::fromXmlElement(const tinyxml2::XMLElement& trElement)
         if ( ptr ) {
             text = ptr;
             boost::trim(text);
-            r.addCell(text);
         } else {
-            r.addCell("ERROR: TD element has no value");
+            //r.addCell("ERROR: TD element has no value");
+            //ASKAPLOG_WARN_STR(logger, "WARNING: One field of the component has no data ie <TD>>/TD>");
         }
+        r.addCell(text);
         //ASKAPLOG_DEBUG_STR(logger,text);
         tdElement = tdElement->NextSiblingElement();
     }
     
     return r;
+}
+
+tinyxml2::XMLElement* VOTableRow2::toXmlElement(tinyxml2::XMLDocument& doc) const
+{
+    XMLElement* tr = doc.NewElement("TR");
+
+    for (std::vector<std::string>::const_iterator it = itsCells.begin();
+            it != itsCells.end(); ++it) {
+        XMLElement* td = doc.NewElement("TD");
+        td->SetText((*it).c_str());
+        tr->InsertEndChild(td);
+    }
+
+    return tr;
 }

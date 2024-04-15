@@ -259,6 +259,7 @@ if (BUILD_TESTING)
   add_subdirectory(tests/calibaccess)
   add_subdirectory(tests/dataaccess)
   add_subdirectory(tests/votable)
+  add_subdirectory(tests/votable2)
   add_subdirectory(tests/imageaccess)
 endif ()
 

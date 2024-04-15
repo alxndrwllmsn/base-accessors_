@@ -82,7 +82,7 @@ namespace askap {
 
                 std::string getRef() const;
 
-                //xercesc::DOMElement* toXmlElement(xercesc::DOMDocument& doc) const;
+                tinyxml2::XMLElement* toXmlElement(tinyxml2::XMLDocument& doc) const;
 
                 static VOTableField2 fromXmlElement(const tinyxml2::XMLElement& fieldElement);
 

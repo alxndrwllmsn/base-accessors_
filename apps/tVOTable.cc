@@ -64,7 +64,7 @@ int main(int argc, char **argv) {
      casacore::Timer timer;
      timer.mark();
      ASKAPLOG_INFO_STR(logger,"Start testing ...");
-     VOTable2 vot = VOTable2::fromXML(argv[1]);
+     const VOTable2 vot = VOTable2::fromXML(argv[1]);
      std::vector<VOTableResource2> resources = vot.getResource();
      ASKAPLOG_INFO_STR(logger,"number of RESOURCE elements: " << resources.size());
      for ( const auto& r : resources ) {
@@ -79,8 +79,15 @@ int main(int argc, char **argv) {
 
         }
     }
-     ASKAPLOG_INFO_STR(logger,"Completed testing ... time taken - " << timer.real()/60 << " minutes");
-     
+    ASKAPLOG_INFO_STR(logger,"Completed testing ... time taken - " << timer.real()/60 << " minutes");
+
+    //vot.toXML("out.xml");
+    std::ostringstream s; 
+    vot.toXML(s);
+    //std::cout << s.str();
+    std::istringstream is(s.str());
+    const VOTable2 vot2 = VOTable2::fromXML(is);  
+    vot2.toXML("out.xml");
   }
   catch(const AskapError &ce) {
      cerr<<"AskapError has been caught. "<<ce.what()<<endl;

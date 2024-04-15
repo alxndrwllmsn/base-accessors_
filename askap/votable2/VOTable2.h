@@ -78,12 +78,6 @@ namespace askap {
                 /// Add an INFO element to the VOTable
                 void addInfo(const askap::accessors::VOTableInfo2& info);
 
-                /// Transform the VOTable object into an XML VOTable
-                ///
-                /// @param[out] os  an ostream to which the XML output string
-                ///                 will be written.
-                //void toXML(std::ostream& os) const;
-
                 /// Transform an XML VOTable to a VOTable object instance
                 ///
                 /// @param[in] is   an istream from which the XML input string
@@ -95,7 +89,22 @@ namespace askap {
                 /// Transform the VOTable object into an XML VOTable
                 ///
                 /// @param[in] filename the file/path to write the XML output to.
-                //void toXML(const std::string& filename) const;
+                void toXML(const std::string& filename) const;
+
+
+                /// Transform the VOTable object into an XML VOTable
+                ///
+                /// @param[out] os  an ostream to which the XML output string
+                ///                 will be written.
+                void toXML(std::ostream& os) const;
+
+                /// Transform an XML VOTable to a VOTable object instance
+                ///
+                /// @param[in] is   an istream from which the XML input string
+                ///                 will be read from.
+                /// @return a VOTable.
+                /// @throw AskapError   if the XML document is empty (i.e. no root).
+                static VOTable2 fromXML(std::istream& is);                
 
                 /// Transform an XML VOTable to a VOTable object instance
                 ///
@@ -108,12 +117,12 @@ namespace askap {
             private:
 
                 /// Transform the VOTable object into an XML VOTable
-                //void toXMLImpl(xercesc::XMLFormatTarget& target) const;
+                void toXMLImpl(tinyxml2::XMLDocument& doc) const;
 
                 /// Transform an XML VOTable to a VOTable object instance
                 ///
                 /// @throw AskapError   if the XML document is empty (i.e. no root).
-                //static VOTable fromXMLImpl(const xercesc::InputSource& source);
+                static VOTable2 fromXMLImpl(tinyxml2::XMLDocument& doc);
 
                 /// The text for the DESCRIPTION element
                 std::string itsDescription;

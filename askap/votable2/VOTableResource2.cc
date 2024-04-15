@@ -144,3 +144,40 @@ VOTableResource2 VOTableResource2::fromXmlElement(const tinyxml2::XMLElement& re
 
     return res;
 }
+
+tinyxml2::XMLElement* VOTableResource2::toXmlElement(tinyxml2::XMLDocument& doc) const
+{
+    XMLElement* e = doc.NewElement("RESOURCE");
+
+    // Add attributes
+    if (itsID.length() > 0) {
+        e->SetAttribute("ID", itsID.c_str());
+    }
+    if (itsName.length() > 0) {
+        e->SetAttribute("name", itsName.c_str());
+    }
+    if (itsType.length() > 0) {
+        e->SetAttribute("type", itsType.c_str());
+    }
+
+    // Create DESCRIPTION element
+    if (itsDescription.length() > 0) {
+        XMLElement* descElement = doc.NewElement("DESCRIPTION");
+        descElement->SetText(itsDescription.c_str());
+        e->InsertEndChild(descElement);
+    }
+
+    // Create INFO elements
+    for (std::vector<VOTableInfo2>::const_iterator it = itsInfo.begin();
+            it != itsInfo.end(); ++it) {
+        e->InsertEndChild(it->toXmlElement(doc));
+    }
+
+    // Create TABLE elements
+    for (std::vector<VOTableTable2>::const_iterator it = itsTables.begin();
+            it != itsTables.end(); ++it) {
+        e->InsertEndChild(it->toXmlElement(doc));
+    }
+
+    return e;
+}

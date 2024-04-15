@@ -85,7 +85,7 @@ namespace askap {
 
                 std::vector<std::string> getParamRefs() const;
 
-                //xercesc::DOMElement* toXmlElement(xercesc::DOMDocument& doc) const;
+                tinyxml2::XMLElement* toXmlElement(tinyxml2::XMLDocument& doc) const;
 
                 static VOTableGroup2 fromXmlElement(const tinyxml2::XMLElement& e);
 

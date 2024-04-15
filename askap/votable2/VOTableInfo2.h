@@ -57,7 +57,7 @@ namespace askap {
                 void setText(const std::string& text);
                 std::string getText() const;
 
-                //xercesc::DOMElement* toXmlElement(xercesc::DOMDocument& doc) const;
+                tinyxml2::XMLElement* toXmlElement(tinyxml2::XMLDocument& doc) const;
 
                 static VOTableInfo2 fromXmlElement(const tinyxml2::XMLElement& infoElement);
 

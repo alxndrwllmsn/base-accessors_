@@ -108,3 +108,26 @@ VOTableInfo2 VOTableInfo2::fromXmlElement(const tinyxml2::XMLElement& infoElemen
 
     return info;
 }
+
+tinyxml2::XMLElement* VOTableInfo2::toXmlElement(tinyxml2::XMLDocument& doc) const
+{
+    XMLElement* e = doc.NewElement("INFO");
+
+    // Add attributes
+    if (itsID.length() > 0) {
+        e->SetAttribute("ID", itsID.c_str());
+    }
+    if (itsName.length() > 0) {
+        e->SetAttribute("name", itsName.c_str());
+    }
+    if (itsValue.length()) {
+        e->SetAttribute("value", itsValue.c_str());
+    }
+
+    // Add text
+    if (itsText.length()) {
+        e->SetText(itsText.c_str());
+    }
+
+    return e;
+}

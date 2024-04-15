@@ -36,6 +36,7 @@
 #include <istream>
 #include <ostream>
 #include <iostream>
+#include <memory>
 
 // ASKAPsoft includes
 #include <askap/askap/AskapLogging.h>
@@ -87,20 +88,8 @@ void VOTable2::addInfo(const askap::accessors::VOTableInfo2& info)
     itsInfo.push_back(info);
 }
 
-VOTable2 VOTable2::fromXML(const std::string& filename)
+VOTable2 VOTable2::fromXMLImpl(tinyxml2::XMLDocument& doc)
 {
-    // Check if the file exists
-    std::ifstream fs(filename.c_str());
-    if (!fs) {
-        ASKAPTHROW(AskapError, "File " << filename << " could not be opened");
-    }
-
-    // Setup a parser
-    XMLDocument doc;
-    if ( doc.LoadFile(filename.c_str()) != XML_SUCCESS ) {
-        ASKAPTHROW(AskapError, "Can not parse/load File " << filename);
-    }
-
     XMLElement* root = doc.RootElement();
     ASKAPASSERT(root != nullptr);
 
@@ -122,8 +111,8 @@ VOTable2 VOTable2::fromXML(const std::string& filename)
     } // no more RESOURCE element to process
 
     // Process INFO
-    // Note: Cant see where the INFO element is specified as a child element of the 
-    // VOTABLE (ie root) element in the link here - 
+    // Note: Cant see where the INFO element is specified as a child element of the
+    // VOTABLE (ie root) element in the link here -
     // https://www.ivoa.net/documents/VOTable/20130920/REC-VOTable-1.3-20130920.html#ToC19
     const XMLElement* infoElement = root->FirstChildElement("INFO");
     while ( infoElement ) {
@@ -134,4 +123,93 @@ VOTable2 VOTable2::fromXML(const std::string& filename)
     } // no more INFO element to process
 
     return vot;
+}
+
+VOTable2 VOTable2::fromXML(const std::string& filename)
+{
+    // Check if the file exists
+    std::ifstream fs(filename.c_str());
+    if (!fs) {
+        ASKAPTHROW(AskapError, "File " << filename << " could not be opened");
+    }
+
+    // Setup a parser
+    XMLDocument doc;
+    if ( doc.LoadFile(filename.c_str()) != XML_SUCCESS ) {
+        ASKAPTHROW(AskapError, "Can not parse/load File " << filename);
+    }
+
+    return VOTable2::fromXMLImpl(doc);
+}
+
+void VOTable2::toXML(const std::string& filename) const
+{
+    XMLDocument doc;
+    toXMLImpl(doc);
+    doc.SaveFile(filename.c_str());
+}
+
+void VOTable2::toXML(std::ostream& os) const
+{
+    XMLDocument doc;
+    toXMLImpl(doc);
+    
+    tinyxml2::XMLPrinter printer;
+    doc.Print(&printer);
+    os << printer.CStr();
+}
+
+void VOTable2::toXMLImpl(tinyxml2::XMLDocument& doc) const
+{
+    doc.Clear();
+
+    // Add <?xml version="1.0" standalone="yes"?> as the first line in the xml
+    doc.InsertFirstChild(doc.NewDeclaration());
+
+    // Create the root element and add it to the document
+    XMLElement* root = doc.NewElement("VOTABLE");
+    root->SetAttribute("version", "1.2");
+    root->SetAttribute("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
+    root->SetAttribute("xmlns", "http://www.ivoa.net/xml/VOTable/v1.2");
+    root->SetAttribute("xmlns:stc", "http://www.ivoa.net/xml/STC/v1.30");
+    doc.InsertEndChild(root);
+
+
+    // Create DESCRIPTION element
+    if (itsDescription != "") {
+        XMLElement* descElement = doc.NewElement("DESCRIPTION");
+        descElement->SetText(itsDescription.c_str());
+        root->InsertEndChild(descElement);
+    }
+
+    // Create INFO elements
+    for (vector<VOTableInfo2>::const_iterator it = itsInfo.begin();
+            it != itsInfo.end(); ++it) {
+        root->InsertEndChild(it->toXmlElement(doc));
+    }
+
+    // Create RESOURCE elements
+    for (vector<VOTableResource2>::const_iterator it = itsResource.begin();
+            it != itsResource.end(); ++it) {
+        root->InsertEndChild(it->toXmlElement(doc));
+    }
+}
+
+VOTable2 VOTable2::fromXML(std::istream& is)
+{
+    // Read the stream into a memory buffer
+    std::vector<char> buf;
+    while (is.good()) {
+        const char c = is.get();
+        if (is.good())
+            buf.push_back(c);
+    }
+    // Setup a parser
+    XMLDocument doc;
+    if ( doc.Parse(buf.data(),buf.size()) != XML_SUCCESS ) {
+        ASKAPTHROW(AskapError, "Can not parse/load File ");
+    }
+
+    return VOTable2::fromXMLImpl(doc);
+    
 }

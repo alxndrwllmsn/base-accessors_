@@ -179,3 +179,55 @@ VOTableGroup2 VOTableGroup2::fromXmlElement(const tinyxml2::XMLElement& groupEle
     }
     return g;
 }
+
+tinyxml2::XMLElement* VOTableGroup2::toXmlElement(tinyxml2::XMLDocument& doc) const
+{
+    XMLElement* e = doc.NewElement("GROUP");
+
+    // Add attributes
+    if (itsName.length() > 0) {
+        e->SetAttribute("name", itsName.c_str());
+    }
+    if (itsID.length() > 0) {
+        e->SetAttribute("ID", itsID.c_str());
+    }
+    if (itsUCD.length() > 0) {
+        e->SetAttribute("ucd", itsUCD.c_str());
+    }
+    if (itsUType.length() > 0) {
+        e->SetAttribute(("utype"), itsUType.c_str());
+    }
+    if (itsRef.length() > 0) {
+        e->SetAttribute("ref", itsRef.c_str());
+    }
+
+    // Create DESCRIPTION element
+    if (itsDescription.length() > 0) {
+        XMLElement* descElement = doc.NewElement("DESCRIPTION");
+        descElement->SetText(itsDescription.c_str());
+        e->InsertEndChild(descElement);
+    }
+
+    // Create PARAM elements
+    for (std::vector<VOTableParam2>::const_iterator it = itsParams.begin();
+            it != itsParams.end(); ++it) {
+        e->InsertEndChild(it->toXmlElement(doc));
+    }
+
+    // Create FIELDref elements
+    for (std::vector<std::string>::const_iterator it = itsFieldRefs.begin();
+            it != itsFieldRefs.end(); ++it) {
+        XMLElement* fr = doc.NewElement("FIELDref");
+        fr->SetAttribute("ref", (*it).c_str());
+        e->InsertEndChild(fr);
+    }
+
+    // Create PARAMref elements
+    for (std::vector<std::string>::const_iterator it = itsParamRefs.begin();
+            it != itsParamRefs.end(); ++it) {
+        XMLElement* fr = doc.NewElement("PARAMref");
+        fr->SetAttribute("ref", (*it).c_str());
+        e->InsertEndChild(fr);
+    }
+    return e;
+}

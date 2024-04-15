@@ -68,7 +68,7 @@ namespace askap {
                 void addTable(const VOTableTable2& table);
                 std::vector<VOTableTable2> getTables() const;
 
-                //tinyxml2::XMLElement* toXmlElement(xercesc::DOMDocument& doc) const;
+                tinyxml2::XMLElement* toXmlElement(tinyxml2::XMLDocument& doc) const;
 
                 static VOTableResource2 fromXmlElement(const tinyxml2::XMLElement& resElement);
 

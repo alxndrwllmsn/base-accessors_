@@ -64,11 +64,11 @@ namespace askap {
                 void addField(const VOTableField2& field);
                 void addRow(const VOTableRow2& row);
 
-                //std::vector<VOTableGroup> getGroups() const;
+                std::vector<VOTableGroup2> getGroups() const;
                 std::vector<VOTableField2> getFields() const;
                 std::vector<VOTableRow2> getRows() const;
 
-                //xercesc::DOMElement* toXmlElement(xercesc::DOMDocument& doc) const;
+                tinyxml2::XMLElement* toXmlElement(tinyxml2::XMLDocument& doc) const;
 
                 static VOTableTable2 fromXmlElement(const tinyxml2::XMLElement& tableElement);
 

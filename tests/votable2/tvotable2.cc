@@ -1,6 +1,6 @@
-/// @file VOTableRow2.h
+/// @file tvotable2.cc
 ///
-/// @copyright (c) 2011 CSIRO
+/// @copyright (c) 2012 CSIRO
 /// Australia Telescope National Facility (ATNF)
 /// Commonwealth Scientific and Industrial Research Organisation (CSIRO)
 /// PO Box 76, Epping NSW 1710, Australia
@@ -24,40 +24,17 @@
 ///
 /// @author Ben Humphreys <ben.humphreys@csiro.au>
 
-#ifndef ASKAP_ACCESSORS_VOTABLE_VOTABLEROW2_H
-#define ASKAP_ACCESSORS_VOTABLE_VOTABLEROW2_H
-
-// System includes
-# include <vector>
-# include <string>
-
 // ASKAPsoft includes
-#include "tinyxml2.h" // Includes all DOM
+#include <askap/askap/AskapTestRunner.h>
 
-namespace askap {
-    namespace accessors {
+// Test includes
+#include "VOTableTest.h"
 
-        /// @brief Encapsulates the TR (table row) element
-        ///
-        /// @ingroup votableaccess
-        class VOTableRow2 {
-            public:
+int main(int argc, char *argv[])
+{
+    askapdev::testutils::AskapTestRunner runner(argv[0]);
+    runner.addTest(askap::accessors::VOTableTest::suite());
+    const bool wasSucessful = runner.run();
 
-                /// @brief Constructor
-                VOTableRow2();
-
-                void addCell(const std::string& cell);
-                std::vector<std::string> getCells() const;
-
-                tinyxml2::XMLElement* toXmlElement(tinyxml2::XMLDocument& doc) const;
-
-                static VOTableRow2 fromXmlElement(const tinyxml2::XMLElement& trElemenent);
-
-            private:
-                std::vector<std::string> itsCells;
-        };
-
-    }
+    return wasSucessful ? 0 : 1;
 }
-
-#endif
