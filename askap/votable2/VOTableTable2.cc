@@ -22,7 +22,7 @@
 /// along with this program; if not, write to the Free Software
 /// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 ///
-/// @author Ben Humphreys <ben.humphreys@csiro.au>
+/// @author Minh Vuong <Minh.Vuong@csiro.au>
 
 // Include own header file first
 #include "VOTableTable2.h"
@@ -38,10 +38,6 @@
 // ASKAPsoft includes
 #include <askap/askap/AskapLogging.h>
 #include <askap/askap/AskapError.h>
-
-// Local package includes
-//#include "askap/votable/VOTableField.h"
-//#include "askap/votable/VOTableRow.h"
 
 ASKAP_LOGGER(logger, ".VOTableTable2");
 
