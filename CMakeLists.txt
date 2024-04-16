@@ -185,6 +185,7 @@ add_subdirectory(askap/imageaccess)
 add_subdirectory(askap/dataaccess)
 add_subdirectory(askap/calibaccess)
 add_subdirectory(askap/votable)
+add_subdirectory(askap/votable2)
 add_subdirectory(apps)
 
 target_compile_definitions(accessors PUBLIC
@@ -258,6 +259,7 @@ if (BUILD_TESTING)
   add_subdirectory(tests/calibaccess)
   add_subdirectory(tests/dataaccess)
   add_subdirectory(tests/votable)
+  add_subdirectory(tests/votable2)
   add_subdirectory(tests/imageaccess)
 endif ()
 
