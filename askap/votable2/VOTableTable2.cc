@@ -113,6 +113,16 @@ std::vector<VOTableRow2> VOTableTable2::getRows() const
     return itsRows;
 }
 
+void VOTableTable2::addParam(const VOTableParam2& param)
+{
+    itsParams.push_back(param);
+}
+
+std::vector<VOTableParam2> VOTableTable2::getParams() const
+{
+    return itsParams;
+}
+
 VOTableTable2 VOTableTable2::fromXmlElement(const tinyxml2::XMLElement& tableElement)
 {
     VOTableTable2 tab;
@@ -130,6 +140,14 @@ VOTableTable2 VOTableTable2::fromXmlElement(const tinyxml2::XMLElement& tableEle
         const VOTableGroup2 group = VOTableGroup2::fromXmlElement(*groupElement);
         tab.addGroup(group);
         groupElement = groupElement->NextSiblingElement("GROUP");
+    }
+
+    // Process PARAM
+    const XMLElement* paramElement = tableElement.FirstChildElement("PARAM");
+    while ( paramElement ) {
+        const VOTableParam2 param = VOTableParam2::fromXmlElement(*paramElement);
+        tab.addParam(param);
+        paramElement = paramElement->NextSiblingElement("PARAM");
     }
 
     // Process FIELD element
@@ -193,6 +211,12 @@ tinyxml2::XMLElement* VOTableTable2::toXmlElement(tinyxml2::XMLDocument& doc) co
     // Create GROUP elements
     for (std::vector<VOTableGroup2>::const_iterator it = itsGroups.begin();
             it != itsGroups.end(); ++it) {
+        e->InsertEndChild(it->toXmlElement(doc));
+    }
+
+    // Create PARAM elements
+    for (std::vector<VOTableParam2>::const_iterator it = itsParams.begin();
+            it != itsParams.end(); ++it) {
         e->InsertEndChild(it->toXmlElement(doc));
     }
 

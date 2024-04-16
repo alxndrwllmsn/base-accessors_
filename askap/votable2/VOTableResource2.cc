@@ -113,6 +113,26 @@ std::vector<VOTableTable2> VOTableResource2::getTables() const
     return itsTables;
 }
 
+void VOTableResource2::addCooSys(const VOTableCooSys2& coo)
+{
+    itsCooSys.push_back(coo);
+}
+
+std::vector<VOTableCooSys2> VOTableResource2::getCooSys() const
+{
+    return itsCooSys;
+}
+
+void VOTableResource2::addTimeSys(const VOTableTimeSys2& ts)
+{
+    itsTimeSys.push_back(ts);
+}
+
+std::vector<VOTableTimeSys2> VOTableResource2::getTimeSys() const
+{
+    return itsTimeSys;
+}
+
 VOTableResource2 VOTableResource2::fromXmlElement(const tinyxml2::XMLElement& resElement)
 {
     VOTableResource2 res;
@@ -124,6 +144,22 @@ VOTableResource2 VOTableResource2::fromXmlElement(const tinyxml2::XMLElement& re
 
     // Get description
     res.setDescription(TinyXml2Utils::getDescription(resElement));
+
+    // Process COOSYS
+    const XMLElement* coosysElement = resElement.FirstChildElement("COOSYS");
+    while ( coosysElement ) {
+        const VOTableCooSys2 coo = VOTableCooSys2::fromXmlElement(*coosysElement);
+        res.addCooSys(coo);
+        coosysElement = coosysElement->NextSiblingElement("COOSYS");
+    }
+
+    // Process TIMESYS
+    const XMLElement* timesysElement = resElement.FirstChildElement("TIMESYS");
+    while ( timesysElement ) {
+        const VOTableTimeSys2 ts = VOTableTimeSys2::fromXmlElement(*timesysElement);
+        res.addTimeSys(ts);
+        timesysElement = timesysElement->NextSiblingElement("TIMESYS");
+    }
 
     // Process INFO
     const XMLElement* infoElement = resElement.FirstChildElement("INFO");
@@ -165,6 +201,18 @@ tinyxml2::XMLElement* VOTableResource2::toXmlElement(tinyxml2::XMLDocument& doc)
         XMLElement* descElement = doc.NewElement("DESCRIPTION");
         descElement->SetText(itsDescription.c_str());
         e->InsertEndChild(descElement);
+    }
+
+    // Create COOSYS element
+    for (std::vector<VOTableCooSys2>::const_iterator it = itsCooSys.begin();
+            it != itsCooSys.end(); ++it) {
+        e->InsertEndChild(it->toXmlElement(doc));
+    }
+
+    // Create TIMESYS element
+    for (std::vector<VOTableTimeSys2>::const_iterator it = itsTimeSys.begin();
+            it != itsTimeSys.end(); ++it) {
+        e->InsertEndChild(it->toXmlElement(doc));
     }
 
     // Create INFO elements

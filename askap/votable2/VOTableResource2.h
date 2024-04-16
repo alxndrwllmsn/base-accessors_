@@ -37,6 +37,8 @@
 // Local package includes
 #include "askap/votable2/VOTableInfo2.h"
 #include "askap/votable2/VOTableTable2.h"
+#include "askap/votable2/VOTableCooSys2.h"
+#include "askap/votable2/VOTableTimeSys2.h"
 
 namespace askap {
     namespace accessors {
@@ -68,6 +70,12 @@ namespace askap {
                 void addTable(const VOTableTable2& table);
                 std::vector<VOTableTable2> getTables() const;
 
+                void addCooSys(const VOTableCooSys2& coo);
+                std::vector<VOTableCooSys2> getCooSys() const;
+
+                void addTimeSys(const VOTableTimeSys2& ts);
+                std::vector<VOTableTimeSys2> getTimeSys() const;
+
                 tinyxml2::XMLElement* toXmlElement(tinyxml2::XMLDocument& doc) const;
 
                 static VOTableResource2 fromXmlElement(const tinyxml2::XMLElement& resElement);
@@ -77,10 +85,10 @@ namespace askap {
                 std::string itsName;
                 std::string itsID;
                 std::string itsType;
+                std::vector<VOTableCooSys2> itsCooSys;
+                std::vector<VOTableTimeSys2> itsTimeSys;
                 std::vector<VOTableInfo2> itsInfo;
                 std::vector<VOTableTable2> itsTables;
-
-
         };
 
     }

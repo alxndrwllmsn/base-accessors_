@@ -87,7 +87,7 @@ int main(int argc, char **argv) {
     //std::cout << s.str();
     std::istringstream is(s.str());
     const VOTable2 vot2 = VOTable2::fromXML(is);  
-    vot2.toXML("out.xml");
+    vot2.toXML("out2.xml");
   }
   catch(const AskapError &ce) {
      cerr<<"AskapError has been caught. "<<ce.what()<<endl;

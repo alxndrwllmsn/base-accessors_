@@ -12,6 +12,8 @@ VOTableRow2.cc
 VOTableTable2.cc
 VOTableInfo2.cc
 TinyXml2Utils.cc
+VOTableCooSys2.cc
+VOTableTimeSys2.cc
 tinyxml2.cpp
 )
 
@@ -25,6 +27,8 @@ VOTableResource2.h
 VOTableRow2.h
 VOTableInfo2.h
 VOTableTable2.h
+VOTableCooSys2.h
+VOTableTimeSys2.h
 TinyXml2Utils.h
 tinyxml2.h
 

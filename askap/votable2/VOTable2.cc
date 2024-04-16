@@ -88,6 +88,26 @@ void VOTable2::addInfo(const askap::accessors::VOTableInfo2& info)
     itsInfo.push_back(info);
 }
 
+void VOTable2::addCooSys(const VOTableCooSys2& coo)
+{
+    itsCooSys.push_back(coo);
+}
+
+std::vector<VOTableCooSys2> VOTable2::getCooSys() const
+{
+    return itsCooSys;
+}
+
+void VOTable2::addTimeSys(const VOTableTimeSys2& timeSys)
+{
+    itsTimeSys.push_back(timeSys);
+}
+
+std::vector<VOTableTimeSys2> VOTable2::getTimeSys() const
+{
+    return itsTimeSys;
+}
+
 VOTable2 VOTable2::fromXMLImpl(tinyxml2::XMLDocument& doc)
 {
     XMLElement* root = doc.RootElement();
@@ -100,6 +120,22 @@ VOTable2 VOTable2::fromXMLImpl(tinyxml2::XMLDocument& doc)
     std::string desc = TinyXml2Utils::getDescription(*root);
     boost::trim(desc);
     vot.setDescription(desc);
+
+    // Process COOSYS
+    const XMLElement* coosysElement = root->FirstChildElement("COOSYS");
+    while ( coosysElement ) {
+        const VOTableCooSys2 coo = VOTableCooSys2::fromXmlElement(*coosysElement);
+        vot.addCooSys(coo);
+        coosysElement = coosysElement->NextSiblingElement("COOSYS");
+    }
+
+    // Process TIMESYS
+    const XMLElement* timeSysElement = root->FirstChildElement("TIMESYS");
+    while ( timeSysElement ) {
+        const VOTableTimeSys2 ts = VOTableTimeSys2::fromXmlElement(*timeSysElement);
+        vot.addTimeSys(ts);
+        timeSysElement = timeSysElement->NextSiblingElement("TIMESYS");
+    }
 
     // Process the RESOURCE element
     const XMLElement* resElement = root->FirstChildElement("RESOURCE");
@@ -180,6 +216,18 @@ void VOTable2::toXMLImpl(tinyxml2::XMLDocument& doc) const
         XMLElement* descElement = doc.NewElement("DESCRIPTION");
         descElement->SetText(itsDescription.c_str());
         root->InsertEndChild(descElement);
+    }
+
+    // Create COOSYS element
+    for (std::vector<VOTableCooSys2>::const_iterator it = itsCooSys.begin();
+            it != itsCooSys.end(); ++it) {
+        root->InsertEndChild(it->toXmlElement(doc));
+    }
+
+    // Create TIMESYS element
+    for (std::vector<VOTableTimeSys2>::const_iterator it = itsTimeSys.begin();
+            it != itsTimeSys.end(); ++it) {
+        root->InsertEndChild(it->toXmlElement(doc));
     }
 
     // Create INFO elements

@@ -1,4 +1,4 @@
-/// @file VOTableTable2.h
+/// @file VOTableTimeSys2.h
 ///
 /// @copyright (c) 2011 CSIRO
 /// Australia Telescope National Facility (ATNF)
@@ -24,67 +24,55 @@
 ///
 /// @author Ben Humphreys <ben.humphreys@csiro.au>
 
-#ifndef ASKAP_ACCESSORS_VOTABLE_VOTABLETABLE2_H
-#define ASKAP_ACCESSORS_VOTABLE_VOTABLETABLE2_H
+#ifndef ASKAP_ACCESSORS_VOTABLE_VOTABLETIMESYS2_H
+#define ASKAP_ACCESSORS_VOTABLE_VOTABLETIMESYS2_H
 
 // System includes
 #include <string>
-#include <vector>
 
 // ASKAPsoft includes
 #include "tinyxml2.h" // Includes all DOM
 
-// Local package includes
-#include "askap/votable2/VOTableField2.h"
-#include "askap/votable2/VOTableRow2.h"
-#include "askap/votable2/VOTableGroup2.h"
-#include "askap/votable2/VOTableParam2.h"
-
 namespace askap {
     namespace accessors {
 
-        /// @brief Encapsulates the TABLE element
+        /// @brief TODO: Write documentation...
+        /// Encapsulates a TIMESYS element
         ///
         /// @ingroup votableaccess
-        class VOTableTable2 {
+        class VOTableTimeSys2 {
             public:
 
                 /// @brief Constructor
-                VOTableTable2();
+                VOTableTimeSys2();
+
 
                 void setID(const std::string& id);
+
                 std::string getID() const;
 
-                void setName(const std::string& name);
-                std::string getName() const;
+                void setTimeOrigin(const std::string& timeOrigin);
 
-                void addParam(const VOTableParam2& param);
-                std::vector<VOTableParam2> getParams() const;
+                std::string getTimeOrigin() const;
 
-                void setDescription(const std::string& description);
-                std::string getDescription() const;
+                void setTimeScale(const std::string& timeScale);
 
-                void addGroup(const VOTableGroup2& group);
-                void addField(const VOTableField2& field);
-                void addRow(const VOTableRow2& row);
+                std::string getTimeScale() const;
 
-                std::vector<VOTableGroup2> getGroups() const;
-                std::vector<VOTableField2> getFields() const;
-                std::vector<VOTableRow2> getRows() const;
+                void setRefPosition(const std::string& refPosition);
+
+                std::string getRefPosition() const;
 
                 tinyxml2::XMLElement* toXmlElement(tinyxml2::XMLDocument& doc) const;
 
-                static VOTableTable2 fromXmlElement(const tinyxml2::XMLElement& tableElement);
+                static VOTableTimeSys2 fromXmlElement(const tinyxml2::XMLElement& timeSysElement);
 
             private:
 
-                std::string itsDescription;
-                std::string itsName;
                 std::string itsID;
-                std::vector<VOTableGroup2> itsGroups;
-                std::vector<VOTableParam2> itsParams;
-                std::vector<VOTableField2> itsFields;
-                std::vector<VOTableRow2> itsRows;
+                std::string itsTimeOrigin;
+                std::string itsTimeScale;
+                std::string itsRefPosition;
         };
 
     }

@@ -45,6 +45,8 @@
 #include "askap/votable2/VOTableTable2.h"
 #include "askap/votable2/VOTableGroup2.h"
 #include "askap/votable2/VOTableInfo2.h"
+#include "askap/votable2/VOTableCooSys2.h"
+#include "askap/votable2/VOTableTimeSys2.h"
 // NOTE: Some are unnecessarily included so the user can just include VOTable.h
 
 namespace askap {
@@ -63,6 +65,19 @@ namespace askap {
                 /// Get the text of the DESCRIPTION element.
                 std::string getDescription() const;
 
+                /// Add a COOSYS element to the VOTable
+                void addCooSys(const VOTableCooSys2& coo);
+
+                /// Get a vector containing all the COOSYS elements in the VOTable
+                std::vector<VOTableCooSys2> getCooSys() const;
+
+                /// Add a TIMESYS element to the VOTable
+                void addTimeSys(const VOTableTimeSys2& coo);
+
+                /// Get a vector containing all the TIMESYS elements in the VOTable
+                std::vector<VOTableTimeSys2> getTimeSys() const;
+
+
                 /// Get a vector containing all the INFO elements in the VOTable
                 std::vector<askap::accessors::VOTableInfo2> getInfo() const;
 
@@ -77,14 +92,6 @@ namespace askap {
 
                 /// Add an INFO element to the VOTable
                 void addInfo(const askap::accessors::VOTableInfo2& info);
-
-                /// Transform an XML VOTable to a VOTable object instance
-                ///
-                /// @param[in] is   an istream from which the XML input string
-                ///                 will be read from.
-                /// @return a VOTable.
-                /// @throw AskapError   if the XML document is empty (i.e. no root).
-                //static VOTable fromXML(std::istream& is);
 
                 /// Transform the VOTable object into an XML VOTable
                 ///
@@ -132,6 +139,12 @@ namespace askap {
 
                 /// A list of of the RESOURCE elements present in the VOTable
                 std::vector<askap::accessors::VOTableResource2> itsResource;
+
+                /// A list of of the COOSYS elements present in the VOTable
+                std::vector<VOTableCooSys2> itsCooSys;
+
+                /// A list of of the TIMESYS elements present in the VOTable
+                std::vector<VOTableTimeSys2> itsTimeSys;
         };
 
     }

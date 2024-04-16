@@ -1,4 +1,4 @@
-/// @file VOTableTable2.h
+/// @file VOTableCooSys2.h
 ///
 /// @copyright (c) 2011 CSIRO
 /// Australia Telescope National Facility (ATNF)
@@ -24,67 +24,61 @@
 ///
 /// @author Ben Humphreys <ben.humphreys@csiro.au>
 
-#ifndef ASKAP_ACCESSORS_VOTABLE_VOTABLETABLE2_H
-#define ASKAP_ACCESSORS_VOTABLE_VOTABLETABLE2_H
+#ifndef ASKAP_ACCESSORS_VOTABLE_VOTABLECOOSYS2_H
+#define ASKAP_ACCESSORS_VOTABLE_VOTABLECOOSYS2_H
 
 // System includes
 #include <string>
-#include <vector>
 
 // ASKAPsoft includes
 #include "tinyxml2.h" // Includes all DOM
 
-// Local package includes
-#include "askap/votable2/VOTableField2.h"
-#include "askap/votable2/VOTableRow2.h"
-#include "askap/votable2/VOTableGroup2.h"
-#include "askap/votable2/VOTableParam2.h"
-
 namespace askap {
     namespace accessors {
 
-        /// @brief Encapsulates the TABLE element
+        /// @brief TODO: Write documentation...
+        /// Encapsulates a COOSYS element
         ///
         /// @ingroup votableaccess
-        class VOTableTable2 {
+        class VOTableCooSys2 {
             public:
 
                 /// @brief Constructor
-                VOTableTable2();
+                VOTableCooSys2();
+
 
                 void setID(const std::string& id);
+
                 std::string getID() const;
 
-                void setName(const std::string& name);
-                std::string getName() const;
+                void setRef(const std::string& datatype);
 
-                void addParam(const VOTableParam2& param);
-                std::vector<VOTableParam2> getParams() const;
+                std::string getRef() const;
 
-                void setDescription(const std::string& description);
-                std::string getDescription() const;
+                void setSystem(const std::string& arraysize);
 
-                void addGroup(const VOTableGroup2& group);
-                void addField(const VOTableField2& field);
-                void addRow(const VOTableRow2& row);
+                std::string getSystem() const;
 
-                std::vector<VOTableGroup2> getGroups() const;
-                std::vector<VOTableField2> getFields() const;
-                std::vector<VOTableRow2> getRows() const;
+                void setEquinox(const std::string& equinox);
+
+                std::string getEquinox() const;
+
+                void setEpoch(const std::string& epoch);
+
+                std::string getEpoch() const;
+
 
                 tinyxml2::XMLElement* toXmlElement(tinyxml2::XMLDocument& doc) const;
 
-                static VOTableTable2 fromXmlElement(const tinyxml2::XMLElement& tableElement);
+                static VOTableCooSys2 fromXmlElement(const tinyxml2::XMLElement& cooSysElement);
 
             private:
 
-                std::string itsDescription;
-                std::string itsName;
                 std::string itsID;
-                std::vector<VOTableGroup2> itsGroups;
-                std::vector<VOTableParam2> itsParams;
-                std::vector<VOTableField2> itsFields;
-                std::vector<VOTableRow2> itsRows;
+                std::string itsRef;
+                std::string itsSystem;
+                std::string itsEquinox;
+                std::string itsEpoch;
         };
 
     }
