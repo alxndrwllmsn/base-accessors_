@@ -51,8 +51,8 @@ using namespace askap::accessors;
 TableDataSource::TableDataSource(const std::string &fname,
                 int opt, const std::string &dataColumn) :
                 TableInfoAccessor(casacore::Table(fname, casacore::TableLock(casacore::TableLock::NoLocking), // try without locking
-                   (opt & MEMORY_BUFFERS) &&
-				  !(opt & REMOVE_BUFFERS) && !(opt & WRITE_PERMITTED) ?
+                   (opt & MEMORY_BUFFERS) && !(opt & REMOVE_BUFFERS)
+				   && !(opt & WRITE_PERMITTED) ?
 				      casacore::Table::Old : casacore::Table::Update),
 						opt & MEMORY_BUFFERS, dataColumn)
 {
@@ -64,6 +64,9 @@ TableDataSource::TableDataSource(const std::string &fname,
 	  catch(...) {}
           table().rwKeywordSet().removeField("BUFFERS");
       }
+  }
+  if (opt & WRITE_DATA_ONLY) {
+      loadSubtables();
   }
 }
 
@@ -104,4 +107,17 @@ boost::shared_ptr<IDataIterator> TableDataSource::createIterator(const
    return boost::shared_ptr<IDataIterator>(new TableDataIterator(
                 getTableManager(),implSel,implConv,uvwMachineCacheSize(),
                 uvwMachineCacheTolerance(), maxChunkSize()));
+}
+
+/// @brief load the subtables into memory
+void TableDataSource::loadSubtables()
+{
+    // load the subtables into memory to avoid opening them r/w later
+    // when we reopen the table r/w for parallel writes
+    subtableInfo().getAntenna();
+    subtableInfo().getDataDescription();
+    subtableInfo().getFeed();
+    subtableInfo().getField();
+    subtableInfo().getSpWindow();
+    subtableInfo().getPolarisation();
 }
