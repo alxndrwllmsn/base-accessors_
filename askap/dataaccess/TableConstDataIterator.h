@@ -241,6 +241,12 @@ public:
   /// @return current polarisation ID
   casacore::uInt currentPolID() const;
 
+  /// @brief test if given row is selected with supplied TableExprNode
+  /// @details This method tests row selection on the underlying table, adjusting
+  /// the specified row number for the current state of iteration
+  /// @return true if row is selected
+  casacore::Bool isSelected(const casacore::TableExprNode& ten, casacore::uInt row);
+
 protected:
   /// @brief obtain selected range of channels
   /// @details A subset spectral channels can be selected for this iterator to work with.

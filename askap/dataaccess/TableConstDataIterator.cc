@@ -129,7 +129,7 @@ bool WholeRowFlagger<casacore::Bool>::copyRequired(casacore::uInt row,
   ASKAPDEBUGASSERT(!itsFlagRowCol.isNull());
   if (itsHasFlagRow) {
       if (itsFlagRowCol.asBool(row)) {
-          cube.xyPlane(row) = true; 
+          cube.xyPlane(row) = true;
           return false;
       }
   }
@@ -474,7 +474,7 @@ void TableConstDataIterator::fillCube(casacore::Cube<T> &cube,
            casacore::Matrix<T> buf = cube.xyPlane(row);
            // Copy a slice into buf and hence xyPlane
            tableCol.getSlice(row + itsCurrentTopRow, chanSlicer, buf, False);
-           
+
        }
   }
 }
@@ -513,7 +513,7 @@ void TableConstDataIterator::fillNoise(casacore::Cube<casacore::Complex> &noise)
   const casacore::uInt startChan = startChannel();
 
   // default action first - just resize the cube and assign 1.
-  noise.resize(itsNumberOfPols, nChan, itsNumberOfRows); 
+  noise.resize(itsNumberOfPols, nChan, itsNumberOfRows);
   noise.set(casacore::Complex(1.,1.));
   // if the sigma spectrum exists, use those sigmas to fill the noise cube
   if (table().actualTableDesc().isColumn("SIGMA_SPECTRUM")) {
@@ -710,7 +710,7 @@ std::pair<casacore::uInt, casacore::uInt> TableConstDataIterator::getChannelRang
               ASKAPDEBUGASSERT(freqInc != 0);
               ASKAPCHECK(abs((dataFreqs(nFreq-1)-dataFreqs(0))/((nFreq-1)*freqInc)-1)<0.001,
                 "Frequency axis non-linear, cannot do frequency selection with current code");
-              
+
               const double channel = (requiredFreq - dataFreqs(0)) / freqInc;
               // for now just use nearest channel, but could do linear interpolation between nearest two
               const int nearestChannel = std::lrint(channel);
@@ -736,6 +736,19 @@ std::pair<casacore::uInt, casacore::uInt> TableConstDataIterator::getChannelRang
   }
 
   return std::pair<casacore::uInt, casacore::uInt>(itsNumberOfChannelsSelected,itsStartChannelSelected);
+}
+
+/// @brief test if given row is selected with supplied TableExprNode
+/// @details This method tests row selection on the underlying table, adjusting
+/// the specified row number for the current state of iteration
+/// @return true if row is selected
+casacore::Bool TableConstDataIterator::isSelected(const casacore::TableExprNode& ten, casacore::uInt row)
+{
+    ASKAPASSERT(!ten.isNull());
+    ASKAPASSERT(ten.nrow() == table().nrow());
+    ASKAPASSERT(row + itsCurrentTopRow < itsCurrentIteration.nrow());
+    const rownr_t baseRow = itsCurrentIteration.rowNumbers()(row + itsCurrentTopRow);
+    return ten.getBool(baseRow);
 }
 
 /// @brief fill the buffer with the polarisation types

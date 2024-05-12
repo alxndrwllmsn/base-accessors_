@@ -59,7 +59,9 @@ public:
      /// create buffers in memory (via MemoryTable)
      MEMORY_BUFFERS = 2,
      /// allow to write to the measurement set
-     WRITE_PERMITTED = 4
+     WRITE_PERMITTED = 4,
+     /// allow write to DATA and FLAG only
+     WRITE_DATA_ONLY = 8
   };
 
   /// construct a read-write data source object
@@ -96,6 +98,10 @@ public:
 
   // we need this to get access to the overloaded syntax in the base class
   using IDataSource::createIterator;
+
+private:
+  /// @brief load the subtables into memory
+  void loadSubtables();
 };
 
 } // namespace accessors
