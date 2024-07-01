@@ -182,7 +182,7 @@ casacore::CoordinateSystem CasaADIOSImageAccessParallel<T>::coordSysSlice(const 
 {
     casacore::Slicer slc(blc, trc, casacore::Slicer::endIsLast);
     ASKAPLOG_INFO_STR(casaADIOSImAccessParallelLogger, " CasaADIOSImageAccessParallel - Slicer " << slc);
-    casacore::PagedImage<T> img(name);
+    ADIOSImage<T> img(itsComms, name);
     casacore::SubImage<T> si = casacore::SubImage<T>(img, slc, casacore::AxesSpecifier(casacore::True));
     return si.coordinates();
 
@@ -224,7 +224,8 @@ BeamList CasaADIOSImageAccessParallel<T>::beamList(const std::string &name) cons
 template <class T>
 std::string CasaADIOSImageAccessParallel<T>::getUnits(const std::string &name) const
 {
-    casacore::Table tmpTable(name);
+    ADIOSImage<T> img(itsComms, name);
+    casacore::Table img.getTable()
     std::string units = tmpTable.keywordSet().asString("units");
     return units;
 }
