@@ -45,17 +45,18 @@ int main(int argc, char *argv[])
  try {
    //CppUnit::TextUi::TestRunner runner;
    askap::accessors::TableTestRunner runner(argv[0]);
-   runner.addTest(askap::accessors::DataConverterTest::suite());
-   runner.addTest(askap::accessors::DataAccessTest::suite());
-   runner.addTest(askap::accessors::TableDataAccessTest::suite());
-   runner.addTest(askap::accessors::UVWMachineCacheTest::suite());
-   runner.addTest(askap::accessors::DataAccessorAdapterTest::suite());
-   runner.addTest(askap::accessors::CachedAccessorFieldTest::suite());
+   runner.addTest(askap::accessors::DataConverterTest::suite()); 
+   runner.addTest(askap::accessors::DataAccessTest::suite()); 
+   runner.addTest(askap::accessors::TableDataAccessTest::suite()); 
+   runner.addTest(askap::accessors::UVWMachineCacheTest::suite()); 
+   runner.addTest(askap::accessors::DataAccessorAdapterTest::suite()); 
+   runner.addTest(askap::accessors::CachedAccessorFieldTest::suite()); 
    runner.addTest(askap::accessors::TimeChunkIteratorAdapterTest::suite());
-   runner.run();
-   return 0;
+   const int result = (runner.run() ? 0 : 1);
+   return result;
  }
  catch (const askap::AskapError &ce) {
 	 std::cerr<<ce.what()<<std::endl;
+     return 1;
  }
 }

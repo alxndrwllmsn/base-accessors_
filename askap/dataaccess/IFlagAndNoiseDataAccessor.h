@@ -53,13 +53,13 @@ class IFlagAndNoiseDataAccessor : virtual public IFlagDataAccessor
 {
 public:
     /// @brief Noise level required for a proper weighting
-	/// @return a reference to nRow x nChannel x nPol cube with
+	/// @return a reference to nPol x nChannel x nRow cube with
 	///         complex noise estimates. Elements correspond to the
 	///         visibilities in the data cube.
 	virtual const casacore::Cube<casacore::Complex>& noise() const = 0;
 
     /// @brief write access to Noise level 
-	/// @return a reference to nRow x nChannel x nPol cube with
+	/// @return a reference to nPol x nChannel x nRow cube with
 	///         complex noise estimates. Elements correspond to the
 	///         visibilities in the data cube.
 	virtual casacore::Cube<casacore::Complex>& rwNoise() = 0;

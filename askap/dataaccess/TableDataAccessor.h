@@ -74,30 +74,30 @@ public:
   /// @param iter a reference to the associated read-write iterator
   explicit TableDataAccessor(const TableDataIterator &iter);
 
-  /// Read-only visibilities (a cube is nRow x nChannel x nPol; 
+  /// Read-only visibilities (a cube is nPol x nChannel x nRow; 
   /// each element is a complex visibility)
   ///
-  /// @return a reference to nRow x nChannel x nPol cube, containing
+  /// @return a reference to nPol x nChannel x nRow cube, containing
   /// all visibility data
   ///
   virtual const casacore::Cube<casacore::Complex>& visibility() const;
   
   
-  /// Read-write access to visibilities (a cube is nRow x nChannel x nPol;
+  /// Read-write access to visibilities (a cube is nPol x nChannel x nRow;
   /// each element is a complex visibility)
   ///
-  /// @return a reference to nRow x nChannel x nPol cube, containing
+  /// @return a reference to nPol x nChannel x nRow cube, containing
   /// all visibility data
   ///
   virtual casacore::Cube<casacore::Complex>& rwVisibility();
 
   /// Cube of flags corresponding to the output of visibility()
-  /// @return a reference to nRow x nChannel x nPol cube with the flag
+  /// @return a reference to nPol x nChannel x nRow cube with the flag
   ///         information. If True, the corresponding element is flagged.
   virtual const casacore::Cube<casacore::Bool>& flag() const;
 
   /// Non-const access to the cube of flags.
-  /// @return a reference to nRow x nChannel x nPol cube with the flag
+  /// @return a reference to nPol x nChannel x nRow cube with the flag
   ///         information. If True, the corresponding element is flagged.
   virtual casacore::Cube<casacore::Bool>& rwFlag();
 

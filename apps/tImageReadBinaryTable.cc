@@ -75,7 +75,7 @@ namespace accessors {
 class TestImageWriteTableApp : public askap::Application {
 public:
 
-    void setup() 
+    void setup()
     {
         itsName = config().getString("name","");
         itsImageAccessor = imageAccessFactory(config());
@@ -104,7 +104,7 @@ public:
         ASKAPLOG_INFO_STR(logger, "nfields: " << nfields);
     }
 
-   virtual int run(int argc, char* argv[])
+   int run(int argc, char* argv[]) final
    {
      try {
         setup();

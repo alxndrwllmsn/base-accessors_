@@ -166,9 +166,9 @@ void TableDataAccessTest::readOnlyTest()
        --maxiter;
        // just call several accessor methods to ensure that no exception is
        // thrown
-       CPPUNIT_ASSERT(it->visibility().nrow() == it->nRow());
+       CPPUNIT_ASSERT(it->visibility().nrow() == it->nPol());
        CPPUNIT_ASSERT(it->visibility().ncolumn() == it->nChannel());
-       CPPUNIT_ASSERT(it->visibility().nplane() == it->nPol());
+       CPPUNIT_ASSERT(it->visibility().nplane() == it->nRow());
        CPPUNIT_ASSERT(it->frequency().nelements() == it->nChannel());
        CPPUNIT_ASSERT(it->flag().shape() == it->visibility().shape());
        CPPUNIT_ASSERT(it->pointingDir2().nelements() == it->nRow());
@@ -224,7 +224,7 @@ void TableDataAccessTest::chunkSizeTest()
    casacore::uInt nIterOrig = 0;
    for (IConstDataSharedIter it=ds.createConstIterator(sel);it!=it.end();++it,++nIterOrig) {
         CPPUNIT_ASSERT_EQUAL(nRowsExpected, it->nRow());
-        CPPUNIT_ASSERT_EQUAL(static_cast<size_t>(nRowsExpected), it->visibility().nrow());
+        CPPUNIT_ASSERT_EQUAL(static_cast<size_t>(nRowsExpected), it->visibility().nplane());
    }
 
    // restrict the chunk size for the following iterators
@@ -236,7 +236,7 @@ void TableDataAccessTest::chunkSizeTest()
         if (count / 3 < nIterOrig) {
             // exclude the last iteration from the check as binning may be different
             CPPUNIT_ASSERT_EQUAL(nRowsExpectedThisIteration, it->nRow());
-            CPPUNIT_ASSERT_EQUAL(static_cast<size_t>(nRowsExpectedThisIteration), it->visibility().nrow());
+            CPPUNIT_ASSERT_EQUAL(static_cast<size_t>(nRowsExpectedThisIteration), it->visibility().nplane());
         }
    }
 }
@@ -648,7 +648,7 @@ void TableDataAccessTest::channelSelectionTest()
 
   // set visibilities back to the original values
   for (IDataSharedIter it=ds.createIterator(); it!=it.end(); ++it) {
-       // store original visibilities in a buffer
+       // restore the original visibilities back from a buffer
        it->rwVisibility() = it.buffer("BACKUP").visibility();
   }
 }
@@ -659,9 +659,18 @@ void TableDataAccessTest::freqSelectionTest()
   TableDataSource tds(TableTestRunner::msName(), TableDataSource::WRITE_PERMITTED);
   IDataSource &ds=tds; // to have all interface methods available without
                        // ambiguity (otherwise methods overridden in
-                       // TableDataSource would get a priority)
+                       // TableDataSource would get a priority
+  IDataSelectorPtr sel=ds.createSelector();
+  ASKAPASSERT(sel);
+  IDataConverterPtr conv=ds.createConverter();
+  ASKAPASSERT(conv);
+  conv->setFrequencyFrame(casa::MFrequency::Ref(casa::MFrequency::TOPO), "Hz");
+  conv->setDirectionFrame(casa::MDirection::Ref(casa::MDirection::J2000));
+  // ensure that time is counted in seconds since 0 MJD
+  conv->setEpochFrame();
+
   casacore::Vector<casacore::Double> freqs;
-  for (IDataSharedIter it=ds.createIterator(); it!=it.end(); ++it) {
+  for (IDataSharedIter it=ds.createIterator(sel,conv); it!=it.end(); ++it) {
        // store original visibilities in a buffer
        it.buffer("BACKUP").rwVisibility() = it->visibility();
        // set new values for all spectral channels, rows and pols
@@ -671,18 +680,15 @@ void TableDataAccessTest::freqSelectionTest()
        }
   }
 
-
-  IDataSelectorPtr sel = ds.createSelector();
-  ASKAPASSERT(sel);
   // choose 3rd freq (i.e. freq(2)), note only 0 width is supported at present
-  sel->chooseFrequencies(1, casacore::MVFrequency(freqs(2)), 0.);
-  for (IDataSharedIter it=ds.createIterator(sel); it!=it.end(); ++it) {
+  sel->chooseFrequencies(1, casacore::MFrequency(casacore::MVFrequency(freqs(2)),casacore::MFrequency::TOPO), 0.);
+  for (IDataSharedIter it=ds.createIterator(sel,conv); it!=it.end(); ++it) {
        // different value corresponding to selected channels
        it->rwVisibility().set(casacore::Complex(-0.5,1.0));
   }
 
   // check that the visibilities are set to a required constant for the selected subset of channels
-  for (IConstDataSharedIter cit = ds.createConstIterator(sel);
+  for (IConstDataSharedIter cit = ds.createConstIterator(sel,conv);
                                         cit != cit.end(); ++cit) {
        const casacore::Cube<casacore::Complex> &vis = cit->visibility();
        // selected just two channels
@@ -718,7 +724,7 @@ void TableDataAccessTest::freqSelectionTest()
 
   // set visibilities back to the original values
   for (IDataSharedIter it=ds.createIterator(); it!=it.end(); ++it) {
-       // store original visibilities in a buffer
+       // restore the original visibilities back from tha buffer
        it->rwVisibility() = it.buffer("BACKUP").visibility();
   }
 }
@@ -736,11 +742,11 @@ void TableDataAccessTest::originalFlagRewriteTest()
         IFlagDataAccessor& acc = dynamic_cast<IFlagDataAccessor&>(*it);
         const casacore::Cube<casacore::Bool>& rwFlags = acc.rwFlag();
         CPPUNIT_ASSERT(roFlags.shape() == rwFlags.shape());
-        CPPUNIT_ASSERT(roFlags.shape() == casacore::IPosition(3,it->nRow(), it->nChannel(), it->nPol()));
+        CPPUNIT_ASSERT(roFlags.shape() == casacore::IPosition(3,it->nPol(), it->nChannel(), it->nRow()));
         for (casacore::uInt row=0; row < it->nRow(); ++row) {
              for (casacore::uInt chan=0; chan < it->nChannel(); ++chan) {
                   for (casacore::uInt pol =0; pol < it->nPol(); ++pol) {
-                       CPPUNIT_ASSERT_EQUAL(roFlags(row,chan,pol), rwFlags(row,chan,pol));
+                       CPPUNIT_ASSERT_EQUAL(roFlags(pol,chan,row), rwFlags(pol,chan,row));
                   }
              }
         }
@@ -760,7 +766,7 @@ void TableDataAccessTest::originalFlagRewriteTest()
                   for (casacore::uInt pol =0; pol < it->nPol(); ++pol) {
                        // the test dataset uses row-based flagging mechanism, so can't just flip
                        // the flag to opposite - just flag all samples for the test
-                       rwFlags(row,chan,pol) = true;
+                       rwFlags(pol,chan,row) = true;
                   }
              }
         }
@@ -775,9 +781,9 @@ void TableDataAccessTest::originalFlagRewriteTest()
              for (casacore::uInt chan=0; chan < it->nChannel(); ++chan) {
                   for (casacore::uInt pol =0; pol < it->nPol(); ++pol) {
                        // check that the flag is now always set,  then reset if it was unflagged originally
-                       CPPUNIT_ASSERT_EQUAL(true, roFlags(row,chan,pol));
+                       CPPUNIT_ASSERT_EQUAL(true, roFlags(pol,chan,row));
                        if (!memoryBuffer[iterCntr](row,chan,pol)) {
-                           rwFlags(row,chan,pol) = false;
+                           rwFlags(pol,chan,row) = false;
                        }
                   }
              }
@@ -821,7 +827,7 @@ void TableDataAccessTest::originalVisRewriteTest()
   }
   // set visibilities back to the original values
   for (IDataSharedIter it=ds.createIterator(); it!=it.end(); ++it) {
-       // store original visibilities in a buffer
+       // restore the original visibilities back from the buffer
        it->rwVisibility() = it.buffer("BACKUP").visibility();
   }
 

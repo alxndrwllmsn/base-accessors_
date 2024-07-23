@@ -56,7 +56,7 @@ struct IBufferManager : virtual public IHolder
   /// @brief populate the cube with the data stored in the given buffer
   /// @details The method throws an exception if the requested buffer
   /// does not exist (prevents a shape mismatch)
-  /// @param[in] vis a reference to the nRow x nChannel x nPol buffer
+  /// @param[in] vis a reference to the nPol x nChannel x nRow buffer
   ///            cube to fill with the complex visibility data
   /// @param[in] name a name of the buffer to work with
   /// @param[in] index a sequential index in the buffer
@@ -66,7 +66,7 @@ struct IBufferManager : virtual public IHolder
   
   /// @brief write the cube back to the given buffer
   /// @details This buffer is created on the first write operation
-  /// @param[in] vis a reference to the nRow x nChannel x nPol buffer
+  /// @param[in] vis a reference to the nPol x nChannel x nRow buffer
   ///            cube to fill with the complex visibility data
   /// @param[in] name a name of the buffer to work with
   /// @param[in] index a sequential index in the buffer

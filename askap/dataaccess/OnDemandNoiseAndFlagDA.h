@@ -61,24 +61,24 @@ public:
   explicit OnDemandNoiseAndFlagDA(const IConstDataAccessor &acc);
   
   /// @brief Noise level required for a proper weighting
-  /// @return a reference to nRow x nChannel x nPol cube with
+  /// @return a reference to nPol x nChannel x nRow cube with
   ///         complex noise estimates. Elements correspond to the
   ///         visibilities in the data cube.
   virtual const casacore::Cube<casacore::Complex>& noise() const;
 
   /// @brief write access to Noise level 
-  /// @return a reference to nRow x nChannel x nPol cube with
+  /// @return a reference to nPol x nChannel x nRow cube with
   ///         complex noise estimates. Elements correspond to the
   ///         visibilities in the data cube.
   virtual casacore::Cube<casacore::Complex>& rwNoise();
   
   /// @brief Cube of flags corresponding to the output of visibility()
-  /// @return a reference to nRow x nChannel x nPol cube with the flag
+  /// @return a reference to nPol x nChannel x nRow cube with the flag
   ///         information. If True, the corresponding element is flagged.
   virtual const casacore::Cube<casacore::Bool>& flag() const;
 
   /// @brief Non-const access to the cube of flags.
-  /// @return a reference to nRow x nChannel x nPol cube with the flag
+  /// @return a reference to nPol x nChannel x nRow cube with the flag
   ///         information. If True, the corresponding element is flagged.
   virtual casacore::Cube<casacore::Bool>& rwFlag();
   

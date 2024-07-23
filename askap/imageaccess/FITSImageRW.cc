@@ -874,7 +874,7 @@ void FITSImageRW::createTable(const casacore::RecordInterface &info)
                 rows.emplace_back(doubleArr.capacity());
 
                 cPointerWrapper.itsTForm[f] = new char[sizeof(char)*3];
-                std::memset(cPointerWrapper.itsTForm[f],3,'\0');
+                std::memset(cPointerWrapper.itsTForm[f],'\0',3);
                 std::memcpy(cPointerWrapper.itsTForm[f],"1D",2);
             } else if ( type == casacore::DataType::TpArrayString ) {
                 casacore::Array<casacore::String> stringArr;

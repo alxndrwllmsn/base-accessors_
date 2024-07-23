@@ -106,11 +106,11 @@ namespace askap
         for (uint chan=0; chan<nChan; chan++)
           this->itsFrequency(chan)=1.400e9-20e6*chan;
         uint nPol(1);
-        itsVisibility.resize(nRows, nChan, nPol);
+        itsVisibility.resize(nPol, nChan, nRows);
         itsVisibility.set(casacore::Complex(0.0, 0.0));
-        itsNoise.resize(nRows, nChan, nPol);
+        itsNoise.resize(nPol, nChan, nRows);
         itsNoise.set(casacore::Complex(1.0, 0.0));
-        itsFlag.resize(nRows, nChan, nPol);
+        itsFlag.resize(nPol, nChan, nRows);
         itsFlag.set(casacore::False);
         itsTime=0;
         itsUVW.resize(nRows);
@@ -158,7 +158,7 @@ namespace askap
                 /// @return the number of rows in this chunk
                 casacore::uInt DataAccessorStub::nRow() const throw()
                 {
-                  return itsVisibility.nrow();
+                  return itsVisibility.nplane();
                 }
 
                 // The following methods implement metadata access
@@ -174,7 +174,7 @@ namespace askap
                 /// @return the number of polarization products (can be 1,2 or 4)
                 casacore::uInt DataAccessorStub::nPol() const throw()
                 {
-                  return itsVisibility.nplane();
+                  return itsVisibility.nrow();
                 }
 
                 /// First antenna IDs for all rows
@@ -263,9 +263,9 @@ namespace askap
                   return itsDishPointing2;
                 }
                 
-                /// Visibilities (a cube is nRow x nChannel x nPol; each element is
+                /// Visibilities (a cube is nPol x nChannel x nRow; each element is
                 /// a complex visibility)
-                /// @return a reference to nRow x nChannel x nPol cube, containing
+                /// @return a reference to nPol x nChannel x nRow cube, containing
                 /// all visibility data
                 /// TODO:
                 ///     a non-const version to be able to subtract the model
@@ -274,10 +274,10 @@ namespace askap
                   return itsVisibility;
                 }
 
-                /// Read-write visibilities (a cube is nRow x nChannel x nPol; 
+                /// Read-write visibilities (a cube is nPol x nChannel x nRow; 
                 /// each element is a complex visibility)
                 /// 
-                /// @return a reference to nRow x nChannel x nPol cube, containing
+                /// @return a reference to nPol x nChannel x nRow cube, containing
                 /// all visibility data
                 ///
                 casacore::Cube<casacore::Complex>& DataAccessorStub::rwVisibility()
@@ -286,7 +286,7 @@ namespace askap
                 }
 
                 /// Cube of flags corresponding to the output of visibility() 
-                /// @return a reference to nRow x nChannel x nPol cube with flag 
+                /// @return a reference to nPol x nChannel x nRow cube with flag 
                 ///         information. If True, the corresponding element is flagged.
                 const casacore::Cube<casacore::Bool>& DataAccessorStub::flag() const
                 {
@@ -295,7 +295,7 @@ namespace askap
                 }
 
                 /// Non-const access to the cube of flags.
-                /// @return a reference to nRow x nChannel x nPol cube with the flag
+                /// @return a reference to nPol x nChannel x nRow cube with the flag
                 ///         information. If True, the corresponding element is flagged.
                 casacore::Cube<casacore::Bool>& DataAccessorStub::rwFlag()
                 {
@@ -340,7 +340,7 @@ namespace askap
                 
 
                 /// Noise level required for a proper weighting
-                /// @return a reference to nRow x nChannel x nPol cube with
+                /// @return a reference to nPol x nChannel x nRow cube with
                 ///         complex noise estimates
                 const casacore::Cube<casacore::Complex>& DataAccessorStub::noise() const
                 {

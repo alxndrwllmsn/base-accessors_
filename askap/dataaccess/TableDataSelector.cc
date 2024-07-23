@@ -216,7 +216,8 @@ uint TableDataSelector::getTiling(const std::string& column,
     tileShape = tsm.getTileShape(hypercube);
     hypercubeShape = tsm.getHypercubeShape(hypercube);
     // we implicitly assume that column is tiled over pol, chan and row
-    ASKAPDEBUGASSERT(tileShape.nelements()==3 && hypercubeShape.nelements()==3);
+    ASKAPASSERT(tileShape.nelements()==3 && hypercubeShape.nelements()==3);
+    ASKAPCHECK(tileShape(2) > 0, "Expect a positive number in the tileShape, you have "<<tileShape);
     const uint nRowTiles = hypercubeShape(2) / tileShape(2) +
         (hypercubeShape(2) % tileShape(2) ? 1 : 0);
     return nRowTiles;

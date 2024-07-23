@@ -69,9 +69,9 @@ casacore::uInt TableConstDataAccessor::nPol() const throw()
   return itsIterator.nPol();
 }
 
-/// Visibilities (a cube is nRow x nChannel x nPol; each element is
+/// Visibilities (a cube is nPol x nChannel x nRow; each element is
 /// a complex visibility)
-/// @return a reference to nRow x nChannel x nPol cube, containing
+/// @return a reference to nPol x nChannel x nRow cube, containing
 /// all visibility data
 const casacore::Cube<casacore::Complex>& TableConstDataAccessor::visibility() const
 {
@@ -80,11 +80,11 @@ const casacore::Cube<casacore::Complex>& TableConstDataAccessor::visibility() co
 }
 
 /// Cube of flags corresponding to the output of visibility() 
-/// @return a reference to nRow x nChannel x nPol cube with flag 
+/// @return a reference to nPol x nChannel x nRow cube with flag 
 ///         information. If True, the corresponding element is flagged.
 const casacore::Cube<casacore::Bool>& TableConstDataAccessor::flag() const
 {
-  return itsFlag.value(itsIterator, &TableConstDataIterator::fillFlag);
+ return itsFlag.value(itsIterator, &TableConstDataIterator::fillFlag);
 }
 
 /// UVW
@@ -97,7 +97,7 @@ TableConstDataAccessor::uvw() const
 }
 
 /// @brief uvw after rotation
-/// @details This method calls UVWMachine to rotate baseline coordinates 
+/// @details This method calls UVWMachine to rotate baseline coordinates
 /// for a new tangent point. Delays corresponding to this correction are
 /// returned by a separate method.
 /// @param[in] tangentPoint tangent point to rotate the coordinates to
@@ -106,12 +106,12 @@ const casacore::Vector<casacore::RigidVector<casacore::Double, 3> >&
 	           TableConstDataAccessor::rotatedUVW(const casacore::MDirection &tangentPoint) const
 {
   return itsRotatedUVW.uvw(*this, tangentPoint);
-}	           
-	         
+}
+
 /// @brief delay associated with uvw rotation
 /// @details This is a companion method to rotatedUVW. It returns delays corresponding
-/// to the baseline coordinate rotation. An additional delay corresponding to the 
-/// translation in the tangent plane can also be applied using the image 
+/// to the baseline coordinate rotation. An additional delay corresponding to the
+/// translation in the tangent plane can also be applied using the image
 /// centre parameter. Set it to tangent point to apply no extra translation.
 /// @param[in] tangentPoint tangent point to rotate the coordinates to
 /// @param[in] imageCentre image centre (additional translation is done if imageCentre!=tangentPoint)
@@ -133,17 +133,17 @@ const casacore::Vector<casacore::Double>& TableConstDataAccessor::frequency() co
 }
 
 /// a helper adapter method to set the time via non-const reference
-/// @param[in] time a reference to buffer to fill with the current time 
+/// @param[in] time a reference to buffer to fill with the current time
 void TableConstDataAccessor::readTime(casacore::Double &time) const
 {
   time=itsIterator.getTime();
 }
-  
+
 
 /// Timestamp for all rows
 /// @return a timestamp for this buffer (it is always the same
-///         for all rows. The timestamp is returned as 
-///         Double w.r.t. the origin specified by the 
+///         for all rows. The timestamp is returned as
+///         Double w.r.t. the origin specified by the
 ///         DataSource object and in that reference frame
 casacore::Double TableConstDataAccessor::time() const
 {
@@ -189,7 +189,7 @@ const casacore::Vector<casacore::Float>& TableConstDataAccessor::feed1PA() const
 {
   return itsFeed1PA.value(itsIterator,&TableConstDataIterator::fillFeed1PA);
 }
-     
+
 /// Position angles of the second feed for all rows
 /// @return a vector with position angles (in radians) of the
 /// second feed corresponding to each visibility
@@ -202,25 +202,25 @@ const casacore::Vector<casacore::Float>& TableConstDataAccessor::feed2PA() const
 /// @return a vector with direction measures (coordinate system
 /// is set via IDataConverter), one direction for each
 /// visibility/row
-const casacore::Vector<casacore::MVDirection>& TableConstDataAccessor::pointingDir1() 
+const casacore::Vector<casacore::MVDirection>& TableConstDataAccessor::pointingDir1()
                                         const
 {
   return itsPointingDir1.value(itsIterator,
                                &TableConstDataIterator::fillPointingDir1);
-}   
+}
 
 /// Return pointing centre directions of the second antenna/feed
 /// @return a vector with direction measures (coordinate system
 /// is set via IDataConverter), one direction for each
 /// visibility/row
-const casacore::Vector<casacore::MVDirection>& TableConstDataAccessor::pointingDir2() 
+const casacore::Vector<casacore::MVDirection>& TableConstDataAccessor::pointingDir2()
                                         const
 {
   return itsPointingDir2.value(itsIterator,
                                &TableConstDataIterator::fillPointingDir2);
-}   
+}
 
-/// pointing direction for the centre of the first antenna 
+/// pointing direction for the centre of the first antenna
 /// @details The same as pointingDir1, if the feed offsets are zero
 /// @return a vector with direction measures (coordinate system
 /// is is set via IDataConverter), one direction for each
@@ -231,7 +231,7 @@ const casacore::Vector<casacore::MVDirection>& TableConstDataAccessor::dishPoint
                                &TableConstDataIterator::fillDishPointing1);
 }
 
-/// pointing direction for the centre of the first antenna 
+/// pointing direction for the centre of the first antenna
 /// @details The same as pointingDir2, if the feed offsets are zero
 /// @return a vector with direction measures (coordinate system
 /// is is set via IDataConverter), one direction for each
@@ -243,13 +243,13 @@ const casacore::Vector<casacore::MVDirection>& TableConstDataAccessor::dishPoint
 }
 
 /// Noise level required for a proper weighting
-/// @return a reference to nRow x nChannel x nPol cube with
+/// @return a reference to nPol x nChannel x nRow cube with
 ///         complex noise estimates
 const casacore::Cube<casacore::Complex>& TableConstDataAccessor::noise() const
 {
   return itsNoise.value(itsIterator, &TableConstDataIterator::fillNoise);
 }
-  
+
 /// Velocity for each channel
 /// @return a reference to vector containing velocities for each
 ///         spectral channel (vector size is nChannel). Velocities
@@ -259,7 +259,7 @@ const casacore::Vector<casacore::Double>& TableConstDataAccessor::velocity() con
 {
   throw AskapError("TableConstDataAccessor::velocity has not been implemented.");
 }
- 
+
 /// @brief polarisation type for each product
 /// @return a reference to vector containing polarisation types for
 /// each product in the visibility cube (nPol() elements).
@@ -268,7 +268,7 @@ const casacore::Vector<casacore::Double>& TableConstDataAccessor::velocity() con
 const casacore::Vector<casacore::Stokes::StokesTypes>& TableConstDataAccessor::stokes() const
 {
   return itsStokes.value(itsIterator, &TableConstDataIterator::fillStokes);
-}                                    
+}
 
 /// invalidate fields  updated on each iteration
 void TableConstDataAccessor::invalidateIterationCaches() const throw()
@@ -296,7 +296,7 @@ void TableConstDataAccessor::invalidateIterationCaches() const throw()
 void TableConstDataAccessor::invalidateSpectralCaches() const throw()
 {
   itsFrequency.invalidate();
-  // polarisation info is attached to a spectral info (i.e. both are controlled by 
+  // polarisation info is attached to a spectral info (i.e. both are controlled by
   // data descriptor ID, which is a sort of correlator setup ID)
   itsStokes.invalidate();
 }
