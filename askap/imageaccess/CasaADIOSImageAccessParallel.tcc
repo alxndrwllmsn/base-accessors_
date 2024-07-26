@@ -225,7 +225,7 @@ template <class T>
 std::string CasaADIOSImageAccessParallel<T>::getUnits(const std::string &name) const
 {
     ADIOSImage<T> img(itsComms, name);
-    casacore::Table img.getTable()
+    casacore::Table tmpTable = img.getTable()
     std::string units = tmpTable.keywordSet().asString("units");
     return units;
 }
