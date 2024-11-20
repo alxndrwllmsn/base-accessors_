@@ -51,7 +51,7 @@ using namespace askap::accessors;
 /// @param[in] config, configuration file name 
 template <class T>
 CasaADIOSImageAccessParallel<T>::CasaADIOSImageAccessParallel(askapparallel::AskapParallel &comms, std::string config, size_t comm_index):
-    itsComms(comms), itsParallel(-1), itsCommIndex(comm_index)
+    CasaADIOSImageAccess<T>(config), itsComms(comms), itsParallel(-1), itsCommIndex(comm_index)
 {
     configname = config;
     if (config != "") {
